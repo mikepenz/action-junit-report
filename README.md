@@ -28,10 +28,11 @@ If you are looking for surefire reporting check out the amazing plugin by [ScaCa
 
 | **Input**      | **Description**                                                                                                                                                    |
 |----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `github_token` | **Required**. Usually in form of `github_token: ${{ secrets.GITHUB_TOKEN }}`.                                                                                      |
-| `report_paths` | **Required**. [Glob](https://github.com/actions/toolkit/tree/master/packages/glob) expression to junit report paths. The default is `**/junit-reports/TEST-*.xml`. |
-| `check_name`   | Optional. Check name to use when creating a check run. The default is `Test Report`.                                                                               |
-| `commit`       | Optional. The commit SHA to update the status. This is useful when you run it with `workflow_run`.                                                                 |
+| `github_token`    | **Required**. Usually in form of `github_token: ${{ secrets.GITHUB_TOKEN }}`.                                                                                      |
+| `report_paths`    | **Required**. [Glob](https://github.com/actions/toolkit/tree/master/packages/glob) expression to junit report paths. The default is `**/junit-reports/TEST-*.xml`. |
+| `check_name`      | Optional. Check name to use when creating a check run. The default is `Test Report`.                                                                               |
+| `commit`          | Optional. The commit SHA to update the status. This is useful when you run it with `workflow_run`.                                                                 |
+| `fail_on_failure` | Optional. Fail the build in case of a test failure.                                                                 |
 
 ### Example usage
 

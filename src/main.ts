@@ -15,6 +15,7 @@ export async function run(): Promise<void> {
 
     const checkName = core.getInput('check_name')
     const commit = core.getInput('commit')
+    const failOnFailure = core.getInput('fail_on_failure') === 'true'
 
     core.endGroup()
     core.startGroup(`📘 Process test results`)
@@ -62,6 +63,10 @@ export async function run(): Promise<void> {
         auth: token
       })
       await octokit.checks.create(createCheckRequest)
+      
+      if (failOnFailure && conclusion === 'failure') {
+        core.setFailed(`Tests reported ${testResult.annotations.length} failures`)
+      }
     } catch (error) {
       core.error(`Failed to create checks using the provided token. (${error})`)
       core.warning(
