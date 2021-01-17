@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="TestReportDesktop/testFailure.xml" name="TestReportDesktop/testFailure.xml" tests="4" failures="1" time="0.000345">
+  <testsuite id="DummyClass" name="DummyClass" tests="4" failures="1" time="0.000322">
+    <testcase id="DefaultCtor_When_ShouldTest" name="DefaultCtor_When_ShouldTest" time="1.7e-05">
+    </testcase>
+    <testcase id="loadFromXMLString_When_Should1Test" name="loadFromXMLString_When_Should1Test" time="0.000174">
+    </testcase>
+    <testcase id="loadFromXMLString_When_Should2Test" name="loadFromXMLString_When_Should2Test" time="8.7e-05">
+      <failure message="false == something.loadXml(xml_string)" type="ERROR">
+false == something.loadXml(xml_string)
+File: /dumm/core/tests/testFailure.cpp
+Line: 77
+      </failure>
+    </testcase>
+    <testcase id="loadFromXMLString_When_ShouldTest" name="loadFromXMLString_When_ShouldTest" time="3.6e-05">
+    </testcase>
+  </testsuite>
+</testsuites>
