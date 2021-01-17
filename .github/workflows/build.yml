@@ -12,13 +12,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - uses: mikepenz/action-junit-report-2@main
+      - name: Test JUnit test import
+        uses: ./
         if: endsWith(github.ref, 'main') == false
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           check_name: Example JUnit Test Report
           report_paths: '**/surefire-reports/TEST-*.xml'
-      - uses: mikepenz/action-junit-report-2@main
+      - name: Test PyTest test import
+        uses: ./
         if: endsWith(github.ref, 'main') == false
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

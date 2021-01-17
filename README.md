@@ -10,6 +10,10 @@
 </p>
 
 <div align="center">
+  <img src=".github/images/action.png"/>
+</div>
+
+<div align="center">
   <a href="https://github.com/mikepenz/action-junit-report">
 		<img src="https://github.com/mikepenz/action-junit-report/workflows/CI/badge.svg"/>
 	</a>
@@ -22,7 +26,7 @@
 
 This action processes JUnit XML test reports on pull requests and shows the result as a PR check with summary and annotations.
 
-If you are looking for surefire reporting check out the amazing plugin by [ScaCap - action-surefire-report](https://github.com/ScaCap/action-surefire-report)
+Based on action for [Surefire Reports by ScaCap](https://github.com/ScaCap/action-surefire-report)
 
 ### Inputs
 
@@ -59,7 +63,13 @@ jobs:
 
 ## Sample
 
-![Screenshot](./screenshot.png)
+<div align="center">
+  <img src=".github/images/annotated.png"/>
+</div>
+
+<div align="center">
+  <img src=".github/images/annotations.png"/>
+</div>
 
 ## Contribute
 
