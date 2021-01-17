@@ -1,5 +1,5 @@
-name: 'JUnit Report'
-description: 'Report JUnit test results as annotations on Github Pull Request [junit, failsafe]'
+name: 'JUnit Report Action'
+description: 'Report JUnit test results as annotations on Github Pull Request [junit]'
 branding:
   icon: 'check-circle'
   color: 'green'
