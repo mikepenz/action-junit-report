@@ -10,31 +10,28 @@ jobs:
     if: github.event_name  == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: mikepenz/action-junit-report@main
+      - name: Checkout
+        uses: actions/checkout@v2
+      - uses: mikepenz/action-junit-report-2@main
         if: endsWith(github.ref, 'main') == false
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           check_name: Example JUnit Test Report
           report_paths: '**/surefire-reports/TEST-*.xml'
-      - uses: mikepenz/action-junit-report@main
+      - uses: mikepenz/action-junit-report-2@main
         if: endsWith(github.ref, 'main') == false
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           check_name: Example Pytest Report
           report_paths: python/report.xml
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 12
-      - uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-cache-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-cache-
-      - run: npm install
-      - run: npm run eslint
-      - run: npm run test
+      - name: Install NPM
+        run: |
+          npm install
+      - name: Run NPM
+        run: |
+          npm run all
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
     if: startsWith(github.ref, 'refs/tags/')
