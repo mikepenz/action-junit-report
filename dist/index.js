@@ -36,6 +36,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.run = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const rest_1 = __nccwpck_require__(5375);
@@ -45,7 +46,7 @@ function run() {
         try {
             core.startGroup(`📘 Reading input values`);
             const reportPaths = core.getInput('report_paths');
-            const token = core.getInput('token') || process.env.GITHUB_TOKEN;
+            const token = core.getInput('token') || core.getInput('github_token') || process.env.GITHUB_TOKEN;
             const checkName = core.getInput('check_name');
             const commit = core.getInput('commit');
             core.endGroup();
@@ -57,10 +58,12 @@ function run() {
                 : 'No test results found!';
             core.info(`Result: ${title}`);
             const pullRequest = github.context.payload.pull_request;
-            const link = pullRequest && pullRequest.html_url || github.context.ref;
-            const conclusion = foundResults && testResult.annotations.length === 0 ? 'success' : 'failure';
-            const status = "completed";
-            const head_sha = commit || pullRequest && pullRequest.head.sha || github.context.sha;
+            const link = (pullRequest && pullRequest.html_url) || github.context.ref;
+            const conclusion = foundResults && testResult.annotations.length === 0
+                ? 'success'
+                : 'failure';
+            const status = 'completed';
+            const head_sha = commit || (pullRequest && pullRequest.head.sha) || github.context.sha;
             core.info(`Posting status '${status}' with conclusion '${conclusion}' to ${link} (sha: ${head_sha})`);
             const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: checkName, head_sha,
                 status,
@@ -74,7 +77,7 @@ function run() {
             core.startGroup(`📘 Publish results`);
             try {
                 const octokit = new rest_1.Octokit({
-                    auth: token,
+                    auth: token
                 });
                 yield octokit.checks.create(createCheckRequest);
             }
@@ -89,6 +92,7 @@ function run() {
         }
     });
 }
+exports.run = run;
 run();
 
 
@@ -145,7 +149,7 @@ function resolveFileAndLine(file, className, output) {
         const fileName = file ? file : className.split('.').slice(-1)[0];
         const matches = output.match(new RegExp(`${fileName}.*?:\\d+`, 'g'));
         if (!matches)
-            return { fileName: fileName, line: 1 };
+            return { fileName, line: 1 };
         const [lastItem] = matches.slice(-1);
         const [, line] = lastItem.split(':');
         core.debug(`Resolved file ${fileName} and line ${line}`);
@@ -157,13 +161,15 @@ function resolvePath(fileName) {
     var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Resolving path for ${fileName}`);
-        const globber = yield glob.create(`**/${fileName}.*`, { followSymbolicLinks: false });
-        const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : "";
+        const globber = yield glob.create(`**/${fileName}.*`, {
+            followSymbolicLinks: false
+        });
+        const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : '';
         try {
             for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
                 const result = _c.value;
                 core.debug(`Matched file: ${result}`);
-                if (!result.includes("/build/")) {
+                if (!result.includes('/build/')) {
                     const path = result.slice(searchPath.length + 1);
                     core.debug(`Resolved path: ${path}`);
                     return path;
@@ -186,7 +192,7 @@ function parseFile(file) {
         core.debug(`Parsing file ${file}`);
         let count = 0;
         let skipped = 0;
-        let annotations = [];
+        const annotations = [];
         const data = fs.readFileSync(file, 'utf8');
         const report = JSON.parse(parser.xml2json(data, { compact: true }));
         const testsuites = report.testsuite
@@ -212,11 +218,20 @@ function parseFile(file) {
                         (testcase.failure && testcase.failure._text) ||
                         (testcase.error && testcase.error._cdata) ||
                         (testcase.error && testcase.error._text) ||
-                        '').toString().trim();
-                    const message = ((testcase.failure && testcase.failure._attributes && testcase.failure._attributes.message) ||
-                        (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
-                        stackTrace.split('\n').slice(0, 2).join('\n') || testcase._attributes.name).trim();
-                    const pos = yield resolveFileAndLine(testcase._attributes.file, testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
+                        '')
+                        .toString()
+                        .trim();
+                    const message = ((testcase.failure &&
+                        testcase.failure._attributes &&
+                        testcase.failure._attributes.message) ||
+                        (testcase.error &&
+                            testcase.error._attributes &&
+                            testcase.error._attributes.message) ||
+                        stackTrace.split('\n').slice(0, 2).join('\n') ||
+                        testcase._attributes.name).trim();
+                    const pos = yield resolveFileAndLine(testcase._attributes.file, testcase._attributes.classname
+                        ? testcase._attributes.classname
+                        : testcase._attributes.name, stackTrace);
                     const path = yield resolvePath(pos.fileName);
                     const title = `${pos.fileName}.${testcase._attributes.name}`;
                     core.info(`${path}:${pos.line} | ${message.replace(/\n/g, ' ')}`);
@@ -249,7 +264,7 @@ function parseTestReports(reportPaths) {
             for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
                 const file = _c.value;
                 const { count: c, skipped: s, annotations: a } = yield parseFile(file);
-                if (c == 0)
+                if (c === 0)
                     continue;
                 count += c;
                 skipped += s;

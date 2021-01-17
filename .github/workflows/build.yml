@@ -15,13 +15,13 @@ jobs:
       - uses: mikepenz/action-junit-report-2@main
         if: endsWith(github.ref, 'main') == false
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           check_name: Example JUnit Test Report
           report_paths: '**/surefire-reports/TEST-*.xml'
       - uses: mikepenz/action-junit-report-2@main
         if: endsWith(github.ref, 'main') == false
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           check_name: Example Pytest Report
           report_paths: python/report.xml
       - name: Install NPM

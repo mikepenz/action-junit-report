@@ -4,8 +4,11 @@ branding:
   icon: 'check-circle'
   color: 'green'
 inputs:
-  github_token:
+  token:
     description: 'GITHUB_TOKEN'
+    required: true
+  github_token:
+    description: 'deprecated'
     required: true
   report_paths:
     description: 'junit xml report paths in glob format'

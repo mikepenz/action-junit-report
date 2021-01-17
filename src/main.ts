@@ -8,7 +8,10 @@ export async function run(): Promise<void> {
     core.startGroup(`📘 Reading input values`)
 
     const reportPaths = core.getInput('report_paths')
-    const token = core.getInput('token') || process.env.GITHUB_TOKEN
+    const token =
+      core.getInput('token') ||
+      core.getInput('github_token') ||
+      process.env.GITHUB_TOKEN
 
     const checkName = core.getInput('check_name')
     const commit = core.getInput('commit')
