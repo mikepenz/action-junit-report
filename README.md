@@ -18,9 +18,10 @@
 
 -------
 
-## GitHub Action: Process junit reports
+## GitHub Action: Process JUnit reports
 
-This action processes junit XML reports on pull requests and shows the result as a PR check with summary and annotations.
+This action processes JUnit XML test reports on pull requests and shows the result as a PR check with summary and annotations.
+
 If you are looking for surefire reporting check out the amazing plugin by [ScaCap - action-surefire-report](https://github.com/ScaCap/action-surefire-report)
 
 ### Inputs
