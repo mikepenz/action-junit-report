@@ -10,6 +10,10 @@
 </p>
 
 <div align="center">
+  <img src=".github/images/action.png"/>
+</div>
+
+<div align="center">
   <a href="https://github.com/mikepenz/action-junit-report">
 		<img src="https://github.com/mikepenz/action-junit-report/workflows/CI/badge.svg"/>
 	</a>
