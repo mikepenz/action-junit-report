@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="3" time="0.052" timestamp="2020-10-12T18:46:11.226119" hostname="Mikes-iMac.local"><testcase classname="python.test_sample" name="test_which_succeeds" time="0.001" /><testcase classname="python.test_sample" name="test_which_fails" time="0.001"><failure message="AssertionError: assert 'test' == 'xyz'&#10;  - xyz&#10;  + test">def test_which_fails():
+        event = { 'attr': 'test'}
+&gt;       assert event['attr'] == 'xyz'
+E       AssertionError: assert 'test' == 'xyz'
+E         - xyz
+E         + test
+
+python/test_sample.py:10: AssertionError</failure></testcase><testcase classname="python.test_sample" name="test_with_error" time="0.000"><failure message="AttributeError: 'dict' object has no attribute 'attr'">def test_with_error():
+        event = { 'attr': 'test'}
+&gt;       assert event.attr == 'test'
+E       AttributeError: 'dict' object has no attribute 'attr'
+
+python/test_sample.py:14: AttributeError</failure></testcase></testsuite></testsuites>

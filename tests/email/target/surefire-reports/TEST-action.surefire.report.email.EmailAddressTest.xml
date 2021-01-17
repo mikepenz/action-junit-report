@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" name="action.surefire.report.email.EmailAddressTest" time="0.041" tests="9" errors="5" skipped="0" failures="2">
+  <testcase name="shouldNotContainInternationalizedHostNames" classname="action.surefire.report.email.EmailAddressTest" time="0.01">
+    <error message="Invalid email address &apos;user@ñandú.com.ar&apos;" type="action.surefire.report.email.InvalidEmailAddressException">action.surefire.report.email.InvalidEmailAddressException: Invalid email address 'user@ñandú.com.ar'
+	at action.surefire.report.email.EmailAddressTest.expectException(EmailAddressTest.java:74)
+	at action.surefire.report.email.EmailAddressTest.shouldNotContainInternationalizedHostNames(EmailAddressTest.java:39)
+</error>
+  </testcase>
+  <testcase name="shouldBeStricterThanRfc2821" classname="action.surefire.report.email.EmailAddressTest" time="0">
+    <error message="Invalid email address &apos;Abc\@def@example.com&apos;" type="action.surefire.report.email.InvalidEmailAddressException">action.surefire.report.email.InvalidEmailAddressException: Invalid email address 'Abc\@def@example.com'
+	at action.surefire.report.email.EmailAddressTest.expectException(EmailAddressTest.java:74)
+	at action.surefire.report.email.EmailAddressTest.shouldBeStricterThanRfc2821(EmailAddressTest.java:49)
+</error>
+  </testcase>
+  <testcase name="shouldBeStricterThanRfc2822" classname="action.surefire.report.email.EmailAddressTest" time="0">
+    <failure message="Address aba@bab.com should have thrown InvalidEmailAddressException" type="java.lang.AssertionError">java.lang.AssertionError: Address aba@bab.com should have thrown InvalidEmailAddressException
+	at action.surefire.report.email.EmailAddressTest.expectException(EmailAddressTest.java:75)
+	at action.surefire.report.email.EmailAddressTest.shouldBeStricterThanRfc2822(EmailAddressTest.java:57)
+</failure>
+  </testcase>
+  <testcase name="shouldAcceptInternationalizedDomainNamesUsingPunycode" classname="action.surefire.report.email.EmailAddressTest" time="0.001"/>
+  <testcase name="shouldNotBeBlank" classname="action.surefire.report.email.EmailAddressTest" time="0">
+    <error message="Email address must not be null, empty, or blanks" type="action.surefire.report.email.InvalidEmailAddressException">action.surefire.report.email.InvalidEmailAddressException: Email address must not be null, empty, or blanks
+	at action.surefire.report.email.EmailAddressTest.expectException(EmailAddressTest.java:74)
+	at action.surefire.report.email.EmailAddressTest.shouldNotBeBlank(EmailAddressTest.java:18)
+</error>
+  </testcase>
+  <testcase name="shouldNotContainLocalHosts" classname="action.surefire.report.email.EmailAddressTest" time="0">
+    <error message="Invalid email address &apos;user@host&apos;" type="action.surefire.report.email.InvalidEmailAddressException">action.surefire.report.email.InvalidEmailAddressException: Invalid email address 'user@host'
+	at action.surefire.report.email.EmailAddressTest.expectException(EmailAddressTest.java:74)
+	at action.surefire.report.email.EmailAddressTest.shouldNotContainLocalHosts(EmailAddressTest.java:32)
+</error>
+  </testcase>
+  <testcase name="shouldNotMissComponents" classname="action.surefire.report.email.EmailAddressTest" time="0.001">
+    <failure message="Address user-without-host@test.com should have thrown InvalidEmailAddressException" type="java.lang.AssertionError">java.lang.AssertionError: Address user-without-host@test.com should have thrown InvalidEmailAddressException
+	at action.surefire.report.email.EmailAddressTest.expectException(EmailAddressTest.java:75)
+	at action.surefire.report.email.EmailAddressTest.shouldNotMissComponents(EmailAddressTest.java:25)
+</failure>
+  </testcase>
+  <testcase name="shouldNotAllowDotsInWeirdPlaces" classname="action.surefire.report.email.EmailAddressTest" time="0">
+    <error message="Invalid email address &apos;.user@host.com&apos;" type="action.surefire.report.email.InvalidEmailAddressException">action.surefire.report.email.InvalidEmailAddressException: Invalid email address '.user@host.com'
+	at action.surefire.report.email.EmailAddressTest.expectException(EmailAddressTest.java:74)
+	at action.surefire.report.email.EmailAddressTest.shouldNotAllowDotsInWeirdPlaces(EmailAddressTest.java:66)
+</error>
+  </testcase>
+  <testcase name="shouldBeGoodEnoughForSalesforce" classname="action.surefire.report.email.EmailAddressTest" time="0"/>
+</testsuite>

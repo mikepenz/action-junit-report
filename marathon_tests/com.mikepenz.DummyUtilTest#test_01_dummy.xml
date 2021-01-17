@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?><testsuite name="common" tests="1" failures="1" errors="0" skipped="0" time="0.014" timestamp="2020-10-12T20:17:49"><properties></properties><testcase classname="com.mikepenz.DummyUtilTest" name="test_01_dummy" time="0.014"><failure><![CDATA[java.io.FileNotFoundException: No content provider: content://com.xyz/photo.jpg
+at android.content.ContentResolver.openTypedAssetFileDescriptor(ContentResolver.java:1969)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2205)
+]]></failure></testcase></testsuite>

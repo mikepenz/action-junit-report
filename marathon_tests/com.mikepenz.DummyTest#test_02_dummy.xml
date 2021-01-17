@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="common" tests="1" failures="0" errors="0" skipped="0" time="0.001" timestamp="2020-10-12T20:17:41">
+    <properties></properties>
+    <testcase classname="com.mikepenz.DummyTest" name="test_02_dummy" time="0.001"></testcase>
+</testsuite>
