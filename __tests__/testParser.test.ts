@@ -1,5 +1,13 @@
 import { resolveFileAndLine, resolvePath, parseFile } from '../src/testParser'
 
+/**
+ * Original test cases:
+ *   Copyright 2020 ScaCap
+ *   https://github.com/ScaCap/action-surefire-report/blob/master/utils.test.js
+ * 
+ * New test cases:
+ *   Copyright Mike Penz
+ */
 describe('resolveFileAndLine', () => {
     it('should default to 1 if no line found', async () => {
         const { fileName, line } = await resolveFileAndLine(null, 'someClassName', 'not a stacktrace');

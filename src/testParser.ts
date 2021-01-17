@@ -26,6 +26,10 @@ export interface Position {
   line: number
 }
 
+/**
+ * Copyright 2020 ScaCap
+ * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
+ */
 export async function resolveFileAndLine(
   file: string | null,
   className: string,
@@ -42,6 +46,10 @@ export async function resolveFileAndLine(
   return {fileName, line: parseInt(line)}
 }
 
+/**
+ * Copyright 2020 ScaCap
+ * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L18
+ */
 export async function resolvePath(fileName: string): Promise<string> {
   core.debug(`Resolving path for ${fileName}`)
   const globber = await glob.create(`**/${fileName}.*`, {
@@ -59,6 +67,10 @@ export async function resolvePath(fileName: string): Promise<string> {
   return fileName
 }
 
+/**
+ * Copyright 2020 ScaCap
+ * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L43
+ */
 export async function parseFile(file: string): Promise<TestResult> {
   core.debug(`Parsing file ${file}`)
   let count = 0
@@ -137,6 +149,10 @@ export async function parseFile(file: string): Promise<TestResult> {
   return {count, skipped, annotations}
 }
 
+/**
+ * Copyright 2020 ScaCap
+ * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L113
+ */
 export async function parseTestReports(
   reportPaths: string
 ): Promise<TestResult> {

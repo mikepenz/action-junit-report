@@ -18,7 +18,7 @@ export async function run(): Promise<void> {
     const failOnFailure = core.getInput('fail_on_failure') === 'true'
 
     core.endGroup()
-    core.startGroup(`📘 Process test results`)
+    core.startGroup(`📦 Process test results`)
 
     const testResult = await parseTestReports(reportPaths)
     const foundResults = testResult.count > 0 || testResult.skipped > 0
@@ -56,7 +56,7 @@ export async function run(): Promise<void> {
     core.debug(JSON.stringify(createCheckRequest, null, 2))
     core.endGroup()
 
-    core.startGroup(`📘 Publish results`)
+    core.startGroup(`🚀 Publish results`)
 
     try {
       const octokit = new Octokit({

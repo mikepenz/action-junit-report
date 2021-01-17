@@ -53,7 +53,7 @@ function run() {
             const commit = core.getInput('commit');
             const failOnFailure = core.getInput('fail_on_failure') === 'true';
             core.endGroup();
-            core.startGroup(`📘 Process test results`);
+            core.startGroup(`📦 Process test results`);
             const testResult = yield testParser_1.parseTestReports(reportPaths);
             const foundResults = testResult.count > 0 || testResult.skipped > 0;
             const title = foundResults
@@ -77,7 +77,7 @@ function run() {
                 } });
             core.debug(JSON.stringify(createCheckRequest, null, 2));
             core.endGroup();
-            core.startGroup(`📘 Publish results`);
+            core.startGroup(`🚀 Publish results`);
             try {
                 const octokit = new rest_1.Octokit({
                     auth: token
@@ -150,6 +150,10 @@ const core = __importStar(__nccwpck_require__(2186));
 const glob = __importStar(__nccwpck_require__(8090));
 const fs = __importStar(__nccwpck_require__(5747));
 const parser = __importStar(__nccwpck_require__(8821));
+/**
+ * Copyright 2020 ScaCap
+ * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
+ */
 function resolveFileAndLine(file, className, output) {
     return __awaiter(this, void 0, void 0, function* () {
         const fileName = file ? file : className.split('.').slice(-1)[0];
@@ -163,6 +167,10 @@ function resolveFileAndLine(file, className, output) {
     });
 }
 exports.resolveFileAndLine = resolveFileAndLine;
+/**
+ * Copyright 2020 ScaCap
+ * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L18
+ */
 function resolvePath(fileName) {
     var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
@@ -193,6 +201,10 @@ function resolvePath(fileName) {
     });
 }
 exports.resolvePath = resolvePath;
+/**
+ * Copyright 2020 ScaCap
+ * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L43
+ */
 function parseFile(file) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Parsing file ${file}`);
@@ -259,6 +271,10 @@ function parseFile(file) {
     });
 }
 exports.parseFile = parseFile;
+/**
+ * Copyright 2020 ScaCap
+ * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L113
+ */
 function parseTestReports(reportPaths) {
     var e_2, _a;
     return __awaiter(this, void 0, void 0, function* () {
@@ -3292,7 +3308,7 @@ exports.withCustomRequest = withCustomRequest;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-const VERSION = "2.6.2";
+const VERSION = "2.7.1";
 
 /**
  * Some “list” response that can be paginated have a different response structure
