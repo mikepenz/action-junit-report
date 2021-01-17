@@ -5,22 +5,26 @@ branding:
   color: 'green'
 inputs:
   token:
-    description: 'GITHUB_TOKEN'
+    description: 'Specify the token to use to publish the check.'
     required: true
   github_token:
-    description: 'deprecated'
+    description: 'Deprecated syntax to specify github token.'
     required: true
   report_paths:
-    description: 'junit xml report paths in glob format'
+    description: 'JUnit xml report paths in glob format'
     required: false
     default: '**/junit-reports/TEST-*.xml'
   check_name:
-    description: 'check name for test reports'
+    description: 'Check name for test reports.'
     required: false
-    default: 'Test Report'
+    default: 'JUnit Test Report'
   commit:
-    description: 'commit sha to update the status'
+    description: 'Commit SHA to update the check status.'
     required: false
+  fail_on_failure:
+    description: 'Fail the build in case a test failure occurred.'
+    required: false
+    default: 'false'
 runs:
   using: 'node12'
   main: 'dist/index.js'
