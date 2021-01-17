@@ -55,10 +55,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-### Note
-
-Forked from: https://github.com/ScaCap/action-surefire-report
-
 ## Sample
 
 ![Screenshot](./screenshot.png)
