@@ -1,11 +1,26 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'JUnit Report'
+description: 'Report JUnit test results as annotations on Github Pull Request [junit, failsafe]'
+branding:
+  icon: 'check-circle'
+  color: 'green'
 inputs:
-  milliseconds: # change this
+  token:
+    description: 'GITHUB_TOKEN'
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+  github_token:
+    description: 'deprecated'
+    required: true
+  report_paths:
+    description: 'junit xml report paths in glob format'
+    required: false
+    default: '**/junit-reports/TEST-*.xml'
+  check_name:
+    description: 'check name for test reports'
+    required: false
+    default: 'Test Report'
+  commit:
+    description: 'commit sha to update the status'
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'

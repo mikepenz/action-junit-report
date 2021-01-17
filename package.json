@@ -1,8 +1,8 @@
 {
-  "name": "typescript-action",
+  "name": "action-junit-report",
   "version": "0.0.0",
   "private": true,
-  "description": "TypeScript template action",
+  "description": "junit report action",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
@@ -15,17 +15,26 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/mikepenz/action-junit-report"
+  },
+  "bugs": {
+    "url": "https://github.com/mikepenz/action-junit-report/issues"
   },
   "keywords": [
-    "actions",
-    "node",
-    "setup"
+    "GitHub",
+    "Actions",
+    "Junit",
+    "test"
   ],
-  "author": "",
-  "license": "MIT",
+  "author": "Mike Penz",
+  "license": "Apache 2.0",
   "dependencies": {
-    "@actions/core": "^1.2.6"
+    "@actions/core": "^1.2.6",
+    "@actions/github": "^4.0.0",
+    "@actions/glob": "^0.1.1",
+    "@octokit/rest": "^18.0.12",
+    "nock": "^13.0.5",
+    "xml-js": "^1.6.11"
   },
   "devDependencies": {
     "@types/jest": "^26.0.15",
