@@ -63,9 +63,11 @@ export async function run(): Promise<void> {
         auth: token
       })
       await octokit.checks.create(createCheckRequest)
-      
+
       if (failOnFailure && conclusion === 'failure') {
-        core.setFailed(`Tests reported ${testResult.annotations.length} failures`)
+        core.setFailed(
+          `Tests reported ${testResult.annotations.length} failures`
+        )
       }
     } catch (error) {
       core.error(`Failed to create checks using the provided token. (${error})`)
