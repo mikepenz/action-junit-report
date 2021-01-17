@@ -64,6 +64,10 @@ jobs:
 ## Sample
 
 <div align="center">
+  <img src=".github/images/annotated.png"/>
+</div>
+
+<div align="center">
   <img src=".github/images/annotations.png"/>
 </div>
 
