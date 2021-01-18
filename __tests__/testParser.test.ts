@@ -246,4 +246,18 @@ describe('parseFile', () => {
             },
         ]);
     });
+
+    it('should parse correctly fileName and line for a Java file with invalid chars', async () => {
+        const { fileName, line } = await resolveFileAndLine(
+            null,
+            'action.surefire.report.email.EmailAddressTest++',
+            `
+action.surefire.report.email.InvalidEmailAddressException: Invalid email address 'user@ñandú.com.ar'
+    at action.surefire.report.email.EmailAddressTest.expectException(EmailAddressTest++.java:74)
+    at action.surefire.report.email.EmailAddressTest.shouldNotContainInternationalizedHostNames(EmailAddressTest++.java:39)
+        `
+        );
+        expect(fileName).toBe('EmailAddressTest++');
+        expect(line).toBe(39);
+    });
 });

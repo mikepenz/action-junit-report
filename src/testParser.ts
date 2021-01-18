@@ -36,14 +36,20 @@ export async function resolveFileAndLine(
   output: String
 ): Promise<Position> {
   const fileName = file ? file : className.split('.').slice(-1)[0]
-  const matches = output.match(new RegExp(`${fileName}.*?:\\d+`, 'g'))
-  if (!matches) return {fileName, line: 1}
+  try {
+    const escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const matches = output.match(new RegExp(`${escapedFileName}.*?:\\d+`, 'g'))
+    if (!matches) return {fileName, line: 1}
 
-  const [lastItem] = matches.slice(-1)
-  const [, line] = lastItem.split(':')
-  core.debug(`Resolved file ${fileName} and line ${line}`)
+    const [lastItem] = matches.slice(-1)
+    const [, line] = lastItem.split(':')
+    core.debug(`Resolved file ${fileName} and line ${line}`)
 
-  return {fileName, line: parseInt(line)}
+    return {fileName, line: parseInt(line)}
+  } catch (error) {
+    core.warning(`⚠️ Failed to resolve file and line for ${file} and ${className}`)
+    return {fileName, line: 1}
+  }
 }
 
 /**
