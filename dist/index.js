@@ -52,6 +52,7 @@ function run() {
             const checkName = core.getInput('check_name');
             const commit = core.getInput('commit');
             const failOnFailure = core.getInput('fail_on_failure') === 'true';
+            const requireTests = core.getInput('require_tests') === 'true';
             core.endGroup();
             core.startGroup(`📦 Process test results`);
             const testResult = yield testParser_1.parseTestReports(reportPaths);
@@ -59,7 +60,11 @@ function run() {
             const title = foundResults
                 ? `${testResult.count} tests run, ${testResult.skipped} skipped, ${testResult.annotations.length} failed.`
                 : 'No test results found!';
-            core.info(`Result: ${title}`);
+            core.info(`ℹ️ ${title}`);
+            if (!foundResults && requireTests) {
+                core.setFailed('❌ No test results found');
+                return;
+            }
             const pullRequest = github.context.payload.pull_request;
             const link = (pullRequest && pullRequest.html_url) || github.context.ref;
             const conclusion = foundResults && testResult.annotations.length === 0
@@ -67,7 +72,7 @@ function run() {
                 : 'failure';
             const status = 'completed';
             const head_sha = commit || (pullRequest && pullRequest.head.sha) || github.context.sha;
-            core.info(`Posting status '${status}' with conclusion '${conclusion}' to ${link} (sha: ${head_sha})`);
+            core.info(`ℹ️ Posting status '${status}' with conclusion '${conclusion}' to ${link} (sha: ${head_sha})`);
             const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: checkName, head_sha,
                 status,
                 conclusion, output: {
@@ -84,12 +89,12 @@ function run() {
                 });
                 yield octokit.checks.create(createCheckRequest);
                 if (failOnFailure && conclusion === 'failure') {
-                    core.setFailed(`Tests reported ${testResult.annotations.length} failures`);
+                    core.setFailed(`❌ Tests reported ${testResult.annotations.length} failures`);
                 }
             }
             catch (error) {
-                core.error(`Failed to create checks using the provided token. (${error})`);
-                core.warning(`This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/32`);
+                core.error(`❌ Failed to create checks using the provided token. (${error})`);
+                core.warning(`⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/32`);
             }
             core.endGroup();
         }
