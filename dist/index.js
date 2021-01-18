@@ -157,13 +157,20 @@ const parser = __importStar(__nccwpck_require__(8821));
 function resolveFileAndLine(file, className, output) {
     return __awaiter(this, void 0, void 0, function* () {
         const fileName = file ? file : className.split('.').slice(-1)[0];
-        const matches = output.match(new RegExp(`${fileName}.*?:\\d+`, 'g'));
-        if (!matches)
+        try {
+            const escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const matches = output.match(new RegExp(`${escapedFileName}.*?:\\d+`, 'g'));
+            if (!matches)
+                return { fileName, line: 1 };
+            const [lastItem] = matches.slice(-1);
+            const [, line] = lastItem.split(':');
+            core.debug(`Resolved file ${fileName} and line ${line}`);
+            return { fileName, line: parseInt(line) };
+        }
+        catch (error) {
+            core.warning(`⚠️ Failed to resolve file and line for ${file} and ${className}`);
             return { fileName, line: 1 };
-        const [lastItem] = matches.slice(-1);
-        const [, line] = lastItem.split(':');
-        core.debug(`Resolved file ${fileName} and line ${line}`);
-        return { fileName, line: parseInt(line) };
+        }
     });
 }
 exports.resolveFileAndLine = resolveFileAndLine;
