@@ -47,7 +47,9 @@ export async function resolveFileAndLine(
 
     return {fileName, line: parseInt(line)}
   } catch (error) {
-    core.warning(`⚠️ Failed to resolve file and line for ${file} and ${className}`)
+    core.warning(
+      `⚠️ Failed to resolve file and line for ${file} and ${className}`
+    )
     return {fileName, line: 1}
   }
 }

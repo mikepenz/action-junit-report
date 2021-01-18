@@ -16,6 +16,7 @@ export async function run(): Promise<void> {
     const checkName = core.getInput('check_name')
     const commit = core.getInput('commit')
     const failOnFailure = core.getInput('fail_on_failure') === 'true'
+    const requireTests = core.getInput('require_tests') === 'true'
 
     core.endGroup()
     core.startGroup(`📦 Process test results`)
@@ -25,7 +26,12 @@ export async function run(): Promise<void> {
     const title = foundResults
       ? `${testResult.count} tests run, ${testResult.skipped} skipped, ${testResult.annotations.length} failed.`
       : 'No test results found!'
-    core.info(`Result: ${title}`)
+    core.info(`ℹ️ ${title}`)
+
+    if (!foundResults && requireTests) {
+      core.setFailed('❌ No test results found')
+      return
+    }
 
     const pullRequest = github.context.payload.pull_request
     const link = (pullRequest && pullRequest.html_url) || github.context.ref
@@ -37,7 +43,7 @@ export async function run(): Promise<void> {
     const head_sha =
       commit || (pullRequest && pullRequest.head.sha) || github.context.sha
     core.info(
-      `Posting status '${status}' with conclusion '${conclusion}' to ${link} (sha: ${head_sha})`
+      `ℹ️ Posting status '${status}' with conclusion '${conclusion}' to ${link} (sha: ${head_sha})`
     )
 
     const createCheckRequest = {
@@ -66,13 +72,15 @@ export async function run(): Promise<void> {
 
       if (failOnFailure && conclusion === 'failure') {
         core.setFailed(
-          `Tests reported ${testResult.annotations.length} failures`
+          `❌ Tests reported ${testResult.annotations.length} failures`
         )
       }
     } catch (error) {
-      core.error(`Failed to create checks using the provided token. (${error})`)
+      core.error(
+        `❌ Failed to create checks using the provided token. (${error})`
+      )
       core.warning(
-        `This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/32`
+        `⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/32`
       )
     }
 
