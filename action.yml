@@ -14,6 +14,10 @@ inputs:
     description: 'JUnit xml report paths in glob format'
     required: false
     default: '**/junit-reports/TEST-*.xml'
+  suite_regex:
+    description: 'Regular expression for the named test suites'
+    required: false
+    default: ''
   check_name:
     description: 'Check name for test reports.'
     required: false

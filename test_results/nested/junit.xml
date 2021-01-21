@@ -1,0 +1,28 @@
+<testsuites>
+    <testsuite tests="4" failures="0" time="150.0" name="All tests">
+        <properties></properties>
+        <testsuite tests="4" failures="0" time="150.0" name="tests">
+            <properties></properties>
+            <testsuite tests="4" failures="0" time="150.0" name="packet">
+                <properties></properties>
+                <testsuite tests="2" failures="0" time="30.0" name="TestA">
+                    <properties></properties>
+                    <testcase classname="" name="A" time="10.0" cluster_instance="packet-1">
+                        <failure message="failure"></failure>
+                    </testcase>
+                    <testcase classname="" name="B" time="20.0" cluster_instance="packet-1"></testcase>
+                </testsuite>
+                <testsuite tests="2" failures="1" time="70.0" name="TestB">
+                    <properties></properties>
+                    <testcase classname="" name="A" time="30.0" cluster_instance="packet-1"></testcase>
+                    <testcase classname="" name="B" time="40.0" cluster_instance="packet-1">
+                        <failure message="failure"></failure>
+                    </testcase>
+                </testsuite>
+                <testcase classname="" name="A" time="50.0" cluster_instance="packet-1">
+                    <failure message="failure"></failure>
+                </testcase>
+            </testsuite>
+        </testsuite>
+    </testsuite>
+</testsuites>
