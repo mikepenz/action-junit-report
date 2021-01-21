@@ -5,7 +5,7 @@ import {parseTestReports} from './testParser'
 
 export async function run(): Promise<void> {
   try {
-    core.startGroup(`📘 Reading input values`)
+    core.startGroup(`📘 Reading input values aaaaaaaaa`)
 
     const reportPaths = core.getInput('report_paths')
     const suiteRegex = core.getInput('suite_regex')

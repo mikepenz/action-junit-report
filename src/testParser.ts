@@ -43,7 +43,7 @@ export async function resolveFileAndLine(
 
     const [lastItem] = matches.slice(-1)
     const [, line] = lastItem.split(':')
-    core.debug(`Resolved file ${fileName} and line ${line}`)
+    core.info(`Resolved file ${fileName} and line ${line}`)
 
     return {fileName, line: parseInt(line)}
   } catch (error) {
@@ -59,16 +59,16 @@ export async function resolveFileAndLine(
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L18
  */
 export async function resolvePath(fileName: string): Promise<string> {
-  core.debug(`Resolving path for ${fileName}`)
+  core.info(`Resolving path for ${fileName}`)
   const globber = await glob.create(`**/${fileName}.*`, {
     followSymbolicLinks: false
   })
   const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : ''
   for await (const result of globber.globGenerator()) {
-    core.debug(`Matched file: ${result}`)
+    core.info(`Matched file: ${result}`)
     if (!result.includes('/build/')) {
       const path = result.slice(searchPath.length + 1)
-      core.debug(`Resolved path: ${path}`)
+      core.info(`Resolved path: ${path}`)
       return path
     }
   }
@@ -80,7 +80,7 @@ export async function resolvePath(fileName: string): Promise<string> {
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L43
  */
 export async function parseFile(file: string, suiteRegex: string = ""): Promise<TestResult> {
-  core.debug(`Parsing file ${file}`)
+  core.info(`Parsing file ${file}`)
 
   const data: string = fs.readFileSync(file, 'utf8')
   const report = JSON.parse(parser.xml2json(data, {compact: true}))
