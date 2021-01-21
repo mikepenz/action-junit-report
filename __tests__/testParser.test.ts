@@ -260,4 +260,42 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         expect(fileName).toBe('EmailAddressTest++');
         expect(line).toBe(39);
     });
+
+    it('should parse correctly nested test suites', async () => {
+        const { count, skipped, annotations } = await parseFile('test_results/nested/junit.xml', 'Test*');
+
+        expect(count).toBe(5);
+        expect(skipped).toBe(0);
+        expect(annotations).toStrictEqual([{
+            "path": "A",
+            "start_line": 1,
+            "end_line": 1,
+            "start_column": 0,
+            "end_column": 0,
+            "annotation_level": "failure",
+            "title": "A.TestA/A",
+            "message": "failure",
+            "raw_details": ""
+        }, {
+            "path": "B",
+            "start_line": 1,
+            "end_line": 1,
+            "start_column": 0,
+            "end_column": 0,
+            "annotation_level": "failure",
+            "title": "B.TestB/B",
+            "message": "failure",
+            "raw_details": ""
+        }, {
+            "path": "A",
+            "start_line": 1,
+            "end_line": 1,
+            "start_column": 0,
+            "end_column": 0,
+            "annotation_level": "failure",
+            "title": "A.A",
+            "message": "failure",
+            "raw_details": ""
+        }]);
+    });
 });

@@ -8,6 +8,7 @@ export async function run(): Promise<void> {
     core.startGroup(`📘 Reading input values`)
 
     const reportPaths = core.getInput('report_paths')
+    const suiteRegex = core.getInput('suite_regex')
     const token =
       core.getInput('token') ||
       core.getInput('github_token') ||
@@ -21,7 +22,7 @@ export async function run(): Promise<void> {
     core.endGroup()
     core.startGroup(`📦 Process test results`)
 
-    const testResult = await parseTestReports(reportPaths)
+    const testResult = await parseTestReports(reportPaths, suiteRegex)
     const foundResults = testResult.count > 0 || testResult.skipped > 0
     const title = foundResults
       ? `${testResult.count} tests run, ${testResult.skipped} skipped, ${testResult.annotations.length} failed.`
