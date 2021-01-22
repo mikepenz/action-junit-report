@@ -81,7 +81,7 @@ export async function run(): Promise<void> {
         `❌ Failed to create checks using the provided token. (${error})`
       )
       core.warning(
-        `⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/32`
+        `⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/23`
       )
     }
 
