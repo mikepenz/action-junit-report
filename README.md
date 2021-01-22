@@ -22,24 +22,31 @@
 
 -------
 
-## GitHub Action: Process JUnit reports
+<p align="center">
+    <a href="#whats-included-">What's included 🚀</a> &bull;
+    <a href="#setup">Setup 🛠️</a> &bull;
+    <a href="#sample-%EF%B8%8F">Sample 🖥️</a> &bull;
+    <a href="#contribute-">Contribute 🧬</a> &bull;
+    <a href="#license">License 📓</a>
+</p>
+
+-------
+
+### What's included 🚀
+
+- Flexible JUnit parser with wide support
+- Supports nested test suites
+- Blazingly fast execution
+- Lighweight
+- Rich build log output
 
 This action processes JUnit XML test reports on pull requests and shows the result as a PR check with summary and annotations.
 
 Based on action for [Surefire Reports by ScaCap](https://github.com/ScaCap/action-surefire-report)
 
-### Inputs
+## Setup
 
-| **Input**      | **Description**                                                                                                                                                    |
-|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `github_token`    | **Required**. Usually in form of `github_token: ${{ secrets.GITHUB_TOKEN }}`.                                                                                      |
-| `report_paths`    | **Required**. [Glob](https://github.com/actions/toolkit/tree/master/packages/glob) expression to junit report paths. The default is `**/junit-reports/TEST-*.xml`. |
-| `check_name`      | Optional. Check name to use when creating a check run. The default is `Test Report`.                                                                               |
-| `commit`          | Optional. The commit SHA to update the status. This is useful when you run it with `workflow_run`.                                                                 |
-| `fail_on_failure` | Optional. Fail the build in case of a test failure.                                                                 |
-| `require_tests` | Optional. Fail if no test are found..                                                                 |
-
-### Example usage
+### Configure the workflow
 
 ```yml
 name: build
@@ -62,7 +69,19 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-## Sample
+### Inputs
+
+| **Input**      | **Description**                                                                                                                                                       |
+|----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `github_token`    | **Required**. Usually in form of `github_token: ${{ secrets.GITHUB_TOKEN }}`.                                                                                      |
+| `report_paths`    | **Required**. [Glob](https://github.com/actions/toolkit/tree/master/packages/glob) expression to junit report paths. The default is `**/junit-reports/TEST-*.xml`. |
+| `check_name`      | Optional. Check name to use when creating a check run. The default is `Test Report`.                                                                               |
+| `suite_regex`     | Optional. Regular expression for the named test suites. E.g. `Test*`                                                                                               |
+| `commit`          | Optional. The commit SHA to update the status. This is useful when you run it with `workflow_run`.                                                                 |
+| `fail_on_failure` | Optional. Fail the build in case of a test failure.                                                                                                                |
+| `require_tests`   | Optional. Fail if no test are found..                                                                                                                              |
+
+## Sample 🖥️
 
 <div align="center">
   <img src=".github/images/annotated.png"/>
@@ -72,7 +91,7 @@ jobs:
   <img src=".github/images/annotations.png"/>
 </div>
 
-## Contribute
+## Contribute 🧬
 
 ```bash
 # Install the dependencies  
@@ -88,7 +107,7 @@ $ npm test
 $ npm run lint -- --fix
 ```
 
-### Attribution
+### Credits
 
 Original idea and GitHub Actions by: https://github.com/ScaCap/action-surefire-report
 
