@@ -159,6 +159,9 @@ const parser = __importStar(__nccwpck_require__(8821));
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
+ *
+ * Modification Copyright 2021 Mike Penz
+ * https://github.com/mikepenz/action-junit-report/
  */
 function resolveFileAndLine(file, className, output) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -183,6 +186,9 @@ exports.resolveFileAndLine = resolveFileAndLine;
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L18
+ *
+ * Modification Copyright 2021 Mike Penz
+ * https://github.com/mikepenz/action-junit-report/
  */
 function resolvePath(fileName) {
     var e_1, _a;
@@ -217,17 +223,22 @@ exports.resolvePath = resolvePath;
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L43
+ *
+ * Modification Copyright 2021 Mike Penz
+ * https://github.com/mikepenz/action-junit-report/
  */
-function parseFile(file, suiteRegex = "") {
+function parseFile(file, suiteRegex = '') {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Parsing file ${file}`);
         const data = fs.readFileSync(file, 'utf8');
         const report = JSON.parse(parser.xml2json(data, { compact: true }));
-        return parseSuite(report, "", suiteRegex);
+        return parseSuite(report, '', suiteRegex);
     });
 }
 exports.parseFile = parseFile;
-function parseSuite(suite, parentName, suiteRegex) {
+function parseSuite(
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+suite, parentName, suiteRegex) {
     return __awaiter(this, void 0, void 0, function* () {
         let count = 0;
         let skipped = 0;
@@ -246,14 +257,14 @@ function parseSuite(suite, parentName, suiteRegex) {
             if (!testsuite) {
                 return { count, skipped, annotations };
             }
-            let suiteName = suiteRegex
+            const suiteName = suiteRegex
                 ? parentName
                     ? `${parentName}/${testsuite._attributes.name}`
                     : testsuite._attributes.name.match(suiteRegex)
                         ? testsuite._attributes.name
-                        : ""
-                : "";
-            let res = yield parseSuite(testsuite, suiteName, suiteRegex);
+                        : ''
+                : '';
+            const res = yield parseSuite(testsuite, suiteName, suiteRegex);
             count += res.count;
             skipped += res.skipped;
             annotations.push(...res.annotations);
@@ -313,6 +324,9 @@ function parseSuite(suite, parentName, suiteRegex) {
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L113
+ *
+ * Modification Copyright 2021 Mike Penz
+ * https://github.com/mikepenz/action-junit-report/
  */
 function parseTestReports(reportPaths, suiteRegex) {
     var e_2, _a;
@@ -4845,7 +4859,7 @@ var pluginRequestLog = __nccwpck_require__(8883);
 var pluginPaginateRest = __nccwpck_require__(4193);
 var pluginRestEndpointMethods = __nccwpck_require__(4923);
 
-const VERSION = "18.0.12";
+const VERSION = "18.0.13";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.restEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -5000,6 +5014,7 @@ const Endpoints = {
     removeRepoFromInstallation: ["DELETE /user/installations/{installation_id}/repositories/{repository_id}"],
     resetToken: ["PATCH /applications/{client_id}/token"],
     revokeInstallationAccessToken: ["DELETE /installation/token"],
+    scopeToken: ["POST /applications/{client_id}/token/scoped"],
     suspendInstallation: ["PUT /app/installations/{installation_id}/suspended"],
     unsuspendInstallation: ["DELETE /app/installations/{installation_id}/suspended"],
     updateWebhookConfigForApp: ["PATCH /app/hook/config"]
@@ -5256,6 +5271,7 @@ const Endpoints = {
   },
   orgs: {
     blockUser: ["PUT /orgs/{org}/blocks/{username}"],
+    cancelInvitation: ["DELETE /orgs/{org}/invitations/{invitation_id}"],
     checkBlockedUser: ["GET /orgs/{org}/blocks/{username}"],
     checkMembershipForUser: ["GET /orgs/{org}/members/{username}"],
     checkPublicMembershipForUser: ["GET /orgs/{org}/public_members/{username}"],
@@ -5271,6 +5287,7 @@ const Endpoints = {
     list: ["GET /organizations"],
     listAppInstallations: ["GET /orgs/{org}/installations"],
     listBlockedUsers: ["GET /orgs/{org}/blocks"],
+    listFailedInvitations: ["GET /orgs/{org}/failed_invitations"],
     listForAuthenticatedUser: ["GET /user/orgs"],
     listForUser: ["GET /users/{username}/orgs"],
     listInvitationTeams: ["GET /orgs/{org}/invitations/{invitation_id}/teams"],
@@ -5893,7 +5910,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "4.4.1";
+const VERSION = "4.7.0";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};

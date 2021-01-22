@@ -29,6 +29,9 @@ export interface Position {
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
+ *
+ * Modification Copyright 2021 Mike Penz
+ * https://github.com/mikepenz/action-junit-report/
  */
 export async function resolveFileAndLine(
   file: string | null,
@@ -57,6 +60,9 @@ export async function resolveFileAndLine(
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L18
+ *
+ * Modification Copyright 2021 Mike Penz
+ * https://github.com/mikepenz/action-junit-report/
  */
 export async function resolvePath(fileName: string): Promise<string> {
   core.debug(`Resolving path for ${fileName}`)
@@ -78,6 +84,9 @@ export async function resolvePath(fileName: string): Promise<string> {
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L43
+ *
+ * Modification Copyright 2021 Mike Penz
+ * https://github.com/mikepenz/action-junit-report/
  */
 export async function parseFile(
   file: string,
@@ -92,6 +101,7 @@ export async function parseFile(
 }
 
 async function parseSuite(
+  /* eslint-disable  @typescript-eslint/no-explicit-any */
   suite: any,
   parentName: string,
   suiteRegex: string
@@ -198,6 +208,9 @@ async function parseSuite(
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L113
+ *
+ * Modification Copyright 2021 Mike Penz
+ * https://github.com/mikepenz/action-junit-report/
  */
 export async function parseTestReports(
   reportPaths: string,
