@@ -29,6 +29,9 @@ export interface Position {
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
+ *
+ * Modification Copyright 2021 Mike Penz
+ * https://github.com/mikepenz/action-junit-report/
  */
 export async function resolveFileAndLine(
   file: string | null,
@@ -57,6 +60,9 @@ export async function resolveFileAndLine(
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L18
+ *
+ * Modification Copyright 2021 Mike Penz
+ * https://github.com/mikepenz/action-junit-report/
  */
 export async function resolvePath(fileName: string): Promise<string> {
   core.debug(`Resolving path for ${fileName}`)
@@ -78,24 +84,64 @@ export async function resolvePath(fileName: string): Promise<string> {
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L43
+ *
+ * Modification Copyright 2021 Mike Penz
+ * https://github.com/mikepenz/action-junit-report/
  */
-export async function parseFile(file: string): Promise<TestResult> {
+export async function parseFile(
+  file: string,
+  suiteRegex = ''
+): Promise<TestResult> {
   core.debug(`Parsing file ${file}`)
+
+  const data: string = fs.readFileSync(file, 'utf8')
+  const report = JSON.parse(parser.xml2json(data, {compact: true}))
+
+  return parseSuite(report, '', suiteRegex)
+}
+
+async function parseSuite(
+  /* eslint-disable  @typescript-eslint/no-explicit-any */
+  suite: any,
+  parentName: string,
+  suiteRegex: string
+): Promise<TestResult> {
   let count = 0
   let skipped = 0
   const annotations: Annotation[] = []
 
-  const data: string = fs.readFileSync(file, 'utf8')
-  const report = JSON.parse(parser.xml2json(data, {compact: true}))
-  const testsuites = report.testsuite
-    ? [report.testsuite]
-    : Array.isArray(report.testsuites.testsuite)
-    ? report.testsuites.testsuite
-    : [report.testsuites.testsuite]
+  if (!suite.testsuite && !suite.testsuites) {
+    return {count, skipped, annotations}
+  }
+
+  const testsuites = suite.testsuite
+    ? Array.isArray(suite.testsuite)
+      ? suite.testsuite
+      : [suite.testsuite]
+    : Array.isArray(suite.testsuites.testsuite)
+    ? suite.testsuites.testsuite
+    : [suite.testsuites.testsuite]
 
   for (const testsuite of testsuites) {
-    if (!testsuite || !testsuite.testcase) {
+    if (!testsuite) {
       return {count, skipped, annotations}
+    }
+
+    const suiteName = suiteRegex
+      ? parentName
+        ? `${parentName}/${testsuite._attributes.name}`
+        : testsuite._attributes.name.match(suiteRegex)
+        ? testsuite._attributes.name
+        : ''
+      : ''
+
+    const res = await parseSuite(testsuite, suiteName, suiteRegex)
+    count += res.count
+    skipped += res.skipped
+    annotations.push(...res.annotations)
+
+    if (!testsuite.testcase) {
+      continue
     }
 
     const testcases = Array.isArray(testsuite.testcase)
@@ -137,7 +183,9 @@ export async function parseFile(file: string): Promise<TestResult> {
         )
 
         const path = await resolvePath(pos.fileName)
-        const title = `${pos.fileName}.${testcase._attributes.name}`
+        const title = suiteName
+          ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
+          : `${pos.fileName}.${testcase._attributes.name}`
         core.info(`${path}:${pos.line} | ${message.replace(/\n/g, ' ')}`)
 
         annotations.push({
@@ -160,16 +208,23 @@ export async function parseFile(file: string): Promise<TestResult> {
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L113
+ *
+ * Modification Copyright 2021 Mike Penz
+ * https://github.com/mikepenz/action-junit-report/
  */
 export async function parseTestReports(
-  reportPaths: string
+  reportPaths: string,
+  suiteRegex: string
 ): Promise<TestResult> {
   const globber = await glob.create(reportPaths, {followSymbolicLinks: false})
   let annotations: Annotation[] = []
   let count = 0
   let skipped = 0
   for await (const file of globber.globGenerator()) {
-    const {count: c, skipped: s, annotations: a} = await parseFile(file)
+    const {count: c, skipped: s, annotations: a} = await parseFile(
+      file,
+      suiteRegex
+    )
     if (c === 0) continue
     count += c
     skipped += s
