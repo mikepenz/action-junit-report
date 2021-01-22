@@ -111,6 +111,11 @@ $ npm run lint -- --fix
 
 Original idea and GitHub Actions by: https://github.com/ScaCap/action-surefire-report
 
+## Other actions
+
+- [release-changelog-builder-action](https://github.com/mikepenz/release-changelog-builder-action)
+- [xray-action](https://github.com/mikepenz/xray-action/)
+- [jira-release-composition-action](https://github.com/mikepenz/jira-release-composite-action)
 
 ## License
 
