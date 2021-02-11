@@ -70,7 +70,9 @@ export async function run(): Promise<void> {
     core.startGroup(`🚀 Publish results`)
 
     try {
-      const octokit = github.getOctokit(token)
+      const octokit = github.getOctokit(token, {
+        previews: ['antiope-preview']
+      })
       await octokit.checks.create(createCheckRequest)
 
       if (failOnFailure && conclusion === 'failure') {

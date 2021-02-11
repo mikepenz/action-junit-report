@@ -88,7 +88,9 @@ function run() {
             core.endGroup();
             core.startGroup(`🚀 Publish results`);
             try {
-                const octokit = github.getOctokit(token);
+                const octokit = github.getOctokit(token, {
+                    previews: ['antiope-preview'],
+                });
                 yield octokit.checks.create(createCheckRequest);
                 if (failOnFailure && conclusion === 'failure') {
                     core.setFailed(`❌ Tests reported ${testResult.annotations.length} failures`);
