@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {Octokit} from '@octokit/rest'
 import {parseTestReports} from './testParser'
 
 export async function run(): Promise<void> {
@@ -13,6 +12,11 @@ export async function run(): Promise<void> {
       core.getInput('token') ||
       core.getInput('github_token') ||
       process.env.GITHUB_TOKEN
+
+    if (!token) {
+      core.setFailed('❌ A token is required to execute this action')
+      return
+    }
 
     const checkName = core.getInput('check_name')
     const commit = core.getInput('commit')
@@ -66,9 +70,7 @@ export async function run(): Promise<void> {
     core.startGroup(`🚀 Publish results`)
 
     try {
-      const octokit = new Octokit({
-        auth: token
-      })
+      const octokit = github.getOctokit(token)
       await octokit.checks.create(createCheckRequest)
 
       if (failOnFailure && conclusion === 'failure') {
