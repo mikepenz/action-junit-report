@@ -33,7 +33,7 @@
     "@actions/github": "^4.0.0",
     "@actions/glob": "^0.1.1",
     "@octokit/rest": "^18.2.1",
-    "nock": "^13.0.7",
+    "nock": "^13.0.8",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
