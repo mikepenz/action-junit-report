@@ -8,6 +8,8 @@ import { resolveFileAndLine, resolvePath, parseFile } from '../src/testParser'
  * New test cases:
  *   Copyright Mike Penz
  */
+jest.setTimeout(10000)
+
 describe('resolveFileAndLine', () => {
     it('should default to 1 if no line found', async () => {
         const { fileName, line } = await resolveFileAndLine(null, 'someClassName', 'not a stacktrace');
