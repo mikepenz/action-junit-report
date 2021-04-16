@@ -33,8 +33,10 @@ export async function run(): Promise<void> {
       : 'No test results found!'
     core.info(`ℹ️ ${title}`)
 
-    if (!foundResults && requireTests) {
-      core.setFailed('❌ No test results found')
+    if (!foundResults) {
+      if (requireTests) {
+        core.setFailed('❌ No test results found')
+      }
       return
     }
 
