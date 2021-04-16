@@ -127,13 +127,17 @@ async function parseSuite(
       return {count, skipped, annotations}
     }
 
-    const suiteName = suiteRegex
-      ? parentName
-        ? `${parentName}/${testsuite._attributes.name}`
-        : testsuite._attributes.name.match(suiteRegex)
-        ? testsuite._attributes.name
-        : ''
-      : ''
+    let suiteName = ''
+    if (suiteRegex) {
+      if (parentName) {
+        suiteName = `${parentName}/${testsuite._attributes.name}`
+      } else if (suiteRegex !== '*') {
+        suiteName = testsuite._attributes.name.match(suiteRegex)
+      }
+      if (!suiteName) {
+        suiteName = testsuite._attributes.name
+      }
+    }
 
     const res = await parseSuite(testsuite, suiteName, suiteRegex)
     count += res.count
