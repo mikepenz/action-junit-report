@@ -127,13 +127,15 @@ async function parseSuite(
       return {count, skipped, annotations}
     }
 
-    const suiteName = suiteRegex
-      ? parentName
-        ? `${parentName}/${testsuite._attributes.name}`
-        : testsuite._attributes.name.match(suiteRegex)
-        ? testsuite._attributes.name
-        : ''
-      : ''
+    let suiteName = ''
+    if (suiteRegex) {
+      suiteName = testsuite._attributes.name.match(suiteRegex)
+    } else if (parentName) {
+      suiteName = `${parentName}/${testsuite._attributes.name}`
+    }
+    if (!suiteName) {
+      suiteName = testsuite._attributes.name || ''
+    }
 
     const res = await parseSuite(testsuite, suiteName, suiteRegex)
     count += res.count
@@ -185,7 +187,7 @@ async function parseSuite(
 
         const path = await resolvePath(pos.fileName)
         const title = suiteName
-          ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
+          ? `${pos.fileName}#${suiteName}/${testcase._attributes.name}`
           : `${pos.fileName}.${testcase._attributes.name}`
         core.info(`${path}:${pos.line} | ${message.replace(/\n/g, ' ')}`)
 

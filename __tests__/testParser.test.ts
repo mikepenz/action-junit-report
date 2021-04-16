@@ -120,7 +120,7 @@ describe('parseFile', () => {
                 start_column: 0,
                 end_column: 0,
                 annotation_level: 'failure',
-                title: 'CalcUtilsTest.test error handling',
+                title: 'CalcUtilsTest#action.surefire.report.calc.CalcUtilsTest/test error handling',
                 message:
                     'unexpected exception type thrown; expected:<java.lang.IllegalStateException> but was:<java.lang.IllegalArgumentException>',
                 raw_details:
@@ -133,7 +133,7 @@ describe('parseFile', () => {
                 start_column: 0,
                 end_column: 0,
                 annotation_level: 'failure',
-                title: 'CalcUtilsTest.test scale',
+                title: 'CalcUtilsTest#action.surefire.report.calc.CalcUtilsTest/test scale',
                 message: 'Expected: <100.10>\n     but: was <100.11>',
                 raw_details:
                     'java.lang.AssertionError: \n\nExpected: <100.10>\n     but: was <100.11>\n\tat action.surefire.report.calc.CalcUtilsTest.test scale(CalcUtilsTest.kt:15)'
@@ -153,7 +153,7 @@ describe('parseFile', () => {
                 start_column: 0,
                 end_column: 0,
                 annotation_level: 'failure',
-                title: 'test_sample.test_which_fails',
+                title: 'test_sample#pytest/test_which_fails',
                 message: "AssertionError: assert 'test' == 'xyz'\n  - xyz\n  + test",
                 raw_details:
                     "def test_which_fails():\n        event = { 'attr': 'test'}\n>       assert event['attr'] == 'xyz'\nE       AssertionError: assert 'test' == 'xyz'\nE         - xyz\nE         + test\n\npython/test_sample.py:10: AssertionError"
@@ -165,7 +165,7 @@ describe('parseFile', () => {
                 start_column: 0,
                 end_column: 0,
                 annotation_level: 'failure',
-                title: 'test_sample.test_with_error',
+                title: 'test_sample#pytest/test_with_error',
                 message: "AttributeError: 'dict' object has no attribute 'attr'",
                 raw_details:
                     "def test_with_error():\n        event = { 'attr': 'test'}\n>       assert event.attr == 'test'\nE       AttributeError: 'dict' object has no attribute 'attr'\n\npython/test_sample.py:14: AttributeError"
@@ -196,7 +196,7 @@ describe('parseFile', () => {
                 "raw_details": "",
                 "start_column": 0,
                 "start_line": 1,
-                "title": "DummyTest3.test_01",
+                "title": "DummyTest3#common/test_01",
             }
         ]);
     });
@@ -216,7 +216,7 @@ describe('parseFile', () => {
                 "raw_details": "java.io.FileNotFoundException: No content provider: content://com.xyz/photo.jpg\nat android.content.ContentResolver.openTypedAssetFileDescriptor(ContentResolver.java:1969)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2205)",
                 "start_column": 0,
                 "start_line": 1,
-                "title": "DummyUtilTest.test_01_dummy",
+                "title": "DummyUtilTest#common/test_01_dummy",
             },
         ]);
     });
@@ -244,7 +244,7 @@ describe('parseFile', () => {
                 "raw_details": "false == something.loadXml(xml_string)\nFile: /dumm/core/tests/testFailure.cpp\nLine: 77",
                 "start_column": 0,
                 "start_line": 1,
-                "title": "loadFromXMLString_When_Should2Test.loadFromXMLString_When_Should2Test",
+                "title": "loadFromXMLString_When_Should2Test#DummyClass/loadFromXMLString_When_Should2Test",
             },
         ]);
     });
@@ -275,7 +275,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             "start_column": 0,
             "end_column": 0,
             "annotation_level": "failure",
-            "title": "A.TestA/A",
+            "title": "A#Test/A",
             "message": "failure",
             "raw_details": ""
         }, {
@@ -285,7 +285,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             "start_column": 0,
             "end_column": 0,
             "annotation_level": "failure",
-            "title": "B.TestB/B",
+            "title": "B#Test/B",
             "message": "failure",
             "raw_details": ""
         }, {
@@ -295,7 +295,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             "start_column": 0,
             "end_column": 0,
             "annotation_level": "failure",
-            "title": "A.A",
+            "title": "A#packet/A",
             "message": "failure",
             "raw_details": ""
         }]);
@@ -313,7 +313,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             start_column: 0,
             end_column: 0,
             annotation_level: "failure",
-            title: "factorial_of_value_from_fixture.factorial_of_value_from_fixture",
+            title: "factorial_of_value_from_fixture#factorial/factorial_of_value_from_fixture",
             message: "tests/failed/main.cpp:58: error: check_eq(3628800, 3628801)",
             raw_details: "",
           }, {
@@ -323,7 +323,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             start_column: 0,
             end_column: 0,
             annotation_level: "failure",
-            title: "factorial_of_value_from_fixture[0].factorial_of_value_from_fixture[0]",
+            title: "factorial_of_value_from_fixture[0]#factorial/factorial_of_value_from_fixture[0]",
             message: "tests/failed/main.cpp:97: error: condition was false",
             raw_details: "",
           }, {
@@ -333,7 +333,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             start_column: 0,
             end_column: 0,
             annotation_level: "failure",
-            title: "positive_arguments_must_produce_expected_result.positive_arguments_must_produce_expected_result",
+            title: "positive_arguments_must_produce_expected_result#factorial/positive_arguments_must_produce_expected_result",
             message: "uncaught std::exception: thrown by test",
             raw_details: "",
           }, {
@@ -343,7 +343,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             start_column: 0,
             end_column: 0,
             annotation_level: "failure",
-            title: "positive_arguments_must_produce_expected_result[2].positive_arguments_must_produce_expected_result[2]",
+            title: "positive_arguments_must_produce_expected_result[2]#factorial/positive_arguments_must_produce_expected_result[2]",
             message: "tests/failed/main.cpp:73: error: condition was false",
             raw_details: "",
           }, {
@@ -353,7 +353,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             start_column: 0,
             end_column: 0,
             annotation_level: "failure",
-            title: "test_which_fails_check_eq_with_custom_message.test_which_fails_check_eq_with_custom_message",
+            title: "test_which_fails_check_eq_with_custom_message#factorial/test_which_fails_check_eq_with_custom_message",
             message: "tests/failed/main.cpp:49: error: check_eq(6, 7): hello world!",
             raw_details: "",
           }, {
@@ -363,7 +363,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             start_column: 0,
             end_column: 0,
             annotation_level: "failure",
-            title: "test_which_throws_unknown_exception.test_which_throws_unknown_exception",
+            title: "test_which_throws_unknown_exception#factorial/test_which_throws_unknown_exception",
             message: "uncaught unknown exception",
             raw_details: "",
           }]);
