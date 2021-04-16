@@ -64,8 +64,10 @@ function run() {
                 ? `${testResult.count} tests run, ${testResult.skipped} skipped, ${testResult.annotations.length} failed.`
                 : 'No test results found!';
             core.info(`ℹ️ ${title}`);
-            if (!foundResults && requireTests) {
-                core.setFailed('❌ No test results found');
+            if (!foundResults) {
+                if (requireTests) {
+                    core.setFailed('❌ No test results found');
+                }
                 return;
             }
             const pullRequest = github.context.payload.pull_request;
@@ -278,7 +280,7 @@ suite, parentName, suiteRegex) {
                     : [];
             for (const testcase of testcases) {
                 count++;
-                if (testcase.skipped)
+                if (testcase.skipped || testcase._attributes.status === 'disabled')
                     skipped++;
                 if (testcase.failure || testcase.error) {
                     const stackTrace = ((testcase.failure && testcase.failure._cdata) ||
@@ -557,6 +559,7 @@ exports.getInput = getInput;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
+    process.stdout.write(os.EOL);
     command_1.issueCommand('set-output', { name }, value);
 }
 exports.setOutput = setOutput;

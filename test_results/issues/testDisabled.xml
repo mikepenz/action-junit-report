@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+	<testsuite name='factorial' tests='22' disabled='10' failures='4' errors='2'>
+		<testcase name='disabled_fixture_test' status='disabled'/>
+		<testcase name='disabled_param_fixture_test[0]' status='disabled'/>
+		<testcase name='disabled_param_fixture_test[1]' status='disabled'/>
+		<testcase name='disabled_param_fixture_test[2]' status='disabled'/>
+		<testcase name='disabled_param_fixture_test[3]' status='disabled'/>
+		<testcase name='disabled_param_test[0]' status='disabled'/>
+		<testcase name='disabled_param_test[1]' status='disabled'/>
+		<testcase name='disabled_param_test[2]' status='disabled'/>
+		<testcase name='disabled_param_test[3]' status='disabled'/>
+		<testcase name='disabled_test' status='disabled'/>
+		<testcase name='factorial_of_value_from_fixture' status='failed'>
+			<failure message='tests/failed/main.cpp:58: error: check_eq(3628800, 3628801)'/>
+		</testcase>
+		<testcase name='factorial_of_value_from_fixture[0]' status='failed'>
+			<failure message='tests/failed/main.cpp:97: error: condition was false'/>
+		</testcase>
+		<testcase name='factorial_of_value_from_fixture[1]' status='passed'/>
+		<testcase name='factorial_of_value_from_fixture[2]' status='passed'/>
+		<testcase name='factorial_of_value_from_fixture[3]' status='passed'/>
+		<testcase name='positive_arguments_must_produce_expected_result' status='errored'>
+			<error message='uncaught std::exception: thrown by test'/>
+		</testcase>
+		<testcase name='positive_arguments_must_produce_expected_result[0]' status='passed'/>
+		<testcase name='positive_arguments_must_produce_expected_result[1]' status='passed'/>
+		<testcase name='positive_arguments_must_produce_expected_result[2]' status='failed'>
+			<failure message='tests/failed/main.cpp:73: error: condition was false'/>
+		</testcase>
+		<testcase name='positive_arguments_must_produce_expected_result[3]' status='passed'/>
+		<testcase name='test_which_fails_check_eq_with_custom_message' status='failed'>
+			<failure message='tests/failed/main.cpp:49: error: check_eq(6, 7): hello world!'/>
+		</testcase>
+		<testcase name='test_which_throws_unknown_exception' status='errored'>
+			<error message='uncaught unknown exception'/>
+		</testcase>
+	</testsuite>
+</testsuites>
