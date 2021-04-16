@@ -151,7 +151,8 @@ async function parseSuite(
       : []
     for (const testcase of testcases) {
       count++
-      if (testcase.skipped) skipped++
+      if (testcase.skipped || testcase._attributes.status === 'disabled')
+        skipped++
       if (testcase.failure || testcase.error) {
         const stackTrace = (
           (testcase.failure && testcase.failure._cdata) ||

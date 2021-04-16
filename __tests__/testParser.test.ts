@@ -298,4 +298,72 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             "raw_details": ""
         }]);
     });
+
+    it('should parse disabled tests', async () => {
+        const { count, skipped, annotations } = await parseFile('test_results/issues/testDisabled.xml');
+
+        expect(count).toBe(22);
+        expect(skipped).toBe(10);
+        expect(annotations).toStrictEqual([{
+            path: "factorial_of_value_from_fixture",
+            start_line: 1,
+            end_line: 1,
+            start_column: 0,
+            end_column: 0,
+            annotation_level: "failure",
+            title: "factorial_of_value_from_fixture.factorial_of_value_from_fixture",
+            message: "tests/failed/main.cpp:58: error: check_eq(3628800, 3628801)",
+            raw_details: "",
+          }, {
+            path: "factorial_of_value_from_fixture[0]",
+            start_line: 1,
+            end_line: 1,
+            start_column: 0,
+            end_column: 0,
+            annotation_level: "failure",
+            title: "factorial_of_value_from_fixture[0].factorial_of_value_from_fixture[0]",
+            message: "tests/failed/main.cpp:97: error: condition was false",
+            raw_details: "",
+          }, {
+            path: "positive_arguments_must_produce_expected_result",
+            start_line: 1,
+            end_line: 1,
+            start_column: 0,
+            end_column: 0,
+            annotation_level: "failure",
+            title: "positive_arguments_must_produce_expected_result.positive_arguments_must_produce_expected_result",
+            message: "uncaught std::exception: thrown by test",
+            raw_details: "",
+          }, {
+            path: "positive_arguments_must_produce_expected_result[2]",
+            start_line: 1,
+            end_line: 1,
+            start_column: 0,
+            end_column: 0,
+            annotation_level: "failure",
+            title: "positive_arguments_must_produce_expected_result[2].positive_arguments_must_produce_expected_result[2]",
+            message: "tests/failed/main.cpp:73: error: condition was false",
+            raw_details: "",
+          }, {
+            path: "test_which_fails_check_eq_with_custom_message",
+            start_line: 1,
+            end_line: 1,
+            start_column: 0,
+            end_column: 0,
+            annotation_level: "failure",
+            title: "test_which_fails_check_eq_with_custom_message.test_which_fails_check_eq_with_custom_message",
+            message: "tests/failed/main.cpp:49: error: check_eq(6, 7): hello world!",
+            raw_details: "",
+          }, {
+            path: "test_which_throws_unknown_exception",
+            start_line: 1,
+            end_line: 1,
+            start_column: 0,
+            end_column: 0,
+            annotation_level: "failure",
+            title: "test_which_throws_unknown_exception.test_which_throws_unknown_exception",
+            message: "uncaught unknown exception",
+            raw_details: "",
+          }]);
+    });
 });
