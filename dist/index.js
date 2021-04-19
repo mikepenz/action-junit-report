@@ -307,9 +307,17 @@ suite, parentName, suiteRegex) {
                         ? testcase._attributes.classname
                         : testcase._attributes.name, stackTrace);
                     const path = yield resolvePath(pos.fileName);
-                    const title = suiteName
-                        ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
-                        : `${pos.fileName}.${testcase._attributes.name}`;
+                    let title = '';
+                    if (pos.fileName !== testcase._attributes.name) {
+                        title = suiteName
+                            ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
+                            : `${pos.fileName}.${testcase._attributes.name}`;
+                    }
+                    else {
+                        title = suiteName
+                            ? `${suiteName}/${testcase._attributes.name}`
+                            : `${testcase._attributes.name}`;
+                    }
                     core.info(`${path}:${pos.line} | ${message.replace(/\n/g, ' ')}`);
                     annotations.push({
                         path,

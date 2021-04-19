@@ -244,7 +244,7 @@ describe('parseFile', () => {
                 "raw_details": "false == something.loadXml(xml_string)\nFile: /dumm/core/tests/testFailure.cpp\nLine: 77",
                 "start_column": 0,
                 "start_line": 1,
-                "title": "loadFromXMLString_When_Should2Test.loadFromXMLString_When_Should2Test",
+                "title": "loadFromXMLString_When_Should2Test",
             },
         ]);
     });
@@ -275,7 +275,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             "start_column": 0,
             "end_column": 0,
             "annotation_level": "failure",
-            "title": "A.All tests/tests/packet/TestA/A",
+            "title": "All tests/tests/packet/TestA/A",
             "message": "failure",
             "raw_details": ""
         }, {
@@ -285,7 +285,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             "start_column": 0,
             "end_column": 0,
             "annotation_level": "failure",
-            "title": "B.All tests/tests/packet/TestB/B",
+            "title": "All tests/tests/packet/TestB/B",
             "message": "failure",
             "raw_details": ""
         }, {
@@ -295,7 +295,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             "start_column": 0,
             "end_column": 0,
             "annotation_level": "failure",
-            "title": "A.All tests/tests/packet/A",
+            "title": "All tests/tests/packet/A",
             "message": "failure",
             "raw_details": ""
         }]);
@@ -313,7 +313,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             start_column: 0,
             end_column: 0,
             annotation_level: "failure",
-            title: "factorial_of_value_from_fixture.factorial/factorial_of_value_from_fixture",
+            title: "factorial/factorial_of_value_from_fixture",
             message: "tests/failed/main.cpp:58: error: check_eq(3628800, 3628801)",
             raw_details: "",
           }, {
@@ -323,7 +323,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             start_column: 0,
             end_column: 0,
             annotation_level: "failure",
-            title: "factorial_of_value_from_fixture[0].factorial/factorial_of_value_from_fixture[0]",
+            title: "factorial/factorial_of_value_from_fixture[0]",
             message: "tests/failed/main.cpp:97: error: condition was false",
             raw_details: "",
           }, {
@@ -333,7 +333,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             start_column: 0,
             end_column: 0,
             annotation_level: "failure",
-            title: "positive_arguments_must_produce_expected_result.factorial/positive_arguments_must_produce_expected_result",
+            title: "factorial/positive_arguments_must_produce_expected_result",
             message: "uncaught std::exception: thrown by test",
             raw_details: "",
           }, {
@@ -343,7 +343,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             start_column: 0,
             end_column: 0,
             annotation_level: "failure",
-            title: "positive_arguments_must_produce_expected_result[2].factorial/positive_arguments_must_produce_expected_result[2]",
+            title: "factorial/positive_arguments_must_produce_expected_result[2]",
             message: "tests/failed/main.cpp:73: error: condition was false",
             raw_details: "",
           }, {
@@ -353,7 +353,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             start_column: 0,
             end_column: 0,
             annotation_level: "failure",
-            title: "test_which_fails_check_eq_with_custom_message.factorial/test_which_fails_check_eq_with_custom_message",
+            title: "factorial/test_which_fails_check_eq_with_custom_message",
             message: "tests/failed/main.cpp:49: error: check_eq(6, 7): hello world!",
             raw_details: "",
           }, {
@@ -363,7 +363,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             start_column: 0,
             end_column: 0,
             annotation_level: "failure",
-            title: "test_which_throws_unknown_exception.factorial/test_which_throws_unknown_exception",
+            title: "factorial/test_which_throws_unknown_exception",
             message: "uncaught unknown exception",
             raw_details: "",
           }]);
