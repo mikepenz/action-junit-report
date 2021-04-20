@@ -1,11 +1,13 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import * as fs from 'fs'
 import {parseTestReports} from './testParser'
 
 export async function run(): Promise<void> {
   try {
     core.startGroup(`📘 Reading input values`)
 
+    const summaryOutput = core.getInput('summary_output')
     const reportPaths = core.getInput('report_paths')
     const suiteRegex = core.getInput('suite_regex')
     const token =
@@ -31,7 +33,8 @@ export async function run(): Promise<void> {
     const title = foundResults
       ? `${testResult.count} tests run, ${testResult.skipped} skipped, ${testResult.annotations.length} failed.`
       : 'No test results found!'
-    core.info(`ℹ️ ${title}`)
+    const coverageReport = summaryOutput ? fs.readFileSync(summaryOutput) : ''
+    core.info(`ℹ️ ${title} \n ${coverageReport}`)
 
     if (!foundResults) {
       if (requireTests) {
