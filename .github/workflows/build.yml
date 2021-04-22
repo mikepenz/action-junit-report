@@ -19,7 +19,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           check_name: Example JUnit Test Report
           report_paths: '**/surefire-reports/TEST-*.xml'
-          summary: 'This is a test'
+          summary: '<table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> test </td></tr></tbody></table>'
       - name: Test PyTest test import
         uses: ./
         if: endsWith(github.ref, 'main') == false
