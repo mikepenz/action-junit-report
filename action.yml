@@ -36,7 +36,7 @@ inputs:
   summary:
     description: 'Additional text to summary output'
     required: false
-    default: 'false'
+    default: ''
 runs:
   using: 'node12'
   main: 'dist/index.js'

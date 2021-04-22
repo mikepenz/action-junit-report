@@ -6,7 +6,7 @@ export async function run(): Promise<void> {
   try {
     core.startGroup(`📘 Reading input values`)
 
-    const summary = core.getInput('summary') ? core.getInput('summary') : ''
+    const summary = core.getInput('summary')
     const reportPaths = core.getInput('report_paths')
     const suiteRegex = core.getInput('suite_regex')
     const token =
