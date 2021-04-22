@@ -6,6 +6,7 @@ export async function run(): Promise<void> {
   try {
     core.startGroup(`📘 Reading input values`)
 
+    const summary = core.getInput('summary')
     const reportPaths = core.getInput('report_paths')
     const suiteRegex = core.getInput('suite_regex')
     const token =
@@ -61,7 +62,7 @@ export async function run(): Promise<void> {
       conclusion,
       output: {
         title,
-        summary: '',
+        summary,
         annotations: testResult.annotations.slice(0, 50)
       }
     }

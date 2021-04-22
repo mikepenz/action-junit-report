@@ -33,6 +33,10 @@ inputs:
     description: 'Fail if no test are found.'
     required: false
     default: 'false'
+  summary:
+    description: 'Additional text to summary output'
+    required: false
+    default: 'false'
 runs:
   using: 'node12'
   main: 'dist/index.js'
