@@ -43,6 +43,7 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             core.startGroup(`📘 Reading input values`);
+            const summary = core.getInput('summary');
             const reportPaths = core.getInput('report_paths');
             const suiteRegex = core.getInput('suite_regex');
             const token = core.getInput('token') ||
@@ -82,7 +83,7 @@ function run() {
                 status,
                 conclusion, output: {
                     title,
-                    summary: '',
+                    summary,
                     annotations: testResult.annotations.slice(0, 50)
                 } });
             core.debug(JSON.stringify(createCheckRequest, null, 2));
