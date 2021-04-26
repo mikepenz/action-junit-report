@@ -6,7 +6,8 @@ branding:
 inputs:
   token:
     description: 'Specify the token to use to publish the check.'
-    required: true
+    required: false
+    default: ${{ github.token }}
   github_token:
     description: 'Deprecated syntax to specify github token.'
     required: true
