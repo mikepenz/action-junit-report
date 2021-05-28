@@ -234,10 +234,11 @@ export async function parseTestReports(
   let count = 0
   let skipped = 0
   for await (const file of globber.globGenerator()) {
-    const {count: c, skipped: s, annotations: a} = await parseFile(
-      file,
-      suiteRegex
-    )
+    const {
+      count: c,
+      skipped: s,
+      annotations: a
+    } = await parseFile(file, suiteRegex)
     if (c === 0) continue
     count += c
     skipped += s
