@@ -74,7 +74,7 @@ export async function run(): Promise<void> {
 
     try {
       const octokit = github.getOctokit(token)
-      await octokit.checks.create(createCheckRequest)
+      await octokit.rest.checks.create(createCheckRequest)
 
       if (failOnFailure && conclusion === 'failure') {
         core.setFailed(
