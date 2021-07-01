@@ -32,7 +32,7 @@
     "@actions/core": "^1.4.0",
     "@actions/github": "^5.0.0",
     "@actions/glob": "^0.2.0",
-    "@octokit/rest": "^18.6.4",
+    "@octokit/rest": "^18.6.6",
     "nock": "^13.1.0",
     "webpack": "^5.41.1",
     "xml-js": "^1.6.11"
