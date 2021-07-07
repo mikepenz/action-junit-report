@@ -38,7 +38,7 @@
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.23",
+    "@types/jest": "^26.0.24",
     "@types/node": "^16.0.0",
     "@typescript-eslint/parser": "^4.28.2",
     "@vercel/ncc": "^0.28.6",
