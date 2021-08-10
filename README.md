@@ -64,6 +64,7 @@ jobs:
         run: # execute your tests generating test results
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v2
+        if: always()
         with:
           report_paths: '**/build/test-results/test/TEST-*.xml'
 ```
