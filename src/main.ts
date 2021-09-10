@@ -91,7 +91,7 @@ export async function run(): Promise<void> {
     }
 
     core.endGroup()
-  } catch (error) {
+  } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
     core.setFailed(error.message)
   }
 }
