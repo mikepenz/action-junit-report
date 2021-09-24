@@ -19,12 +19,14 @@ jobs:
           check_name: Example JUnit Test Report
           report_paths: '**/surefire-reports/TEST-*.xml'
           summary: '<table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> test </td></tr></tbody></table>'
+          fail_on_failure: false
       - name: Test PyTest test import
         uses: ./
         if: endsWith(github.ref, 'main') == false
         with:
           check_name: Example Pytest Report
           report_paths: test_results/python/report.xml
+          fail_on_failure: false
       - name: Install NPM
         run: |
           npm install
