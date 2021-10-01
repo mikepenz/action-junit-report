@@ -4,7 +4,7 @@ import { resolveFileAndLine, resolvePath, parseFile } from '../src/testParser'
  * Original test cases:
  *   Copyright 2020 ScaCap
  *   https://github.com/ScaCap/action-surefire-report/blob/master/utils.test.js
- * 
+ *
  * New test cases:
  *   Copyright Mike Penz
  */
@@ -100,7 +100,7 @@ note: run with &#x60;RUST_BACKTRACE&#x3D;1&#x60; environment variable to display
   `
       );
       expect(line).toBe(48);
-      expect(fileName).toBe('project');
+      expect(fileName).toBe('tests/project/admission_webhook_tests.rs');
     });
 });
 
