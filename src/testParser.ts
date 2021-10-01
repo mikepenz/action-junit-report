@@ -45,7 +45,7 @@ export async function resolveFileAndLine(
     if (!matches) return {fileName, line: 1}
 
     const [lastItem] = matches.slice(-1)
-    const [, line] = lastItem.split(':')
+    const line = lastItem.split(':').pop() || '0'
     core.debug(`Resolved file ${fileName} and line ${line}`)
 
     return {fileName, line: parseInt(line)}

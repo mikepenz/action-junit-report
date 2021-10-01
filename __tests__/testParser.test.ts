@@ -88,6 +88,20 @@ test.py:14: AttributeError
         expect(fileName).toBe('test.py');
         expect(line).toBe(14);
     });
+
+    it('should parse correctly line number for rust tests', async () => {
+      const { fileName, line } = await resolveFileAndLine(
+        null,
+        'project',
+        `
+                  thread &#x27;project::admission_webhook_tests::it_should_be_possible_to_update_projects&#x27; panicked at &#x27;boom&#x27;, tests/project/admission_webhook_tests.rs:48:38
+note: run with &#x60;RUST_BACKTRACE&#x3D;1&#x60; environment variable to display a backtrace
+
+  `
+      );
+      expect(line).toBe(48);
+      expect(fileName).toBe('project');
+    });
 });
 
 describe('resolvePath', () => {
