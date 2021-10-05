@@ -181,6 +181,7 @@ function resolveFileAndLine(file, className, output) {
             const line = lineTokens.pop() || '0';
             // check, if the error message is from a rust file -- this way we have the chance to find
             // out the involved test file
+            // See: https://github.com/mikepenz/action-junit-report/pull/360
             {
                 const lineNumberPrefix = lineTokens.pop() || '';
                 if (lineNumberPrefix.endsWith('.rs')) {
@@ -3843,7 +3844,7 @@ exports.withCustomRequest = withCustomRequest;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-const VERSION = "2.16.4";
+const VERSION = "2.16.7";
 
 function ownKeys(object, enumerableOnly) {
   var keys = Object.keys(object);
@@ -5155,7 +5156,7 @@ var isPlainObject = __nccwpck_require__(3287);
 var nodeFetch = _interopDefault(__nccwpck_require__(467));
 var requestError = __nccwpck_require__(537);
 
-const VERSION = "5.6.1";
+const VERSION = "5.6.2";
 
 function getBufferResponse(response) {
   return response.arrayBuffer();
