@@ -56,6 +56,7 @@ export async function resolveFileAndLine(
 
     // check, if the error message is from a rust file -- this way we have the chance to find
     // out the involved test file
+    // See: https://github.com/mikepenz/action-junit-report/pull/360
     {
       const lineNumberPrefix = lineTokens.pop() || ''
       if (lineNumberPrefix.endsWith('.rs')) {
