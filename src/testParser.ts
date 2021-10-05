@@ -38,18 +38,30 @@ export async function resolveFileAndLine(
   className: string,
   output: String
 ): Promise<Position> {
-  const fileName = file ? file : className.split('.').slice(-1)[0]
+  let fileName = file ? file : className.split('.').slice(-1)[0]
   try {
     const escapedFileName = fileName
       .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       .replace('::', '/') // Rust test output contains colons between package names - See: https://github.com/mikepenz/action-junit-report/pull/359
-    const matches = output.match(new RegExp(`${escapedFileName}.*?:\\d+`, 'g'))
+
+    const matches = output.match(
+      new RegExp(` [^ ]*${escapedFileName}.*?:\\d+`, 'g')
+    )
     if (!matches) return {fileName, line: 1}
 
     const [lastItem] = matches.slice(-1)
 
     const lineTokens = lastItem.split(':')
     const line = lineTokens.pop() || '0'
+
+    // check, if the error message is from a rust file -- this way we have the chance to find
+    // out the involved test file
+    {
+      const lineNumberPrefix = lineTokens.pop() || ''
+      if (lineNumberPrefix.endsWith('.rs')) {
+        fileName = lineNumberPrefix.split(' ').pop() || ''
+      }
+    }
 
     core.debug(`Resolved file ${fileName} and line ${line}`)
 
