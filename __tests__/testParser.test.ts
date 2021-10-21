@@ -53,7 +53,7 @@ Caused by: java.lang.IllegalArgumentException: Amount must have max 2 non-zero d
             null,
             'action.surefire.report.calc.StringUtilsTest',
             `
-java.lang.AssertionError: 
+java.lang.AssertionError:
 
 Expected: (an instance of java.lang.IllegalArgumentException and exception with message a string containing "This is unexpected")
      but: exception with message a string containing "This is unexpected" message was "Input='' didn't match condition."
@@ -128,6 +128,11 @@ describe('resolvePath', () => {
         const path = await resolvePath('CalcUtilsTest');
         expect(path).toBe('test_results/tests/utils/src/test/java/action/surefire/report/calc/CalcUtilsTest.kt');
     });
+
+    it('should find correct file with a relative path', async () => {
+        const path = await resolvePath('./test_results/CalcUtilsTest.kt');
+        expect(path).toBe('test_results/CalcUtilsTest.kt');
+  })
 });
 
 describe('parseFile', () => {

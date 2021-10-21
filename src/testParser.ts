@@ -84,7 +84,8 @@ export async function resolveFileAndLine(
  */
 export async function resolvePath(fileName: string): Promise<string> {
   core.debug(`Resolving path for ${fileName}`)
-  const globber = await glob.create(`**/${fileName}.*`, {
+  const normalizedFilename = fileName.replace(/^\.\//, '') // strip relative prefix (./)
+  const globber = await glob.create(`**/${normalizedFilename}.*`, {
     followSymbolicLinks: false
   })
   const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : ''
@@ -96,7 +97,7 @@ export async function resolvePath(fileName: string): Promise<string> {
       return path
     }
   }
-  return fileName
+  return normalizedFilename
 }
 
 /**

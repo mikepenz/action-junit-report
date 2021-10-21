@@ -209,7 +209,8 @@ function resolvePath(fileName) {
     var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Resolving path for ${fileName}`);
-        const globber = yield glob.create(`**/${fileName}.*`, {
+        const normalizedFilename = fileName.replace(/^\.\//, ''); // strip relative prefix (./)
+        const globber = yield glob.create(`**/${normalizedFilename}.*`, {
             followSymbolicLinks: false
         });
         const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : '';
@@ -231,7 +232,7 @@ function resolvePath(fileName) {
             }
             finally { if (e_1) throw e_1.error; }
         }
-        return fileName;
+        return normalizedFilename;
     });
 }
 exports.resolvePath = resolvePath;
