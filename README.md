@@ -75,7 +75,7 @@ jobs:
 |----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `report_paths`    | **Required**. [Glob](https://github.com/actions/toolkit/tree/master/packages/glob) expression to junit report paths. The default is `**/junit-reports/TEST-*.xml`. |
 | `token`    | Optional. GitHub token for creating a check run. Set to `${{ github.token }}` by default.                                                                                     |
-| `check_name`      | Optional. Check name to use when creating a check run. The default is `Test Report`.                                                                               |
+| `check_name`      | Optional. Check name to use when creating a check run. The default is `JUnit Test Report`.                                                                               |
 | `suite_regex`     | Optional. Regular expression for the named test suites. E.g. `Test*`                                                                                               |
 | `commit`          | Optional. The commit SHA to update the status. This is useful when you run it with `workflow_run`.                                                                 |
 | `fail_on_failure` | Optional. Fail the build in case of a test failure.                                                                                                                |
