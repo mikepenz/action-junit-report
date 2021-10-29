@@ -57,9 +57,10 @@ function run() {
             const commit = core.getInput('commit');
             const failOnFailure = core.getInput('fail_on_failure') === 'true';
             const requireTests = core.getInput('require_tests') === 'true';
+            const includePassed = core.getInput('include_passed') === 'true';
             core.endGroup();
             core.startGroup(`📦 Process test results`);
-            const testResult = yield (0, testParser_1.parseTestReports)(reportPaths, suiteRegex);
+            const testResult = yield (0, testParser_1.parseTestReports)(reportPaths, suiteRegex, includePassed);
             const foundResults = testResult.count > 0 || testResult.skipped > 0;
             const title = foundResults
                 ? `${testResult.count} tests run, ${testResult.skipped} skipped, ${testResult.annotations.length} failed.`
@@ -243,18 +244,18 @@ exports.resolvePath = resolvePath;
  * Modification Copyright 2021 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseFile(file, suiteRegex = '') {
+function parseFile(file, suiteRegex = '', includePassed = false) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Parsing file ${file}`);
         const data = fs.readFileSync(file, 'utf8');
         const report = JSON.parse(parser.xml2json(data, { compact: true }));
-        return parseSuite(report, '', suiteRegex);
+        return parseSuite(report, '', suiteRegex, includePassed);
     });
 }
 exports.parseFile = parseFile;
 function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-suite, parentName, suiteRegex) {
+suite, parentName, suiteRegex, includePassed = false) {
     return __awaiter(this, void 0, void 0, function* () {
         let count = 0;
         let skipped = 0;
@@ -285,7 +286,7 @@ suite, parentName, suiteRegex) {
                     suiteName = testsuite._attributes.name;
                 }
             }
-            const res = yield parseSuite(testsuite, suiteName, suiteRegex);
+            const res = yield parseSuite(testsuite, suiteName, suiteRegex, includePassed);
             count += res.count;
             skipped += res.skipped;
             annotations.push(...res.annotations);
@@ -299,9 +300,11 @@ suite, parentName, suiteRegex) {
                     : [];
             for (const testcase of testcases) {
                 count++;
+                const failed = testcase.failure || testcase.error;
+                const success = !failed;
                 if (testcase.skipped || testcase._attributes.status === 'disabled')
                     skipped++;
-                if (testcase.failure || testcase.error) {
+                if (failed || (includePassed && success)) {
                     const stackTrace = ((testcase.failure && testcase.failure._cdata) ||
                         (testcase.failure && testcase.failure._text) ||
                         (testcase.error && testcase.error._cdata) ||
@@ -317,7 +320,7 @@ suite, parentName, suiteRegex) {
                             testcase.error._attributes.message) ||
                         stackTrace.split('\n').slice(0, 2).join('\n') ||
                         testcase._attributes.name).trim();
-                    const pos = yield resolveFileAndLine(testcase._attributes.file, testcase._attributes.classname
+                    const pos = yield resolveFileAndLine(testcase._attributes.file || testsuite._attributes.file, testcase._attributes.classname
                         ? testcase._attributes.classname
                         : testcase._attributes.name, stackTrace);
                     const path = yield resolvePath(pos.fileName);
@@ -339,7 +342,7 @@ suite, parentName, suiteRegex) {
                         end_line: pos.line,
                         start_column: 0,
                         end_column: 0,
-                        annotation_level: 'failure',
+                        annotation_level: success ? 'notice' : 'failure',
                         title,
                         message,
                         raw_details: stackTrace
@@ -357,7 +360,7 @@ suite, parentName, suiteRegex) {
  * Modification Copyright 2021 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseTestReports(reportPaths, suiteRegex) {
+function parseTestReports(reportPaths, suiteRegex, includePassed = false) {
     var e_2, _a;
     return __awaiter(this, void 0, void 0, function* () {
         const globber = yield glob.create(reportPaths, { followSymbolicLinks: false });
@@ -367,7 +370,7 @@ function parseTestReports(reportPaths, suiteRegex) {
         try {
             for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
                 const file = _c.value;
-                const { count: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex);
+                const { count: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, includePassed);
                 if (c === 0)
                     continue;
                 count += c;

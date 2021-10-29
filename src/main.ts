@@ -23,11 +23,16 @@ export async function run(): Promise<void> {
     const commit = core.getInput('commit')
     const failOnFailure = core.getInput('fail_on_failure') === 'true'
     const requireTests = core.getInput('require_tests') === 'true'
+    const includePassed = core.getInput('include_passed') === 'true'
 
     core.endGroup()
     core.startGroup(`📦 Process test results`)
 
-    const testResult = await parseTestReports(reportPaths, suiteRegex)
+    const testResult = await parseTestReports(
+      reportPaths,
+      suiteRegex,
+      includePassed
+    )
     const foundResults = testResult.count > 0 || testResult.skipped > 0
     const title = foundResults
       ? `${testResult.count} tests run, ${testResult.skipped} skipped, ${testResult.annotations.length} failed.`

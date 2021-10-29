@@ -109,21 +109,23 @@ export async function resolvePath(fileName: string): Promise<string> {
  */
 export async function parseFile(
   file: string,
-  suiteRegex = ''
+  suiteRegex = '',
+  includePassed = false
 ): Promise<TestResult> {
   core.debug(`Parsing file ${file}`)
 
   const data: string = fs.readFileSync(file, 'utf8')
   const report = JSON.parse(parser.xml2json(data, {compact: true}))
 
-  return parseSuite(report, '', suiteRegex)
+  return parseSuite(report, '', suiteRegex, includePassed)
 }
 
 async function parseSuite(
   /* eslint-disable  @typescript-eslint/no-explicit-any */
   suite: any,
   parentName: string,
-  suiteRegex: string
+  suiteRegex: string,
+  includePassed = false
 ): Promise<TestResult> {
   let count = 0
   let skipped = 0
@@ -158,7 +160,12 @@ async function parseSuite(
       }
     }
 
-    const res = await parseSuite(testsuite, suiteName, suiteRegex)
+    const res = await parseSuite(
+      testsuite,
+      suiteName,
+      suiteRegex,
+      includePassed
+    )
     count += res.count
     skipped += res.skipped
     annotations.push(...res.annotations)
@@ -174,9 +181,13 @@ async function parseSuite(
       : []
     for (const testcase of testcases) {
       count++
+
+      const failed = testcase.failure || testcase.error
+      const success = !failed
+
       if (testcase.skipped || testcase._attributes.status === 'disabled')
         skipped++
-      if (testcase.failure || testcase.error) {
+      if (failed || (includePassed && success)) {
         const stackTrace = (
           (testcase.failure && testcase.failure._cdata) ||
           (testcase.failure && testcase.failure._text) ||
@@ -199,7 +210,7 @@ async function parseSuite(
         ).trim()
 
         const pos = await resolveFileAndLine(
-          testcase._attributes.file,
+          testcase._attributes.file || testsuite._attributes.file,
           testcase._attributes.classname
             ? testcase._attributes.classname
             : testcase._attributes.name,
@@ -226,7 +237,7 @@ async function parseSuite(
           end_line: pos.line,
           start_column: 0,
           end_column: 0,
-          annotation_level: 'failure',
+          annotation_level: success ? 'notice' : 'failure',
           title,
           message,
           raw_details: stackTrace
@@ -246,7 +257,8 @@ async function parseSuite(
  */
 export async function parseTestReports(
   reportPaths: string,
-  suiteRegex: string
+  suiteRegex: string,
+  includePassed = false
 ): Promise<TestResult> {
   const globber = await glob.create(reportPaths, {followSymbolicLinks: false})
   let annotations: Annotation[] = []
@@ -257,7 +269,7 @@ export async function parseTestReports(
       count: c,
       skipped: s,
       annotations: a
-    } = await parseFile(file, suiteRegex)
+    } = await parseFile(file, suiteRegex, includePassed)
     if (c === 0) continue
     count += c
     skipped += s
