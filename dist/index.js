@@ -323,7 +323,12 @@ suite, parentName, suiteRegex, includePassed = false) {
                     const pos = yield resolveFileAndLine(testcase._attributes.file || testsuite._attributes.file, testcase._attributes.classname
                         ? testcase._attributes.classname
                         : testcase._attributes.name, stackTrace);
-                    const path = yield resolvePath(pos.fileName);
+                    let resolvedPath = yield resolvePath(pos.fileName);
+                    core.debug(`Path prior to stripping: ${resolvedPath}`);
+                    const githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
+                    if (githubWorkspacePath) {
+                        resolvedPath = resolvedPath.replace(githubWorkspacePath, ''); // strip workspace prefix, make the path relative
+                    }
                     let title = '';
                     if (pos.fileName !== testcase._attributes.name) {
                         title = suiteName
@@ -335,9 +340,9 @@ suite, parentName, suiteRegex, includePassed = false) {
                             ? `${suiteName}/${testcase._attributes.name}`
                             : `${testcase._attributes.name}`;
                     }
-                    core.info(`${path}:${pos.line} | ${message.replace(/\n/g, ' ')}`);
+                    core.info(`${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`);
                     annotations.push({
-                        path,
+                        path: resolvedPath,
                         start_line: pos.line,
                         end_line: pos.line,
                         start_column: 0,

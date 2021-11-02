@@ -217,7 +217,15 @@ async function parseSuite(
           stackTrace
         )
 
-        const path = await resolvePath(pos.fileName)
+        let resolvedPath = await resolvePath(pos.fileName)
+
+        core.debug(`Path prior to stripping: ${resolvedPath}`)
+
+        const githubWorkspacePath = process.env['GITHUB_WORKSPACE']
+        if (githubWorkspacePath) {
+          resolvedPath = resolvedPath.replace(githubWorkspacePath, '') // strip workspace prefix, make the path relative
+        }
+
         let title = ''
         if (pos.fileName !== testcase._attributes.name) {
           title = suiteName
@@ -229,10 +237,12 @@ async function parseSuite(
             : `${testcase._attributes.name}`
         }
 
-        core.info(`${path}:${pos.line} | ${message.replace(/\n/g, ' ')}`)
+        core.info(
+          `${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`
+        )
 
         annotations.push({
-          path,
+          path: resolvedPath,
           start_line: pos.line,
           end_line: pos.line,
           start_column: 0,
