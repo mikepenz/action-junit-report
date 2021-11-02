@@ -223,7 +223,7 @@ async function parseSuite(
 
         const githubWorkspacePath = process.env['GITHUB_WORKSPACE']
         if (githubWorkspacePath) {
-          resolvedPath = resolvedPath.replace(githubWorkspacePath, '') // strip workspace prefix, make the path relative
+          resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, '') // strip workspace prefix, make the path relative
         }
 
         let title = ''

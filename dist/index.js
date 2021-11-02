@@ -327,7 +327,7 @@ suite, parentName, suiteRegex, includePassed = false) {
                     core.debug(`Path prior to stripping: ${resolvedPath}`);
                     const githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
                     if (githubWorkspacePath) {
-                        resolvedPath = resolvedPath.replace(githubWorkspacePath, ''); // strip workspace prefix, make the path relative
+                        resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, ''); // strip workspace prefix, make the path relative
                     }
                     let title = '';
                     if (pos.fileName !== testcase._attributes.name) {
