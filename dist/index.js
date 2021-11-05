@@ -44,6 +44,7 @@ function run() {
         try {
             core.startGroup(`📘 Reading input values`);
             const summary = core.getInput('summary');
+            const checkTitleTemplate = core.getInput('check_title_template');
             const reportPaths = core.getInput('report_paths');
             const suiteRegex = core.getInput('suite_regex');
             const token = core.getInput('token') ||
@@ -60,7 +61,7 @@ function run() {
             const includePassed = core.getInput('include_passed') === 'true';
             core.endGroup();
             core.startGroup(`📦 Process test results`);
-            const testResult = yield (0, testParser_1.parseTestReports)(reportPaths, suiteRegex, includePassed);
+            const testResult = yield (0, testParser_1.parseTestReports)(reportPaths, suiteRegex, includePassed, checkTitleTemplate);
             const foundResults = testResult.count > 0 || testResult.skipped > 0;
             const title = foundResults
                 ? `${testResult.count} tests run, ${testResult.skipped} skipped, ${testResult.annotations.length} failed.`
@@ -244,18 +245,18 @@ exports.resolvePath = resolvePath;
  * Modification Copyright 2021 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseFile(file, suiteRegex = '', includePassed = false) {
+function parseFile(file, suiteRegex = '', includePassed = false, checkTitleTemplate = undefined) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Parsing file ${file}`);
         const data = fs.readFileSync(file, 'utf8');
         const report = JSON.parse(parser.xml2json(data, { compact: true }));
-        return parseSuite(report, '', suiteRegex, includePassed);
+        return parseSuite(report, '', suiteRegex, includePassed, checkTitleTemplate);
     });
 }
 exports.parseFile = parseFile;
 function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-suite, parentName, suiteRegex, includePassed = false) {
+suite, parentName, suiteRegex, includePassed = false, checkTitleTemplate = undefined) {
     return __awaiter(this, void 0, void 0, function* () {
         let count = 0;
         let skipped = 0;
@@ -286,7 +287,7 @@ suite, parentName, suiteRegex, includePassed = false) {
                     suiteName = testsuite._attributes.name;
                 }
             }
-            const res = yield parseSuite(testsuite, suiteName, suiteRegex, includePassed);
+            const res = yield parseSuite(testsuite, suiteName, suiteRegex, includePassed, checkTitleTemplate);
             count += res.count;
             skipped += res.skipped;
             annotations.push(...res.annotations);
@@ -330,7 +331,15 @@ suite, parentName, suiteRegex, includePassed = false) {
                         resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, ''); // strip workspace prefix, make the path relative
                     }
                     let title = '';
-                    if (pos.fileName !== testcase._attributes.name) {
+                    if (checkTitleTemplate !== undefined) {
+                        // ensure to not duplicate the test_name if file_name is equal
+                        const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : '';
+                        title = checkTitleTemplate
+                            .replace('${{FILE_NAME}}', fileName)
+                            .replace('${{SUITE_NAME}}', suiteName !== null && suiteName !== void 0 ? suiteName : '')
+                            .replace('${{TEST_NAME}}', testcase._attributes.name);
+                    }
+                    else if (pos.fileName !== testcase._attributes.name) {
                         title = suiteName
                             ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
                             : `${pos.fileName}.${testcase._attributes.name}`;
@@ -365,7 +374,7 @@ suite, parentName, suiteRegex, includePassed = false) {
  * Modification Copyright 2021 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseTestReports(reportPaths, suiteRegex, includePassed = false) {
+function parseTestReports(reportPaths, suiteRegex, includePassed = false, checkTitleTemplate = undefined) {
     var e_2, _a;
     return __awaiter(this, void 0, void 0, function* () {
         const globber = yield glob.create(reportPaths, { followSymbolicLinks: false });
@@ -375,7 +384,7 @@ function parseTestReports(reportPaths, suiteRegex, includePassed = false) {
         try {
             for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
                 const file = _c.value;
-                const { count: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, includePassed);
+                const { count: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, includePassed, checkTitleTemplate);
                 if (c === 0)
                     continue;
                 count += c;

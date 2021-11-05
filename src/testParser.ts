@@ -110,14 +110,15 @@ export async function resolvePath(fileName: string): Promise<string> {
 export async function parseFile(
   file: string,
   suiteRegex = '',
-  includePassed = false
+  includePassed = false,
+  checkTitleTemplate: string | undefined = undefined
 ): Promise<TestResult> {
   core.debug(`Parsing file ${file}`)
 
   const data: string = fs.readFileSync(file, 'utf8')
   const report = JSON.parse(parser.xml2json(data, {compact: true}))
 
-  return parseSuite(report, '', suiteRegex, includePassed)
+  return parseSuite(report, '', suiteRegex, includePassed, checkTitleTemplate)
 }
 
 async function parseSuite(
@@ -125,7 +126,8 @@ async function parseSuite(
   suite: any,
   parentName: string,
   suiteRegex: string,
-  includePassed = false
+  includePassed = false,
+  checkTitleTemplate: string | undefined = undefined
 ): Promise<TestResult> {
   let count = 0
   let skipped = 0
@@ -164,7 +166,8 @@ async function parseSuite(
       testsuite,
       suiteName,
       suiteRegex,
-      includePassed
+      includePassed,
+      checkTitleTemplate
     )
     count += res.count
     skipped += res.skipped
@@ -227,7 +230,15 @@ async function parseSuite(
         }
 
         let title = ''
-        if (pos.fileName !== testcase._attributes.name) {
+        if (checkTitleTemplate !== undefined) {
+          // ensure to not duplicate the test_name if file_name is equal
+          const fileName =
+            pos.fileName !== testcase._attributes.name ? pos.fileName : ''
+          title = checkTitleTemplate
+            .replace('${{FILE_NAME}}', fileName)
+            .replace('${{SUITE_NAME}}', suiteName ?? '')
+            .replace('${{TEST_NAME}}', testcase._attributes.name)
+        } else if (pos.fileName !== testcase._attributes.name) {
           title = suiteName
             ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
             : `${pos.fileName}.${testcase._attributes.name}`
@@ -268,7 +279,8 @@ async function parseSuite(
 export async function parseTestReports(
   reportPaths: string,
   suiteRegex: string,
-  includePassed = false
+  includePassed = false,
+  checkTitleTemplate: string | undefined = undefined
 ): Promise<TestResult> {
   const globber = await glob.create(reportPaths, {followSymbolicLinks: false})
   let annotations: Annotation[] = []
@@ -279,7 +291,7 @@ export async function parseTestReports(
       count: c,
       skipped: s,
       annotations: a
-    } = await parseFile(file, suiteRegex, includePassed)
+    } = await parseFile(file, suiteRegex, includePassed, checkTitleTemplate)
     if (c === 0) continue
     count += c
     skipped += s

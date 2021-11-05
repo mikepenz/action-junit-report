@@ -80,7 +80,8 @@ jobs:
 | `commit`          | Optional. The commit SHA to update the status. This is useful when you run it with `workflow_run`.                                                                 |
 | `fail_on_failure` | Optional. Fail the build in case of a test failure.                                                                                                                |
 | `require_tests`   | Optional. Fail if no test are found..                                                                                                                              |
-| `summary       `  | Optional. Additional text to summary output                                                                                                                        |
+| `check_title_template`  | Optional. Template to configure the title format. Placeholders: ${{FILE_NAME}}, ${{SUITE_NAME}}, ${{TEST_NAME}}.                                             |
+| `summary`         | Optional. Additional text to summary output                                                                                                                        |
 
 ## Sample 🖥️
 
