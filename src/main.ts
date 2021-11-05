@@ -7,6 +7,7 @@ export async function run(): Promise<void> {
     core.startGroup(`📘 Reading input values`)
 
     const summary = core.getInput('summary')
+    const checkTitleTemplate = core.getInput('check_title_template')
     const reportPaths = core.getInput('report_paths')
     const suiteRegex = core.getInput('suite_regex')
     const token =
@@ -31,7 +32,8 @@ export async function run(): Promise<void> {
     const testResult = await parseTestReports(
       reportPaths,
       suiteRegex,
-      includePassed
+      includePassed,
+      checkTitleTemplate
     )
     const foundResults = testResult.count > 0 || testResult.skipped > 0
     const title = foundResults
