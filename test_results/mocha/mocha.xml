@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="3.2860" tests="15515" failures="0" skipped="1">
+  <testsuite name="Root Suite" timestamp="2021-10-28T00:15:42" tests="0" time="0.0000" failures="0">
+  </testsuite>
+  <testsuite name="Config files" timestamp="2021-10-28T00:15:42" tests="0" file="/path/test/config.js" time="0.0000" failures="0">
+  </testsuite>
+  <testsuite name="default config" timestamp="2021-10-28T00:15:42" tests="1" file="/path/test/config.js" time="0.0000" failures="0">
+    <testcase name="Config files default config projectUTCOffset should be a callable with current UTC offset" time="0.0020" classname="projectUTCOffset should be a callable with current UTC offset">
+    </testcase>
+  </testsuite>
+</testsuites>

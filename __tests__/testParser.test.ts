@@ -399,4 +399,22 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             raw_details: "",
           }]);
     });
+
+    it('parse mocha test case', async () => {
+        const { count, skipped, annotations } = await parseFile('test_results/mocha/mocha.xml', '*', true);
+
+        expect(count).toBe(1);
+        expect(skipped).toBe(0);
+        expect(annotations).toStrictEqual([{
+            "path": "/path/test/config.js",
+            "start_line": 1,
+            "end_line": 1,
+            "start_column": 0,
+            "end_column": 0,
+            "annotation_level": "notice",
+            "title": "/path/test/config.js.default config/Config files default config projectUTCOffset should be a callable with current UTC offset",
+            "message": "Config files default config projectUTCOffset should be a callable with current UTC offset",
+            "raw_details": ""
+        }]);
+    });
 });
