@@ -87,25 +87,7 @@ function run() {
             try {
                 const octokit = github.getOctokit(token);
                 if (updateCheck) {
-                    const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: checkName, head_sha,
-                        status,
-                        conclusion, output: {
-                            title,
-                            summary,
-                            annotations: testResult.annotations.slice(0, 50)
-                        } });
-                    core.debug(JSON.stringify(createCheckRequest, null, 2));
-                    yield octokit.rest.checks.create(createCheckRequest);
-                }
-                else {
-                    const ref = head_sha;
-                    const check_name = github.context.job;
-                    const status = "in_progress";
-                    const filter = 'latest';
-                    const checks = yield octokit.rest.checks.listForRef(Object.assign(Object.assign({}, github.context.repo), { ref,
-                        check_name,
-                        status,
-                        filter }));
+                    const checks = yield octokit.rest.checks.listForRef(Object.assign(Object.assign({}, github.context.repo), { ref: head_sha, check_name: github.context.job, status: 'in_progress', filter: 'latest' }));
                     core.debug(JSON.stringify(checks, null, 2));
                     const check_run_id = checks.data.check_runs[0].id;
                     const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
@@ -115,6 +97,17 @@ function run() {
                         } });
                     core.debug(JSON.stringify(updateCheckRequest, null, 2));
                     yield octokit.rest.checks.update(updateCheckRequest);
+                }
+                else {
+                    const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: checkName, head_sha,
+                        status,
+                        conclusion, output: {
+                            title,
+                            summary,
+                            annotations: testResult.annotations.slice(0, 50)
+                        } });
+                    core.debug(JSON.stringify(createCheckRequest, null, 2));
+                    yield octokit.rest.checks.create(createCheckRequest);
                 }
                 if (failOnFailure && conclusion === 'failure') {
                     core.setFailed(`❌ Tests reported ${testResult.annotations.length} failures`);
