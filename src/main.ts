@@ -81,20 +81,24 @@ export async function run(): Promise<void> {
 
         const check_run_id = checks.data.check_runs[0].id
 
-        const updateCheckRequest = {
-          ...github.context.repo,
-          check_run_id,
-          output: {
-            title,
-            summary,
-            conclusion,
-            annotations: testResult.annotations.slice(0, 50)
+        for (let i = 0; i < testResult.annotations.length; i = i + 50) {
+          const sliced = testResult.annotations.slice(i, i + 50)
+
+          const updateCheckRequest = {
+            ...github.context.repo,
+            check_run_id,
+            output: {
+              title,
+              summary,
+              conclusion,
+              annotations: sliced
+            }
           }
+
+          core.debug(JSON.stringify(updateCheckRequest, null, 2))
+
+          await octokit.rest.checks.update(updateCheckRequest)
         }
-
-        core.debug(JSON.stringify(updateCheckRequest, null, 2))
-
-        await octokit.rest.checks.update(updateCheckRequest)
       } else {
         const createCheckRequest = {
           ...github.context.repo,

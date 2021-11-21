@@ -89,14 +89,17 @@ function run() {
                     const checks = yield octokit.rest.checks.listForRef(Object.assign(Object.assign({}, github.context.repo), { ref: head_sha, check_name: github.context.job, status: 'in_progress', filter: 'latest' }));
                     core.debug(JSON.stringify(checks, null, 2));
                     const check_run_id = checks.data.check_runs[0].id;
-                    const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
-                            title,
-                            summary,
-                            conclusion,
-                            annotations: testResult.annotations.slice(0, 50)
-                        } });
-                    core.debug(JSON.stringify(updateCheckRequest, null, 2));
-                    yield octokit.rest.checks.update(updateCheckRequest);
+                    for (let i = 0; i < testResult.annotations.length; i = i + 50) {
+                        const sliced = testResult.annotations.slice(i, i + 50);
+                        const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
+                                title,
+                                summary,
+                                conclusion,
+                                annotations: sliced
+                            } });
+                        core.debug(JSON.stringify(updateCheckRequest, null, 2));
+                        yield octokit.rest.checks.update(updateCheckRequest);
+                    }
                 }
                 else {
                     const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: checkName, head_sha, status: 'completed', conclusion, output: {
