@@ -81,6 +81,7 @@ export async function run(): Promise<void> {
 
         const check_run_id = checks.data.check_runs[0].id
 
+        core.info(`ℹ️ Updating checks ${testResult.annotations.length}`)
         for (let i = 0; i < testResult.annotations.length; i = i + 50) {
           const sliced = testResult.annotations.slice(i, i + 50)
 
@@ -114,6 +115,8 @@ export async function run(): Promise<void> {
         }
 
         core.debug(JSON.stringify(createCheckRequest, null, 2))
+
+        core.info(`ℹ️ Creating check`)
         await octokit.rest.checks.create(createCheckRequest)
       }
 
