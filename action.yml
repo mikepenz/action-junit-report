@@ -19,6 +19,10 @@ inputs:
     description: 'Regular expression for the named test suites'
     required: false
     default: ''
+  update_check:
+    description: 'Defines if the active check should be updated instead'
+    required: false
+    default: 'false'
   check_name:
     description: 'Check name for test reports.'
     required: false

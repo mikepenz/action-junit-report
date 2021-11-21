@@ -20,6 +20,7 @@ export async function run(): Promise<void> {
       return
     }
 
+    const updateCheck = core.getInput('update_check') === 'true'
     const checkName = core.getInput('check_name')
     const commit = core.getInput('commit')
     const failOnFailure = core.getInput('fail_on_failure') === 'true'
@@ -54,34 +55,70 @@ export async function run(): Promise<void> {
       foundResults && testResult.annotations.length === 0
         ? 'success'
         : 'failure'
-    const status: 'completed' = 'completed'
     const head_sha =
       commit || (pullRequest && pullRequest.head.sha) || github.context.sha
     core.info(
-      `ℹ️ Posting status '${status}' with conclusion '${conclusion}' to ${link} (sha: ${head_sha})`
+      `ℹ️ Posting with conclusion '${conclusion}' to ${link} (sha: ${head_sha})`
     )
 
-    const createCheckRequest = {
-      ...github.context.repo,
-      name: checkName,
-      head_sha,
-      status,
-      conclusion,
-      output: {
-        title,
-        summary,
-        annotations: testResult.annotations.slice(0, 50)
-      }
-    }
-
-    core.debug(JSON.stringify(createCheckRequest, null, 2))
     core.endGroup()
 
     core.startGroup(`🚀 Publish results`)
 
     try {
       const octokit = github.getOctokit(token)
-      await octokit.rest.checks.create(createCheckRequest)
+
+      if (updateCheck) {
+        const checks = await octokit.rest.checks.listForRef({
+          ...github.context.repo,
+          ref: head_sha,
+          check_name: github.context.job,
+          status: 'in_progress',
+          filter: 'latest'
+        })
+
+        core.debug(JSON.stringify(checks, null, 2))
+
+        const check_run_id = checks.data.check_runs[0].id
+
+        core.info(`ℹ️ Updating checks ${testResult.annotations.length}`)
+        for (let i = 0; i < testResult.annotations.length; i = i + 50) {
+          const sliced = testResult.annotations.slice(i, i + 50)
+
+          const updateCheckRequest = {
+            ...github.context.repo,
+            check_run_id,
+            output: {
+              title,
+              summary,
+              conclusion,
+              annotations: sliced
+            }
+          }
+
+          core.debug(JSON.stringify(updateCheckRequest, null, 2))
+
+          await octokit.rest.checks.update(updateCheckRequest)
+        }
+      } else {
+        const createCheckRequest = {
+          ...github.context.repo,
+          name: checkName,
+          head_sha,
+          status: 'completed',
+          conclusion,
+          output: {
+            title,
+            summary,
+            annotations: testResult.annotations.slice(0, 50)
+          }
+        }
+
+        core.debug(JSON.stringify(createCheckRequest, null, 2))
+
+        core.info(`ℹ️ Creating check`)
+        await octokit.rest.checks.create(createCheckRequest)
+      }
 
       if (failOnFailure && conclusion === 'failure') {
         core.setFailed(
