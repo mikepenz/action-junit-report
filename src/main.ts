@@ -88,14 +88,18 @@ export async function run(): Promise<void> {
       } else {
         const ref = head_sha
         const check_name = github.context.job
+        const status = "in_progress" 
         const filter = 'latest'
 
         const checks = await octokit.rest.checks.listForRef({
           ...github.context.repo,
           ref,
           check_name,
+          status,
           filter
         })
+
+        core.debug(JSON.stringify(checks, null, 2))
 
         const check_run_id = checks.data.check_runs[0].id
 
