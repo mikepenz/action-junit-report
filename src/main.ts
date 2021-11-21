@@ -20,7 +20,7 @@ export async function run(): Promise<void> {
       return
     }
 
-    const updateCheck = core.getInput('update_check')
+    const updateCheck = core.getInput('update_check') === 'true'
     const checkName = core.getInput('check_name')
     const commit = core.getInput('commit')
     const failOnFailure = core.getInput('fail_on_failure') === 'true'
