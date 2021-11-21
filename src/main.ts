@@ -55,11 +55,10 @@ export async function run(): Promise<void> {
       foundResults && testResult.annotations.length === 0
         ? 'success'
         : 'failure'
-    const status: 'completed' = 'completed'
     const head_sha =
       commit || (pullRequest && pullRequest.head.sha) || github.context.sha
     core.info(
-      `ℹ️ Posting status '${status}' with conclusion '${conclusion}' to ${link} (sha: ${head_sha})`
+      `ℹ️ Posting with conclusion '${conclusion}' to ${link} (sha: ${head_sha})`
     )
 
     core.endGroup()
@@ -88,6 +87,7 @@ export async function run(): Promise<void> {
           output: {
             title,
             summary,
+            conclusion,
             annotations: testResult.annotations.slice(0, 50)
           }
         }
@@ -100,7 +100,7 @@ export async function run(): Promise<void> {
           ...github.context.repo,
           name: checkName,
           head_sha,
-          status,
+          status: 'completed',
           conclusion,
           output: {
             title,

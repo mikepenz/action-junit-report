@@ -79,9 +79,8 @@ function run() {
             const conclusion = foundResults && testResult.annotations.length === 0
                 ? 'success'
                 : 'failure';
-            const status = 'completed';
             const head_sha = commit || (pullRequest && pullRequest.head.sha) || github.context.sha;
-            core.info(`ℹ️ Posting status '${status}' with conclusion '${conclusion}' to ${link} (sha: ${head_sha})`);
+            core.info(`ℹ️ Posting with conclusion '${conclusion}' to ${link} (sha: ${head_sha})`);
             core.endGroup();
             core.startGroup(`🚀 Publish results`);
             try {
@@ -93,15 +92,14 @@ function run() {
                     const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
                             title,
                             summary,
+                            conclusion,
                             annotations: testResult.annotations.slice(0, 50)
                         } });
                     core.debug(JSON.stringify(updateCheckRequest, null, 2));
                     yield octokit.rest.checks.update(updateCheckRequest);
                 }
                 else {
-                    const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: checkName, head_sha,
-                        status,
-                        conclusion, output: {
+                    const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: checkName, head_sha, status: 'completed', conclusion, output: {
                             title,
                             summary,
                             annotations: testResult.annotations.slice(0, 50)
