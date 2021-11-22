@@ -92,8 +92,7 @@ function run() {
                     core.info(`ℹ️ Updating checks ${testResult.annotations.length}`);
                     for (let i = 0; i < testResult.annotations.length; i = i + 50) {
                         const sliced = testResult.annotations.slice(i, i + 50);
-                        const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id,
-                            conclusion, output: {
+                        const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
                                 title,
                                 summary,
                                 annotations: sliced

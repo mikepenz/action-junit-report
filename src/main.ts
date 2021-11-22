@@ -88,7 +88,6 @@ export async function run(): Promise<void> {
           const updateCheckRequest = {
             ...github.context.repo,
             check_run_id,
-            conclusion,
             output: {
               title,
               summary,
