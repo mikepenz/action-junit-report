@@ -185,19 +185,23 @@ const parser = __importStar(__nccwpck_require__(8821));
  * Modification Copyright 2021 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function resolveFileAndLine(file, className, output) {
+function resolveFileAndLine(file, line, className, output) {
     return __awaiter(this, void 0, void 0, function* () {
         let fileName = file ? file : className.split('.').slice(-1)[0];
+        const lineNumber = safeParseInt(line);
         try {
+            if (fileName && lineNumber) {
+                return { fileName, line: lineNumber };
+            }
             const escapedFileName = fileName
                 .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
                 .replace('::', '/'); // Rust test output contains colons between package names - See: https://github.com/mikepenz/action-junit-report/pull/359
             const matches = output.match(new RegExp(` [^ ]*${escapedFileName}.*?:\\d+`, 'g'));
             if (!matches)
-                return { fileName, line: 1 };
+                return { fileName, line: lineNumber || 1 };
             const [lastItem] = matches.slice(-1);
             const lineTokens = lastItem.split(':');
-            const line = lineTokens.pop() || '0';
+            line = lineTokens.pop() || '0';
             // check, if the error message is from a rust file -- this way we have the chance to find
             // out the involved test file
             // See: https://github.com/mikepenz/action-junit-report/pull/360
@@ -208,15 +212,26 @@ function resolveFileAndLine(file, className, output) {
                 }
             }
             core.debug(`Resolved file ${fileName} and line ${line}`);
-            return { fileName, line: parseInt(line) };
+            return { fileName, line: safeParseInt(line) || -1 };
         }
         catch (error) {
-            core.warning(`⚠️ Failed to resolve file and line for ${file} and ${className}`);
-            return { fileName, line: 1 };
+            core.warning(`⚠️ Failed to resolve file (${file}) and/or line (${line}) for ${className}`);
+            return { fileName, line: safeParseInt(line) || -1 };
         }
     });
 }
 exports.resolveFileAndLine = resolveFileAndLine;
+/**
+ * Parse the provided string line number, and return its value, or null if it is not available or NaN.
+ */
+function safeParseInt(line) {
+    if (!line)
+        return null;
+    const parsed = parseInt(line);
+    if (isNaN(parsed))
+        return null;
+    return parsed;
+}
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L18
@@ -338,7 +353,7 @@ suite, parentName, suiteRegex, includePassed = false, checkTitleTemplate = undef
                             testcase.error._attributes.message) ||
                         stackTrace.split('\n').slice(0, 2).join('\n') ||
                         testcase._attributes.name).trim();
-                    const pos = yield resolveFileAndLine(testcase._attributes.file || testsuite._attributes.file, testcase._attributes.classname
+                    const pos = yield resolveFileAndLine(testcase._attributes.file || testsuite._attributes.file, testcase._attributes.line || testsuite._attributes.line, testcase._attributes.classname
                         ? testcase._attributes.classname
                         : testcase._attributes.name, stackTrace);
                     let resolvedPath = yield resolvePath(pos.fileName);

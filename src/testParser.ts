@@ -35,11 +35,17 @@ export interface Position {
  */
 export async function resolveFileAndLine(
   file: string | null,
+  line: string | null,
   className: string,
   output: String
 ): Promise<Position> {
   let fileName = file ? file : className.split('.').slice(-1)[0]
+  const lineNumber = safeParseInt(line)
   try {
+    if (fileName && lineNumber) {
+      return {fileName, line: lineNumber}
+    }
+
     const escapedFileName = fileName
       .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       .replace('::', '/') // Rust test output contains colons between package names - See: https://github.com/mikepenz/action-junit-report/pull/359
@@ -47,12 +53,11 @@ export async function resolveFileAndLine(
     const matches = output.match(
       new RegExp(` [^ ]*${escapedFileName}.*?:\\d+`, 'g')
     )
-    if (!matches) return {fileName, line: 1}
+    if (!matches) return {fileName, line: lineNumber || 1}
 
     const [lastItem] = matches.slice(-1)
-
     const lineTokens = lastItem.split(':')
-    const line = lineTokens.pop() || '0'
+    line = lineTokens.pop() || '0'
 
     // check, if the error message is from a rust file -- this way we have the chance to find
     // out the involved test file
@@ -66,13 +71,23 @@ export async function resolveFileAndLine(
 
     core.debug(`Resolved file ${fileName} and line ${line}`)
 
-    return {fileName, line: parseInt(line)}
+    return {fileName, line: safeParseInt(line) || -1}
   } catch (error) {
     core.warning(
-      `⚠️ Failed to resolve file and line for ${file} and ${className}`
+      `⚠️ Failed to resolve file (${file}) and/or line (${line}) for ${className}`
     )
-    return {fileName, line: 1}
+    return {fileName, line: safeParseInt(line) || -1}
   }
+}
+
+/**
+ * Parse the provided string line number, and return its value, or null if it is not available or NaN.
+ */
+function safeParseInt(line: string | null): number | null {
+  if (!line) return null
+  const parsed = parseInt(line)
+  if (isNaN(parsed)) return null
+  return parsed
 }
 
 /**
@@ -214,6 +229,7 @@ async function parseSuite(
 
         const pos = await resolveFileAndLine(
           testcase._attributes.file || testsuite._attributes.file,
+          testcase._attributes.line || testsuite._attributes.line,
           testcase._attributes.classname
             ? testcase._attributes.classname
             : testcase._attributes.name,
