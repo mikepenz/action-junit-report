@@ -34,21 +34,21 @@
     "@actions/glob": "^0.2.0",
     "@octokit/rest": "^18.12.0",
     "nock": "^13.2.1",
-    "webpack": "^5.64.2",
+    "webpack": "^5.64.4",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
     "@types/jest": "^27.0.3",
     "@typescript-eslint/parser": "^5.4.0",
-    "@types/node": "^16.11.9",
+    "@types/node": "^16.11.10",
     "@vercel/ncc": "^0.32.0",
     "eslint": "^8.3.0",
     "eslint-plugin-github": "^4.3.5",
-    "eslint-plugin-jest": "^25.2.4",
+    "eslint-plugin-jest": "^25.3.0",
     "jest": "^27.3.1",
     "jest-circus": "^27.3.1",
     "js-yaml": "^4.1.0",
-    "prettier": "2.4.1",
+    "prettier": "2.5.0",
     "ts-jest": "^27.0.7",
     "typescript": "^4.5.2"
   }
