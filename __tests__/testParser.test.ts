@@ -12,7 +12,7 @@ jest.setTimeout(10000)
 
 describe('resolveFileAndLine', () => {
     it('should default to 1 if no line found', async () => {
-        const { fileName, line } = await resolveFileAndLine(null, 'someClassName', 'not a stacktrace');
+        const { fileName, line } = await resolveFileAndLine(null, null, 'someClassName', 'not a stacktrace');
         expect(fileName).toBe('someClassName');
         expect(line).toBe(1);
     });
@@ -20,6 +20,7 @@ describe('resolveFileAndLine', () => {
     it('should parse correctly fileName and line for a Java file', async () => {
         const { fileName, line } = await resolveFileAndLine(
             null,
+            null, 
             'action.surefire.report.email.EmailAddressTest',
             `
 action.surefire.report.email.InvalidEmailAddressException: Invalid email address 'user@ñandú.com.ar'
@@ -34,6 +35,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     it('should parse correctly fileName and line for a Kotlin file', async () => {
         const { fileName, line } = await resolveFileAndLine(
             null,
+            null, 
             'action.surefire.report.calc.CalcUtilsTest',
             `
 java.lang.AssertionError: unexpected exception type thrown; expected:<java.lang.IllegalStateException> but was:<java.lang.IllegalArgumentException>
@@ -51,6 +53,7 @@ Caused by: java.lang.IllegalArgumentException: Amount must have max 2 non-zero d
     it('should parse correctly fileName and line for extended stacktrace', async () => {
         const { fileName, line } = await resolveFileAndLine(
             null,
+            null, 
             'action.surefire.report.calc.StringUtilsTest',
             `
 java.lang.AssertionError:
@@ -74,6 +77,7 @@ Stacktrace was: java.lang.IllegalArgumentException: Input='' didn't match condit
     it('should parse correctly fileName and line for pytest', async () => {
         const { fileName, line } = await resolveFileAndLine(
             'test.py',
+            null, 
             'anything',
             `
 def
@@ -92,6 +96,7 @@ test.py:14: AttributeError
     it('should parse correctly line number for rust tests', async () => {
       const { fileName, line } = await resolveFileAndLine(
         null,
+        null, 
         'project',
         `thread &#x27;project::admission_webhook_tests::it_should_be_possible_to_update_projects&#x27; panicked at &#x27;boom&#x27;, tests/project/admission_webhook_tests.rs:48:38
 note: run with &#x60;RUST_BACKTRACE&#x3D;1&#x60; environment variable to display a backtrace
@@ -105,6 +110,7 @@ note: run with &#x60;RUST_BACKTRACE&#x3D;1&#x60; environment variable to display
   it('should parse correctly line number for rust tests 2', async () => {
     const { fileName, line } = await resolveFileAndLine(
       null,
+      null, 
       'project::manifest_secrets',
       `thread 'project::manifest_secrets::it_should_skip_annotated_manifests' panicked at 'assertion failed: \`(left == right)\`\\n" +
         '  left: \`0\`,\\n' +
@@ -283,6 +289,7 @@ describe('parseFile', () => {
     it('should parse correctly fileName and line for a Java file with invalid chars', async () => {
         const { fileName, line } = await resolveFileAndLine(
             null,
+            null, 
             'action.surefire.report.email.EmailAddressTest++',
             `
 action.surefire.report.email.InvalidEmailAddressException: Invalid email address 'user@ñandú.com.ar'
@@ -434,5 +441,25 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             "message": "Config files default config projectUTCOffset should be a callable with current UTC offset",
             "raw_details": ""
         }]);
+    });
+
+    it('should parse xunit results', async () => {
+        const { count, skipped, annotations } = await parseFile('test_results/xunit/report.xml');
+
+        expect(count).toBe(4);
+        expect(skipped).toBe(0);
+        expect(annotations).toStrictEqual([
+            {
+                path: "main.c",
+                start_line: 38,
+                end_line: 38,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: "failure",
+                title: "main.c.test_my_sum_fail",
+                message: "Expected 2 Was 0",
+                raw_details: "",
+              }
+        ]);
     });
 });

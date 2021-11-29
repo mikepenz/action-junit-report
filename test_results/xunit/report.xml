@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<testsuites disabled="0" errors="0" failures="1" tests="4" time="0.0">
+	<testsuite disabled="0" errors="0" failures="1" name="CI basic test" skipped="0" tests="4" time="0">
+		<testcase name="test_my_sum_pos" file="main.c" line="44"/>
+		<testcase name="test_my_sum_neg" file="main.c" line="45"/>
+		<testcase name="test_my_sum_fail" file="main.c" line="38">
+			<failure type="failure" message="Expected 2 Was 0"/>
+		</testcase>
+		<testcase name="test_my_sum_zero" file="main.c" line="47"/>
+	</testsuite>
+</testsuites>
