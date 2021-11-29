@@ -95,7 +95,6 @@ function run() {
                         const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
                                 title,
                                 summary,
-                                conclusion,
                                 annotations: sliced
                             } });
                         core.debug(JSON.stringify(updateCheckRequest, null, 2));

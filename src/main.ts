@@ -91,7 +91,6 @@ export async function run(): Promise<void> {
             output: {
               title,
               summary,
-              conclusion,
               annotations: sliced
             }
           }
