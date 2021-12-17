@@ -206,7 +206,7 @@ async function parseSuite(
       if (testcase.skipped || testcase._attributes.status === 'disabled')
         skipped++
       if (failed || (includePassed && success)) {
-        const stackTrace = (
+        const stackTrace: string = (
           (testcase.failure && testcase.failure._cdata) ||
           (testcase.failure && testcase.failure._text) ||
           (testcase.error && testcase.error._cdata) ||
@@ -216,7 +216,7 @@ async function parseSuite(
           .toString()
           .trim()
 
-        const message = (
+        const message: string = (
           (testcase.failure &&
             testcase.failure._attributes &&
             testcase.failure._attributes.message) ||
@@ -275,9 +275,9 @@ async function parseSuite(
           start_column: 0,
           end_column: 0,
           annotation_level: success ? 'notice' : 'failure',
-          title,
-          message,
-          raw_details: stackTrace
+          title: escapeEmoji(title),
+          message: escapeEmoji(message),
+          raw_details: escapeEmoji(stackTrace),
         })
       }
     }
@@ -314,4 +314,12 @@ export async function parseTestReports(
     annotations = annotations.concat(a)
   }
   return {count, skipped, annotations}
+}
+
+/**
+ * Escape emoji sequences.
+ */
+export function escapeEmoji(input: string): string {
+  const regex = /[\u{1f300}-\u{1f5ff}\u{1f900}-\u{1f9ff}\u{1f600}-\u{1f64f}\u{1f680}-\u{1f6ff}\u{2600}-\u{26ff}\u{2700}-\u{27bf}\u{1f1e6}-\u{1f1ff}\u{1f191}-\u{1f251}\u{1f004}\u{1f0cf}\u{1f170}-\u{1f171}\u{1f17e}-\u{1f17f}\u{1f18e}\u{3030}\u{2b50}\u{2b55}\u{2934}-\u{2935}\u{2b05}-\u{2b07}\u{2b1b}-\u{2b1c}\u{3297}\u{3299}\u{303d}\u{00a9}\u{00ae}\u{2122}\u{23f3}\u{24c2}\u{23e9}-\u{23ef}\u{25b6}\u{23f8}-\u{23fa}]/ug;
+  return input.replace(regex, match => ``); // replace emoji with empty string (\\u${(match.codePointAt(0) || "").toString(16)})
 }
