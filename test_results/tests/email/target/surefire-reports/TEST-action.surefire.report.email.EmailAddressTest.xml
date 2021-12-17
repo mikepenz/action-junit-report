@@ -7,9 +7,10 @@
 </error>
   </testcase>
   <testcase name="shouldBeStricterThanRfc2821" classname="action.surefire.report.email.EmailAddressTest" time="0">
-    <error message="Invalid email address &apos;Abc\@def@example.com&apos;" type="action.surefire.report.email.InvalidEmailAddressException">action.surefire.report.email.InvalidEmailAddressException: Invalid email address 'Abc\@def@example.com'
+    <error message="Invalid email address 😋 &apos;Abc\@def@example.com&apos;" type="action.surefire.report.email.InvalidEmailAddressException">action.surefire.report.email.InvalidEmailAddressException: Invalid email address 'Abc\@def@example.com'
 	at action.surefire.report.email.EmailAddressTest.expectException(EmailAddressTest.java:74)
-	at action.surefire.report.email.EmailAddressTest.shouldBeStricterThanRfc2821(EmailAddressTest.java:49)
+	at action.surefire.report.email.EmailAddressTest.shouldBeStricterThanRfc2821(EmailAddressTest.java:49) 
+  😋
 </error>
   </testcase>
   <testcase name="shouldBeStricterThanRfc2822" classname="action.surefire.report.email.EmailAddressTest" time="0">
