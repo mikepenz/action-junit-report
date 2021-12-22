@@ -124,19 +124,19 @@ note: run with &#x60;RUST_BACKTRACE&#x3D;1&#x60; environment variable to display
 
 describe('resolvePath', () => {
     it('should find correct file for Java fileName', async () => {
-        const path = await resolvePath('EmailAddressTest');
+        const path = await resolvePath('EmailAddressTest', ['/build/', '/__pycache__/']);
         expect(path).toBe(
             'test_results/tests/email/src/test/java/action/surefire/report/email/EmailAddressTest.java'
         );
     });
 
     it('should find correct file for Kotlin fileName', async () => {
-        const path = await resolvePath('CalcUtilsTest');
+        const path = await resolvePath('CalcUtilsTest', ['/build/', '/__pycache__/']);
         expect(path).toBe('test_results/tests/utils/src/test/java/action/surefire/report/calc/CalcUtilsTest.kt');
     });
 
     it('should find correct file with a relative path', async () => {
-        const path = await resolvePath('./test_results/CalcUtilsTest.kt');
+        const path = await resolvePath('./test_results/CalcUtilsTest.kt', ['/build/', '/__pycache__/']);
         expect(path).toBe('test_results/CalcUtilsTest.kt');
   })
 });
@@ -426,7 +426,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     });
 
     it('parse mocha test case, custom title template', async () => {
-        const { count, skipped, annotations } = await parseFile('test_results/mocha/mocha.xml', '*', true, '${{TEST_NAME}}');
+        const { count, skipped, annotations } = await parseFile('test_results/mocha/mocha.xml', '*', true, ['/build/', '/__pycache__/'], '${{TEST_NAME}}');
 
         expect(count).toBe(1);
         expect(skipped).toBe(0);

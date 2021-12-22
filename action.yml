@@ -12,9 +12,13 @@ inputs:
     description: 'Deprecated syntax to specify github token.'
     required: true
   report_paths:
-    description: 'JUnit xml report paths in glob format'
+    description: 'Xml report paths in glob format'
     required: false
     default: '**/junit-reports/TEST-*.xml'
+  exclude_sources:
+    description: 'Comma seperated list of source folders to ignore for lookup'
+    required: false
+    default: '/build/,/__pycache__/'
   suite_regex:
     description: 'Regular expression for the named test suites'
     required: false

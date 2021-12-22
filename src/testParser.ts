@@ -97,7 +97,10 @@ function safeParseInt(line: string | null): number | null {
  * Modification Copyright 2021 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-export async function resolvePath(fileName: string): Promise<string> {
+export async function resolvePath(
+  fileName: string,
+  excludeSources: string[]
+): Promise<string> {
   core.debug(`Resolving path for ${fileName}`)
   const normalizedFilename = fileName.replace(/^\.\//, '') // strip relative prefix (./)
   const globber = await glob.create(`**/${normalizedFilename}.*`, {
@@ -106,7 +109,9 @@ export async function resolvePath(fileName: string): Promise<string> {
   const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : ''
   for await (const result of globber.globGenerator()) {
     core.debug(`Matched file: ${result}`)
-    if (!result.includes('/build/')) {
+
+    const found = excludeSources.find(v => result.includes(v))
+    if (!found) {
       const path = result.slice(searchPath.length + 1)
       core.debug(`Resolved path: ${path}`)
       return path
@@ -126,6 +131,7 @@ export async function parseFile(
   file: string,
   suiteRegex = '',
   includePassed = false,
+  excludeSources: string[] = ['/build/', '/__pycache__/'],
   checkTitleTemplate: string | undefined = undefined
 ): Promise<TestResult> {
   core.debug(`Parsing file ${file}`)
@@ -133,7 +139,14 @@ export async function parseFile(
   const data: string = fs.readFileSync(file, 'utf8')
   const report = JSON.parse(parser.xml2json(data, {compact: true}))
 
-  return parseSuite(report, '', suiteRegex, includePassed, checkTitleTemplate)
+  return parseSuite(
+    report,
+    '',
+    suiteRegex,
+    includePassed,
+    excludeSources,
+    checkTitleTemplate
+  )
 }
 
 async function parseSuite(
@@ -142,6 +155,7 @@ async function parseSuite(
   parentName: string,
   suiteRegex: string,
   includePassed = false,
+  excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined
 ): Promise<TestResult> {
   let count = 0
@@ -182,6 +196,7 @@ async function parseSuite(
       suiteName,
       suiteRegex,
       includePassed,
+      excludeSources,
       checkTitleTemplate
     )
     count += res.count
@@ -236,7 +251,7 @@ async function parseSuite(
           stackTrace
         )
 
-        let resolvedPath = await resolvePath(pos.fileName)
+        let resolvedPath = await resolvePath(pos.fileName, excludeSources)
 
         core.debug(`Path prior to stripping: ${resolvedPath}`)
 
@@ -296,6 +311,7 @@ export async function parseTestReports(
   reportPaths: string,
   suiteRegex: string,
   includePassed = false,
+  excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined
 ): Promise<TestResult> {
   const globber = await glob.create(reportPaths, {followSymbolicLinks: false})
@@ -307,7 +323,13 @@ export async function parseTestReports(
       count: c,
       skipped: s,
       annotations: a
-    } = await parseFile(file, suiteRegex, includePassed, checkTitleTemplate)
+    } = await parseFile(
+      file,
+      suiteRegex,
+      includePassed,
+      excludeSources,
+      checkTitleTemplate
+    )
     if (c === 0) continue
     count += c
     skipped += s
