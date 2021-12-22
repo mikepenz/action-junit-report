@@ -281,7 +281,7 @@ exports.resolvePath = resolvePath;
  * Modification Copyright 2021 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseFile(file, suiteRegex = '', includePassed = false, excludeSources, checkTitleTemplate = undefined) {
+function parseFile(file, suiteRegex = '', includePassed = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Parsing file ${file}`);
         const data = fs.readFileSync(file, 'utf8');
