@@ -26,6 +26,9 @@ export async function run(): Promise<void> {
     const failOnFailure = core.getInput('fail_on_failure') === 'true'
     const requireTests = core.getInput('require_tests') === 'true'
     const includePassed = core.getInput('include_passed') === 'true'
+    const excludeSources = core.getInput('exclude_sources')
+      ? core.getInput('exclude_sources').split(',')
+      : []
 
     core.endGroup()
     core.startGroup(`📦 Process test results`)
@@ -34,6 +37,7 @@ export async function run(): Promise<void> {
       reportPaths,
       suiteRegex,
       includePassed,
+      excludeSources,
       checkTitleTemplate
     )
     const foundResults = testResult.count > 0 || testResult.skipped > 0
