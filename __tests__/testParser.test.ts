@@ -462,4 +462,24 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
               }
         ]);
     });
+
+    it('should parse junit web test results', async () => {
+        const { count, skipped, annotations } = await parseFile('test_results/junit-web-test/expected.xml');
+
+        expect(count).toBe(6);
+        expect(skipped).toBe(1);
+        expect(annotations).toStrictEqual([
+            {
+                path: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js",
+                start_line: 15,
+                end_line: 15,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: "failure",
+                title: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.asserts error",
+                message: "expected false to be true",
+                raw_details: "AssertionError: expected false to be true\n  at o.<anonymous> (packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js:15:29)",
+            }
+        ]);
+    });
 });
