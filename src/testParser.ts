@@ -261,7 +261,7 @@ async function parseSuite(
         }
 
         let title = ''
-        if (checkTitleTemplate !== undefined) {
+        if (checkTitleTemplate) {
           // ensure to not duplicate the test_name if file_name is equal
           const fileName =
             pos.fileName !== testcase._attributes.name ? pos.fileName : ''
