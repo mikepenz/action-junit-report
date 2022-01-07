@@ -71,17 +71,18 @@ jobs:
 
 ### Inputs
 
-| **Input**      | **Description**                                                                                                                                                       |
-|----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Input**      | **Description**                                                                                                                                                    |
+|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `report_paths`    | **Required**. [Glob](https://github.com/actions/toolkit/tree/master/packages/glob) expression to junit report paths. The default is `**/junit-reports/TEST-*.xml`. |
 | `token`           | Optional. GitHub token for creating a check run. Set to `${{ github.token }}` by default.                                                                          |
-| `exclude_sources` | Optional. Provide `,` seperated array of folders to ignore for source lookup. Defaults to: `/build/,/__pycache__/`                                                  |
+| `exclude_sources` | Optional. Provide `,` seperated array of folders to ignore for source lookup. Defaults to: `/build/,/__pycache__/`                                                 |
 | `check_name`      | Optional. Check name to use when creating a check run. The default is `JUnit Test Report`.                                                                         |
 | `suite_regex`     | Optional. Regular expression for the named test suites. E.g. `Test*`                                                                                               |
 | `commit`          | Optional. The commit SHA to update the status. This is useful when you run it with `workflow_run`.                                                                 |
 | `fail_on_failure` | Optional. Fail the build in case of a test failure.                                                                                                                |
 | `require_tests`   | Optional. Fail if no test are found..                                                                                                                              |
-| `check_title_template`  | Optional. Template to configure the title format. Placeholders: ${{FILE_NAME}}, ${{SUITE_NAME}}, ${{TEST_NAME}}.                                             |
+| `check_retries`   | Optional. If a testcase is retried, ignore the original failure.                                                                                                   |
+| `check_title_template`  | Optional. Template to configure the title format. Placeholders: ${{FILE_NAME}}, ${{SUITE_NAME}}, ${{TEST_NAME}}.                                                   |
 | `summary`         | Optional. Additional text to summary output                                                                                                                        |
 
 ## Sample 🖥️

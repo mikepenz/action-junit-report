@@ -29,6 +29,7 @@ export async function run(): Promise<void> {
     const excludeSources = core.getInput('exclude_sources')
       ? core.getInput('exclude_sources').split(',')
       : []
+    const checkRetries = core.getInput('check_retries') === 'true'
 
     core.endGroup()
     core.startGroup(`📦 Process test results`)
@@ -38,6 +39,7 @@ export async function run(): Promise<void> {
       suiteRegex,
       includePassed,
       excludeSources,
+      checkRetries,
       checkTitleTemplate
     )
     const foundResults = testResult.count > 0 || testResult.skipped > 0

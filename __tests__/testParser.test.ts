@@ -152,6 +152,7 @@ describe('parseFile', () => {
         expect(annotations).toStrictEqual([
             {
                 path: 'test_results/tests/utils/src/test/java/action/surefire/report/calc/CalcUtilsTest.kt',
+                testcase: "test error handling",
                 start_line: 27,
                 end_line: 27,
                 start_column: 0,
@@ -165,6 +166,7 @@ describe('parseFile', () => {
             },
             {
                 path: 'test_results/tests/utils/src/test/java/action/surefire/report/calc/CalcUtilsTest.kt',
+                testcase: "test scale",
                 start_line: 15,
                 end_line: 15,
                 start_column: 0,
@@ -185,6 +187,7 @@ describe('parseFile', () => {
         expect(annotations).toStrictEqual([
             {
                 path: 'test_results/python/test_sample.py',
+                testcase: 'test_which_fails',
                 start_line: 10,
                 end_line: 10,
                 start_column: 0,
@@ -197,6 +200,7 @@ describe('parseFile', () => {
             },
             {
                 path: 'test_results/python/test_sample.py',
+                testcase: 'test_with_error',
                 start_line: 14,
                 end_line: 14,
                 start_column: 0,
@@ -226,6 +230,7 @@ describe('parseFile', () => {
         expect(annotations).toStrictEqual([
             {
                 "annotation_level": "failure",
+                "testcase": 'test_01',
                 "end_column": 0,
                 "end_line": 1,
                 "message": "test_01",
@@ -246,6 +251,7 @@ describe('parseFile', () => {
         expect(annotations).toStrictEqual([
             {
                 "annotation_level": "failure",
+                "testcase": 'test_01_dummy',
                 "end_column": 0,
                 "end_line": 1,
                 "message": "java.io.FileNotFoundException: No content provider: content://com.xyz/photo.jpg\nat android.content.ContentResolver.openTypedAssetFileDescriptor(ContentResolver.java:1969)",
@@ -274,6 +280,7 @@ describe('parseFile', () => {
         expect(annotations).toStrictEqual([
             {
                 "annotation_level": "failure",
+                "testcase": "loadFromXMLString_When_Should2Test",
                 "end_column": 0,
                 "end_line": 1,
                 "message": "false == something.loadXml(xml_string)",
@@ -308,6 +315,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         expect(skipped).toBe(0);
         expect(annotations).toStrictEqual([{
             "path": "A",
+            "testcase": "A",
             "start_line": 1,
             "end_line": 1,
             "start_column": 0,
@@ -318,6 +326,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             "raw_details": ""
         }, {
             "path": "B",
+            "testcase": "B",
             "start_line": 1,
             "end_line": 1,
             "start_column": 0,
@@ -328,6 +337,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             "raw_details": ""
         }, {
             "path": "A",
+            "testcase": "A",
             "start_line": 1,
             "end_line": 1,
             "start_column": 0,
@@ -346,6 +356,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         expect(skipped).toBe(10);
         expect(annotations).toStrictEqual([{
             path: "factorial_of_value_from_fixture",
+            testcase: "factorial_of_value_from_fixture",
             start_line: 1,
             end_line: 1,
             start_column: 0,
@@ -356,6 +367,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             raw_details: "",
           }, {
             path: "factorial_of_value_from_fixture[0]",
+            testcase: "factorial_of_value_from_fixture[0]",
             start_line: 1,
             end_line: 1,
             start_column: 0,
@@ -366,6 +378,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             raw_details: "",
           }, {
             path: "positive_arguments_must_produce_expected_result",
+            testcase: "positive_arguments_must_produce_expected_result",
             start_line: 1,
             end_line: 1,
             start_column: 0,
@@ -376,6 +389,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             raw_details: "",
           }, {
             path: "positive_arguments_must_produce_expected_result[2]",
+            testcase: "positive_arguments_must_produce_expected_result[2]",
             start_line: 1,
             end_line: 1,
             start_column: 0,
@@ -386,6 +400,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             raw_details: "",
           }, {
             path: "test_which_fails_check_eq_with_custom_message",
+            testcase: "test_which_fails_check_eq_with_custom_message",
             start_line: 1,
             end_line: 1,
             start_column: 0,
@@ -396,6 +411,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             raw_details: "",
           }, {
             path: "test_which_throws_unknown_exception",
+            testcase: "test_which_throws_unknown_exception",
             start_line: 1,
             end_line: 1,
             start_column: 0,
@@ -414,6 +430,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         expect(skipped).toBe(0);
         expect(annotations).toStrictEqual([{
             "path": "/path/test/config.js",
+            "testcase": "Config files default config projectUTCOffset should be a callable with current UTC offset",
             "start_line": 1,
             "end_line": 1,
             "start_column": 0,
@@ -426,12 +443,13 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     });
 
     it('parse mocha test case, custom title template', async () => {
-        const { count, skipped, annotations } = await parseFile('test_results/mocha/mocha.xml', '*', true, ['/build/', '/__pycache__/'], '${{TEST_NAME}}');
+        const { count, skipped, annotations } = await parseFile('test_results/mocha/mocha.xml', '*', true, ['/build/', '/__pycache__/'], false, '${{TEST_NAME}}');
 
         expect(count).toBe(1);
         expect(skipped).toBe(0);
         expect(annotations).toStrictEqual([{
             "path": "/path/test/config.js",
+            "testcase": "Config files default config projectUTCOffset should be a callable with current UTC offset",
             "start_line": 1,
             "end_line": 1,
             "start_column": 0,
@@ -451,6 +469,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         expect(annotations).toStrictEqual([
             {
                 path: "main.c",
+                testcase: "test_my_sum_fail",
                 start_line: 38,
                 end_line: 38,
                 start_column: 0,
@@ -471,6 +490,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         expect(annotations).toStrictEqual([
             {
                 path: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js",
+                testcase: "asserts error",
                 start_line: 15,
                 end_line: 15,
                 start_column: 0,
@@ -479,6 +499,60 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
                 title: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.asserts error",
                 message: "expected false to be true",
                 raw_details: "AssertionError: expected false to be true\n  at o.<anonymous> (packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js:15:29)",
+            }
+        ]);
+    });
+
+    it('should handle retries', async () => {
+        const { count, skipped, annotations } = await parseFile('test_results/junit-web-test/expectedRetries.xml', '', false, ['/build/', '/__pycache__/'], true);
+
+        expect(count).toBe(8);
+        expect(skipped).toBe(1);
+        expect(annotations).toStrictEqual([
+            {
+                path: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js",
+                testcase: "asserts error",
+                start_line: 15,
+                end_line: 15,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: "failure",
+                title: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.asserts error",
+                message: "expected false to be true",
+                raw_details: "AssertionError: expected false to be true\n  at o.<anonymous> (packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js:15:29)",
+            }
+        ]);
+    });
+
+    it('there should be two errors if retries are not handled', async () => {
+        const { count, skipped, annotations } = await parseFile('test_results/junit-web-test/expectedRetries.xml');
+
+        expect(count).toBe(8);
+        expect(skipped).toBe(1);
+        expect(annotations).toStrictEqual([
+            {
+                path: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js",
+                testcase: "asserts error",
+                start_line: 15,
+                end_line: 15,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: "failure",
+                title: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.asserts error",
+                message: "expected false to be true",
+                raw_details: "AssertionError: expected false to be true\n  at o.<anonymous> (packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js:15:29)",
+            },
+            {
+                annotation_level: "failure",
+                end_column: 0,
+                end_line: 15,
+                message: "this is flaky, so is retried",
+                path: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js",
+                raw_details: "AssertionError: expected false to be true\n  at o.<anonymous> (packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js:15:29)",
+                start_column: 0,
+                start_line: 15,
+                testcase: "retried flaky test",
+                title: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.retried flaky test",
             }
         ]);
     });

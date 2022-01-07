@@ -11,6 +11,7 @@ export interface TestResult {
 
 export interface Annotation {
   path: string
+  testcase: string
   start_line: number
   end_line: number
   start_column: number
@@ -132,6 +133,7 @@ export async function parseFile(
   suiteRegex = '',
   includePassed = false,
   excludeSources: string[] = ['/build/', '/__pycache__/'],
+  checkRetries = false,
   checkTitleTemplate: string | undefined = undefined
 ): Promise<TestResult> {
   core.debug(`Parsing file ${file}`)
@@ -145,6 +147,7 @@ export async function parseFile(
     suiteRegex,
     includePassed,
     excludeSources,
+    checkRetries,
     checkTitleTemplate
   )
 }
@@ -156,11 +159,12 @@ async function parseSuite(
   suiteRegex: string,
   includePassed = false,
   excludeSources: string[],
+  checkRetries = false,
   checkTitleTemplate: string | undefined = undefined
 ): Promise<TestResult> {
   let count = 0
   let skipped = 0
-  const annotations: Annotation[] = []
+  let annotations: Annotation[] = []
 
   if (!suite.testsuite && !suite.testsuites) {
     return {count, skipped, annotations}
@@ -197,6 +201,7 @@ async function parseSuite(
       suiteRegex,
       includePassed,
       excludeSources,
+      checkRetries,
       checkTitleTemplate
     )
     count += res.count
@@ -220,6 +225,11 @@ async function parseSuite(
 
       if (testcase.skipped || testcase._attributes.status === 'disabled')
         skipped++
+      if (checkRetries) {
+        annotations = annotations.filter(
+          annotation => annotation.testcase !== testcase._attributes.name
+        )
+      }
       if (failed || (includePassed && success)) {
         const stackTrace: string = (
           (testcase.failure && testcase.failure._cdata) ||
@@ -285,6 +295,7 @@ async function parseSuite(
 
         annotations.push({
           path: resolvedPath,
+          testcase: testcase._attributes.name,
           start_line: pos.line,
           end_line: pos.line,
           start_column: 0,
@@ -312,6 +323,7 @@ export async function parseTestReports(
   suiteRegex: string,
   includePassed = false,
   excludeSources: string[],
+  checkRetries = false,
   checkTitleTemplate: string | undefined = undefined
 ): Promise<TestResult> {
   const globber = await glob.create(reportPaths, {followSymbolicLinks: false})
@@ -328,6 +340,7 @@ export async function parseTestReports(
       suiteRegex,
       includePassed,
       excludeSources,
+      checkRetries,
       checkTitleTemplate
     )
     if (c === 0) continue
