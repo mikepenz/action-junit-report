@@ -426,7 +426,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     });
 
     it('parse mocha test case, custom title template', async () => {
-        const { count, skipped, annotations } = await parseFile('test_results/mocha/mocha.xml', '*', true, ['/build/', '/__pycache__/'], '${{TEST_NAME}}');
+        const { count, skipped, annotations } = await parseFile('test_results/mocha/mocha.xml', '*', true, false, ['/build/', '/__pycache__/'], '${{TEST_NAME}}');
 
         expect(count).toBe(1);
         expect(skipped).toBe(0);
@@ -479,6 +479,57 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
                 title: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.asserts error",
                 message: "expected false to be true",
                 raw_details: "AssertionError: expected false to be true\n  at o.<anonymous> (packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js:15:29)",
+            }
+        ]);
+    });
+
+    it('should handle retries', async () => {
+        const { count, skipped, annotations } = await parseFile('test_results/junit-web-test/expectedRetries.xml', '', false, true, ['/build/', '/__pycache__/']);
+
+        expect(count).toBe(7);
+        expect(skipped).toBe(1);
+        expect(annotations).toStrictEqual([
+            {
+                path: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js",
+                start_line: 15,
+                end_line: 15,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: "failure",
+                title: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.asserts error",
+                message: "expected false to be true",
+                raw_details: "AssertionError: expected false to be true\n  at o.<anonymous> (packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js:15:29)",
+            }
+        ]);
+    });
+
+    it('there should be two errors if retries are not handled', async () => {
+        const { count, skipped, annotations } = await parseFile('test_results/junit-web-test/expectedRetries.xml', '', false);
+
+        expect(count).toBe(8);
+        expect(skipped).toBe(1);
+        expect(annotations).toStrictEqual([
+            {
+                path: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js",
+                start_line: 15,
+                end_line: 15,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: "failure",
+                title: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.asserts error",
+                message: "expected false to be true",
+                raw_details: "AssertionError: expected false to be true\n  at o.<anonymous> (packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js:15:29)",
+            },
+            {
+                annotation_level: "failure",
+                end_column: 0,
+                end_line: 15,
+                message: "this is flaky, so is retried",
+                path: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js",
+                raw_details: "AssertionError: expected false to be true\n  at o.<anonymous> (packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js:15:29)",
+                start_column: 0,
+                start_line: 15,
+                title: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.retried flaky test",
             }
         ]);
     });

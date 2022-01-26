@@ -63,9 +63,10 @@ function run() {
             const excludeSources = core.getInput('exclude_sources')
                 ? core.getInput('exclude_sources').split(',')
                 : [];
+            const checkRetries = core.getInput('check_retries') === 'true';
             core.endGroup();
             core.startGroup(`📦 Process test results`);
-            const testResult = yield (0, testParser_1.parseTestReports)(reportPaths, suiteRegex, includePassed, excludeSources, checkTitleTemplate);
+            const testResult = yield (0, testParser_1.parseTestReports)(reportPaths, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate);
             const foundResults = testResult.count > 0 || testResult.skipped > 0;
             let title = 'No test results found!';
             if (foundResults) {
@@ -289,18 +290,18 @@ exports.resolvePath = resolvePath;
  * Modification Copyright 2021 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseFile(file, suiteRegex = '', includePassed = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined) {
+function parseFile(file, suiteRegex = '', includePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Parsing file ${file}`);
         const data = fs.readFileSync(file, 'utf8');
         const report = JSON.parse(parser.xml2json(data, { compact: true }));
-        return parseSuite(report, '', suiteRegex, includePassed, excludeSources, checkTitleTemplate);
+        return parseSuite(report, '', suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate);
     });
 }
 exports.parseFile = parseFile;
 function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-suite, parentName, suiteRegex, includePassed = false, excludeSources, checkTitleTemplate = undefined) {
+suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined) {
     return __awaiter(this, void 0, void 0, function* () {
         let count = 0;
         let skipped = 0;
@@ -331,18 +332,41 @@ suite, parentName, suiteRegex, includePassed = false, excludeSources, checkTitle
                     suiteName = testsuite._attributes.name;
                 }
             }
-            const res = yield parseSuite(testsuite, suiteName, suiteRegex, includePassed, excludeSources, checkTitleTemplate);
+            const res = yield parseSuite(testsuite, suiteName, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate);
             count += res.count;
             skipped += res.skipped;
             annotations.push(...res.annotations);
             if (!testsuite.testcase) {
                 continue;
             }
-            const testcases = Array.isArray(testsuite.testcase)
+            let testcases = Array.isArray(testsuite.testcase)
                 ? testsuite.testcase
                 : testsuite.testcase
                     ? [testsuite.testcase]
                     : [];
+            if (checkRetries) {
+                // identify duplicates, in case of flaky tests, and remove them
+                const testcaseMap = new Map();
+                for (const testcase of testcases) {
+                    const key = testcase._attributes.name;
+                    if (testcaseMap.get(key) !== undefined) {
+                        // testcase with matching name exists
+                        const failed = testcase.failure || testcase.error;
+                        const previousFailed = testcaseMap.get(key).failure || testcaseMap.get(key).error;
+                        if (failed && !previousFailed) {
+                            // previous is a success, drop failure
+                        }
+                        else if (!failed && previousFailed) {
+                            // previous failed, new one not, replace
+                            testcaseMap.set(key, testcase);
+                        }
+                    }
+                    else {
+                        testcaseMap.set(key, testcase);
+                    }
+                }
+                testcases = Array.from(testcaseMap.values());
+            }
             for (const testcase of testcases) {
                 count++;
                 const failed = testcase.failure || testcase.error;
@@ -418,7 +442,7 @@ suite, parentName, suiteRegex, includePassed = false, excludeSources, checkTitle
  * Modification Copyright 2021 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseTestReports(reportPaths, suiteRegex, includePassed = false, excludeSources, checkTitleTemplate = undefined) {
+function parseTestReports(reportPaths, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined) {
     var e_2, _a;
     return __awaiter(this, void 0, void 0, function* () {
         const globber = yield glob.create(reportPaths, { followSymbolicLinks: false });
@@ -428,7 +452,7 @@ function parseTestReports(reportPaths, suiteRegex, includePassed = false, exclud
         try {
             for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
                 const file = _c.value;
-                const { count: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, includePassed, excludeSources, checkTitleTemplate);
+                const { count: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate);
                 if (c === 0)
                     continue;
                 count += c;
