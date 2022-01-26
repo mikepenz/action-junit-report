@@ -28,6 +28,7 @@ jobs:
         with:
           check_name: Example Pytest Report
           report_paths: test_results/python/report.xml
+          include_passed: true
       - name: Install NPM
         run: |
           npm install
