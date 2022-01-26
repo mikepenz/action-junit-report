@@ -100,14 +100,14 @@ jobs:
 # Install the dependencies  
 $ npm install
 
+# Verify lint is happy
+$ npm run lint -- --fix
+
 # Build the typescript and package it for distribution
 $ npm run build && npm run package
 
 # Run the tests, use to debug, and test it out
 $ npm test
-
-# Verify lint is happy
-$ npm run lint -- --fix
 ```
 
 ### Credits
