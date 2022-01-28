@@ -131,6 +131,7 @@ export async function parseFile(
   file: string,
   suiteRegex = '',
   includePassed = false,
+  checkRetries = false,
   excludeSources: string[] = ['/build/', '/__pycache__/'],
   checkTitleTemplate: string | undefined = undefined
 ): Promise<TestResult> {
@@ -144,6 +145,7 @@ export async function parseFile(
     '',
     suiteRegex,
     includePassed,
+    checkRetries,
     excludeSources,
     checkTitleTemplate
   )
@@ -155,6 +157,7 @@ async function parseSuite(
   parentName: string,
   suiteRegex: string,
   includePassed = false,
+  checkRetries = false,
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined
 ): Promise<TestResult> {
@@ -196,6 +199,7 @@ async function parseSuite(
       suiteName,
       suiteRegex,
       includePassed,
+      checkRetries,
       excludeSources,
       checkTitleTemplate
     )
@@ -207,11 +211,37 @@ async function parseSuite(
       continue
     }
 
-    const testcases = Array.isArray(testsuite.testcase)
+    let testcases = Array.isArray(testsuite.testcase)
       ? testsuite.testcase
       : testsuite.testcase
       ? [testsuite.testcase]
       : []
+
+    if (checkRetries) {
+      // identify duplicates, in case of flaky tests, and remove them
+      const testcaseMap = new Map<string, any>()
+      for (const testcase of testcases) {
+        const key = testcase._attributes.name
+        if (testcaseMap.get(key) !== undefined) {
+          // testcase with matching name exists
+          const failed = testcase.failure || testcase.error
+          const previousFailed =
+            testcaseMap.get(key).failure || testcaseMap.get(key).error
+          if (failed && !previousFailed) {
+            // previous is a success, drop failure
+            core.debug(`Drop flaky test failure for (1): ${key}`)
+          } else if (!failed && previousFailed) {
+            // previous failed, new one not, replace
+            testcaseMap.set(key, testcase)
+            core.debug(`Drop flaky test failure for (2): ${key}`)
+          }
+        } else {
+          testcaseMap.set(key, testcase)
+        }
+      }
+      testcases = Array.from(testcaseMap.values())
+    }
+
     for (const testcase of testcases) {
       count++
 
@@ -311,6 +341,7 @@ export async function parseTestReports(
   reportPaths: string,
   suiteRegex: string,
   includePassed = false,
+  checkRetries = false,
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined
 ): Promise<TestResult> {
@@ -327,6 +358,7 @@ export async function parseTestReports(
       file,
       suiteRegex,
       includePassed,
+      checkRetries,
       excludeSources,
       checkTitleTemplate
     )
