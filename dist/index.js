@@ -355,10 +355,12 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
                         const previousFailed = testcaseMap.get(key).failure || testcaseMap.get(key).error;
                         if (failed && !previousFailed) {
                             // previous is a success, drop failure
+                            core.debug(`Drop flaky test failure for (1): ${key}`);
                         }
                         else if (!failed && previousFailed) {
                             // previous failed, new one not, replace
                             testcaseMap.set(key, testcase);
+                            core.debug(`Drop flaky test failure for (2): ${key}`);
                         }
                     }
                     else {
