@@ -123,7 +123,7 @@ Original idea and GitHub Actions by: https://github.com/ScaCap/action-surefire-r
 
 ## License
 
-    Copyright (C) 2021 Mike Penz
+    Copyright (C) 2022 Mike Penz
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

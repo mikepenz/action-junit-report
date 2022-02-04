@@ -30,7 +30,7 @@ export interface Position {
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
  *
- * Modification Copyright 2021 Mike Penz
+ * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
 export async function resolveFileAndLine(
@@ -94,7 +94,7 @@ function safeParseInt(line: string | null): number | null {
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L18
  *
- * Modification Copyright 2021 Mike Penz
+ * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
 export async function resolvePath(
@@ -124,7 +124,7 @@ export async function resolvePath(
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L43
  *
- * Modification Copyright 2021 Mike Penz
+ * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
 export async function parseFile(
@@ -334,7 +334,7 @@ async function parseSuite(
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L113
  *
- * Modification Copyright 2021 Mike Penz
+ * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
 export async function parseTestReports(
