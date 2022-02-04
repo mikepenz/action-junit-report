@@ -71,6 +71,8 @@ function run() {
             // get the count of passed and failed tests.
             const passed = testResult.annotations.filter(a => a.annotation_level === 'notice').length;
             const failed = testResult.annotations.length - passed;
+            core.setOutput('passed', passed);
+            core.setOutput('failed', failed);
             let title = 'No test results found!';
             if (foundResults) {
                 if (includePassed) {
@@ -193,7 +195,7 @@ const parser = __importStar(__nccwpck_require__(8821));
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
  *
- * Modification Copyright 2021 Mike Penz
+ * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
 function resolveFileAndLine(file, line, className, output) {
@@ -247,7 +249,7 @@ function safeParseInt(line) {
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L18
  *
- * Modification Copyright 2021 Mike Penz
+ * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
 function resolvePath(fileName, excludeSources) {
@@ -286,7 +288,7 @@ exports.resolvePath = resolvePath;
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L43
  *
- * Modification Copyright 2021 Mike Penz
+ * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
 function parseFile(file, suiteRegex = '', includePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined) {
@@ -440,7 +442,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L113
  *
- * Modification Copyright 2021 Mike Penz
+ * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
 function parseTestReports(reportPaths, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined) {
