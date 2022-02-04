@@ -50,6 +50,9 @@ export async function run(): Promise<void> {
     ).length
     const failed = testResult.annotations.length - passed
 
+    core.setOutput('passed', passed)
+    core.setOutput('failed', failed)
+
     let title = 'No test results found!'
     if (foundResults) {
       if (includePassed) {
@@ -137,9 +140,7 @@ export async function run(): Promise<void> {
       }
 
       if (failOnFailure && conclusion === 'failure') {
-        core.setFailed(
-          `❌ Tests reported ${failed} failures`
-        )
+        core.setFailed(`❌ Tests reported ${failed} failures`)
       }
     } catch (error) {
       core.error(
