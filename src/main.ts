@@ -44,12 +44,14 @@ export async function run(): Promise<void> {
     )
     const foundResults = testResult.count > 0 || testResult.skipped > 0
 
+    // get the count of passed and failed tests.
+    const passed = testResult.annotations.filter(
+      a => a.annotation_level === 'notice'
+    ).length
+    const failed = testResult.annotations.length - passed
+
     let title = 'No test results found!'
     if (foundResults) {
-      const passed = testResult.annotations.filter(
-        a => a.annotation_level === 'notice'
-      ).length
-      const failed = testResult.annotations.length - passed
       if (includePassed) {
         title = `${testResult.count} tests run, ${passed} passed, ${testResult.skipped} skipped, ${failed} failed.`
       } else {
@@ -69,9 +71,7 @@ export async function run(): Promise<void> {
     const pullRequest = github.context.payload.pull_request
     const link = (pullRequest && pullRequest.html_url) || github.context.ref
     const conclusion: 'success' | 'failure' =
-      foundResults && testResult.annotations.length === 0
-        ? 'success'
-        : 'failure'
+      foundResults && failed <= 0 ? 'success' : 'failure'
     const head_sha =
       commit || (pullRequest && pullRequest.head.sha) || github.context.sha
     core.info(
@@ -138,7 +138,7 @@ export async function run(): Promise<void> {
 
       if (failOnFailure && conclusion === 'failure') {
         core.setFailed(
-          `❌ Tests reported ${testResult.annotations.length} failures`
+          `❌ Tests reported ${failed} failures`
         )
       }
     } catch (error) {
