@@ -67,14 +67,18 @@ export async function run(): Promise<void> {
     if (!foundResults) {
       if (requireTests) {
         core.setFailed('❌ No test results found')
+        return
       }
-      return
+     core.info(`ℹ️ No tests found, but test results no rquired`)
     }
 
     const pullRequest = github.context.payload.pull_request
     const link = (pullRequest && pullRequest.html_url) || github.context.ref
     const conclusion: 'success' | 'failure' =
-      foundResults && failed <= 0 ? 'success' : 'failure'
+      testResult.annotations.length === 0
+        ? 'success'
+        : 'failure'
+    const status: 'completed' = 'completed'
     const head_sha =
       commit || (pullRequest && pullRequest.head.sha) || github.context.sha
     core.info(
