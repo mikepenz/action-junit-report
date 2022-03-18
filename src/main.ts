@@ -86,6 +86,25 @@ export async function run(): Promise<void> {
     core.startGroup(`🚀 Publish results`)
 
     try {
+      for (const annotation of testResult.annotations) {
+        const properties: core.AnnotationProperties = {
+          title: annotation.title,
+          file: annotation.path,
+          startLine: annotation.start_line,
+          endLine: annotation.end_line,
+          startColumn: annotation.start_column,
+          endColumn: annotation.end_column
+        }
+        if (annotation.annotation_level === 'failure') {
+          core.error(annotation.message, properties)
+        } else if (annotation.annotation_level === 'warning') {
+          core.warning(annotation.message, properties)
+        } else {
+          core.notice(annotation.message, properties)
+        }
+      }
+
+      /*
       const octokit = github.getOctokit(token)
 
       if (updateCheck) {
@@ -138,6 +157,7 @@ export async function run(): Promise<void> {
         core.info(`ℹ️ Creating check`)
         await octokit.rest.checks.create(createCheckRequest)
       }
+      */
 
       if (failOnFailure && conclusion === 'failure') {
         core.setFailed(`❌ Tests reported ${failed} failures`)

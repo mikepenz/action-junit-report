@@ -97,33 +97,79 @@ function run() {
             core.endGroup();
             core.startGroup(`🚀 Publish results`);
             try {
-                const octokit = github.getOctokit(token);
-                if (updateCheck) {
-                    const checks = yield octokit.rest.checks.listForRef(Object.assign(Object.assign({}, github.context.repo), { ref: head_sha, check_name: github.context.job, status: 'in_progress', filter: 'latest' }));
-                    core.debug(JSON.stringify(checks, null, 2));
-                    const check_run_id = checks.data.check_runs[0].id;
-                    core.info(`ℹ️ Updating checks ${testResult.annotations.length}`);
-                    for (let i = 0; i < testResult.annotations.length; i = i + 50) {
-                        const sliced = testResult.annotations.slice(i, i + 50);
-                        const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
-                                title,
-                                summary,
-                                annotations: sliced
-                            } });
-                        core.debug(JSON.stringify(updateCheckRequest, null, 2));
-                        yield octokit.rest.checks.update(updateCheckRequest);
+                for (const annotation of testResult.annotations) {
+                    const properties = {
+                        title: annotation.title,
+                        file: annotation.path,
+                        startLine: annotation.start_line,
+                        endLine: annotation.end_line,
+                        startColumn: annotation.start_column,
+                        endColumn: annotation.end_column
+                    };
+                    if (annotation.annotation_level === 'failure') {
+                        core.error(annotation.message, properties);
+                    }
+                    else if (annotation.annotation_level === 'warning') {
+                        core.warning(annotation.message, properties);
+                    }
+                    else {
+                        core.notice(annotation.message, properties);
                     }
                 }
-                else {
-                    const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: checkName, head_sha, status: 'completed', conclusion, output: {
-                            title,
-                            summary,
-                            annotations: testResult.annotations.slice(0, 50)
-                        } });
-                    core.debug(JSON.stringify(createCheckRequest, null, 2));
-                    core.info(`ℹ️ Creating check`);
-                    yield octokit.rest.checks.create(createCheckRequest);
+                /*
+                const octokit = github.getOctokit(token)
+          
+                if (updateCheck) {
+                  const checks = await octokit.rest.checks.listForRef({
+                    ...github.context.repo,
+                    ref: head_sha,
+                    check_name: github.context.job,
+                    status: 'in_progress',
+                    filter: 'latest'
+                  })
+          
+                  core.debug(JSON.stringify(checks, null, 2))
+          
+                  const check_run_id = checks.data.check_runs[0].id
+          
+                  core.info(`ℹ️ Updating checks ${testResult.annotations.length}`)
+                  for (let i = 0; i < testResult.annotations.length; i = i + 50) {
+                    const sliced = testResult.annotations.slice(i, i + 50)
+          
+                    const updateCheckRequest = {
+                      ...github.context.repo,
+                      check_run_id,
+                      output: {
+                        title,
+                        summary,
+                        annotations: sliced
+                      }
+                    }
+          
+                    core.debug(JSON.stringify(updateCheckRequest, null, 2))
+          
+                    await octokit.rest.checks.update(updateCheckRequest)
+                  }
+                } else {
+                  const createCheckRequest = {
+                    ...github.context.repo,
+                    name: checkName,
+                    head_sha,
+                    status: 'completed',
+                    conclusion,
+                    output: {
+                      title,
+                      summary,
+                      annotations: testResult.annotations.slice(0, 50)
+                    }
+                  }
+          
+                  core.debug(JSON.stringify(createCheckRequest, null, 2))
+          
+                  core.info(`ℹ️ Creating check`)
+                  await octokit.rest.checks.create(createCheckRequest)
                 }
+                */
                 if (failOnFailure && conclusion === 'failure') {
                     core.setFailed(`❌ Tests reported ${failed} failures`);
                 }
