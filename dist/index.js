@@ -54,7 +54,7 @@ function run() {
                 core.setFailed('❌ A token is required to execute this action');
                 return;
             }
-            const legacyApi = core.getInput('legacy') === 'false';
+            const annotateOnly = core.getInput('annotate_only') === 'true';
             const updateCheck = core.getInput('update_check') === 'true';
             const checkName = core.getInput('check_name');
             const commit = core.getInput('commit');
@@ -99,7 +99,7 @@ function run() {
             core.startGroup(`🚀 Publish results`);
             try {
                 const octokit = github.getOctokit(token);
-                if (!legacyApi) {
+                if (annotateOnly) {
                     for (const annotation of testResult.annotations) {
                         const properties = {
                             title: annotation.title,
@@ -119,13 +119,6 @@ function run() {
                             core.notice(annotation.message, properties);
                         }
                     }
-                    const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: checkName, head_sha, status: 'completed', conclusion, output: {
-                            title,
-                            summary
-                        } });
-                    core.debug(JSON.stringify(createCheckRequest, null, 2));
-                    core.info(`ℹ️ Creating check`);
-                    yield octokit.rest.checks.create(createCheckRequest);
                 }
                 else {
                     if (updateCheck) {

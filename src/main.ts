@@ -20,7 +20,7 @@ export async function run(): Promise<void> {
       return
     }
 
-    const legacyApi = core.getInput('legacy') === 'false'
+    const annotateOnly = core.getInput('annotate_only') === 'true'
     const updateCheck = core.getInput('update_check') === 'true'
     const checkName = core.getInput('check_name')
     const commit = core.getInput('commit')
@@ -88,7 +88,7 @@ export async function run(): Promise<void> {
 
     try {
       const octokit = github.getOctokit(token)
-      if (!legacyApi) {
+      if (annotateOnly) {
         for (const annotation of testResult.annotations) {
           const properties: core.AnnotationProperties = {
             title: annotation.title,
@@ -106,21 +106,6 @@ export async function run(): Promise<void> {
             core.notice(annotation.message, properties)
           }
         }
-
-        const createCheckRequest = {
-          ...github.context.repo,
-          name: checkName,
-          head_sha,
-          status: 'completed',
-          conclusion,
-          output: {
-            title,
-            summary
-          }
-        }
-        core.debug(JSON.stringify(createCheckRequest, null, 2))
-        core.info(`ℹ️ Creating check`)
-        await octokit.rest.checks.create(createCheckRequest)
       } else {
         if (updateCheck) {
           const checks = await octokit.rest.checks.listForRef({
