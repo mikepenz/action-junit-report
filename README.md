@@ -63,7 +63,7 @@ jobs:
       - name: Build and Run Tests
         run: # execute your tests generating test results
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v2
+        uses: mikepenz/action-junit-report@v3
         if: always() # always run even if the previous step fails
         with:
           report_paths: '**/build/test-results/test/TEST-*.xml'
