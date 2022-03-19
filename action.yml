@@ -23,6 +23,10 @@ inputs:
     description: 'Regular expression for the named test suites'
     required: false
     default: ''
+  annotate_only:
+    description: 'Enable to only annotate the results on the files, won't create a check run.'
+    required: false
+    default: 'false'
   update_check:
     description: 'Defines if the active check should be updated instead'
     required: false
