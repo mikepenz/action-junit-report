@@ -24,7 +24,7 @@ inputs:
     required: false
     default: ''
   annotate_only:
-    description: 'Enable to only annotate the results on the files, won't create a check run.'
+    description: 'Enable to only annotate the results on the files, will not create a check run.'
     required: false
     default: 'false'
   update_check:
