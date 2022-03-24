@@ -54,6 +54,10 @@ inputs:
     description: 'Additional text to summary output'
     required: false
     default: ''
+  check_retries:
+    description: 'If a testcase is retried, ignore the original failure.'
+    required: false
+    default: 'false'
 runs:
   using: 'node16'
   main: 'dist/index.js'
