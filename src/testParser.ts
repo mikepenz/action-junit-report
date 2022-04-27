@@ -151,6 +151,10 @@ export async function parseFile(
   )
 }
 
+function templateVar(varName: string): string {
+  return `{{${varName}}}`
+}
+
 async function parseSuite(
   /* eslint-disable  @typescript-eslint/no-explicit-any */
   suite: any,
@@ -296,9 +300,9 @@ async function parseSuite(
           const fileName =
             pos.fileName !== testcase._attributes.name ? pos.fileName : ''
           title = checkTitleTemplate
-            .replace('${{FILE_NAME}}', fileName)
-            .replace('${{SUITE_NAME}}', suiteName ?? '')
-            .replace('${{TEST_NAME}}', testcase._attributes.name)
+            .replace(templateVar('FILE_NAME'), fileName)
+            .replace(templateVar('SUITE_NAME'), suiteName ?? '')
+            .replace(templateVar('TEST_NAME'), testcase._attributes.name)
         } else if (pos.fileName !== testcase._attributes.name) {
           title = suiteName
             ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
