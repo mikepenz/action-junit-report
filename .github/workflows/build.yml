@@ -22,6 +22,7 @@ jobs:
           check_name: Example JUnit Test Report
           report_paths: '**/surefire-reports/TEST-*.xml'
           summary: '<table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> test </td></tr></tbody></table>'
+          check_title_template: '{{SUITE_NAME}} | {{TEST_NAME}}'
       - name: Test PyTest test import
         uses: ./
         if: endsWith(github.ref, 'main') == false
@@ -60,4 +61,3 @@ jobs:
           prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-b') || contains(github.ref, '-a') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          

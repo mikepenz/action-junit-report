@@ -426,7 +426,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     });
 
     it('parse mocha test case, custom title template', async () => {
-        const { count, skipped, annotations } = await parseFile('test_results/mocha/mocha.xml', '*', true, false, ['/build/', '/__pycache__/'], '${{TEST_NAME}}');
+        const { count, skipped, annotations } = await parseFile('test_results/mocha/mocha.xml', '*', true, false, ['/build/', '/__pycache__/'], '{{TEST_NAME}}');
 
         expect(count).toBe(1);
         expect(skipped).toBe(0);

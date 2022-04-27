@@ -50,6 +50,10 @@ inputs:
     description: 'Include passed tests in the report'
     required: false
     default: 'false'
+  check_title_template:
+    description: |-
+      Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}.
+    required: false
   summary:
     description: 'Additional text to summary output'
     required: false

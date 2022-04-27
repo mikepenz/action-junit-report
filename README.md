@@ -82,7 +82,7 @@ jobs:
 | `fail_on_failure` | Optional. Fail the build in case of a test failure.                                                                                                                |
 | `require_tests`   | Optional. Fail if no test are found..                                                                                                                              |
 | `check_retries`         | Optional. If a testcase is retried, ignore the original failure.                                                                                             |
-| `check_title_template`  | Optional. Template to configure the title format. Placeholders: ${{FILE_NAME}}, ${{SUITE_NAME}}, ${{TEST_NAME}}.                                             |
+| `check_title_template`  | Optional. Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}.                                                |
 | `summary`         | Optional. Additional text to summary output                                                                                                                        |
 | `update_check`    | Optional. Uses an alternative API to update checks, use for cases with more than 50 annotations.                                                                   |
 | `annotate_only`   | Optional. Will only annotate the results on the files, won't create a check run.                                                                                   |
