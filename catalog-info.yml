@@ -1,0 +1,16 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: actions-junit-report
+  description: |
+    Reports junit test results as GitHub Pull Request Check
+  annotations:
+    github.com/project-slug: Tradeshift/actions-junit-report
+  tags:
+    - github-action
+    - nodejs
+    - fork
+spec:
+  type: library
+  owner: developer-productivity
+  lifecycle: production
