@@ -9,6 +9,7 @@ export async function run(): Promise<void> {
     const summary = core.getInput('summary')
     const checkTitleTemplate = core.getInput('check_title_template')
     const reportPaths = core.getInput('report_paths')
+    const testFilesPrefix = core.getInput('test_files_prefix')
     const suiteRegex = core.getInput('suite_regex')
     const token =
       core.getInput('token') ||
@@ -92,7 +93,7 @@ export async function run(): Promise<void> {
         for (const annotation of testResult.annotations) {
           const properties: core.AnnotationProperties = {
             title: annotation.title,
-            file: annotation.path,
+            file: testFilesPrefix + '/' + annotation.path,
             startLine: annotation.start_line,
             endLine: annotation.end_line,
             startColumn: annotation.start_column,
