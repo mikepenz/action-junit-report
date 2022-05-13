@@ -15,6 +15,10 @@ inputs:
     description: 'Xml report paths in glob format'
     required: false
     default: '**/junit-reports/TEST-*.xml'
+  test_files_prefix:
+    description: 'Prefix to add to test file paths from report files when annotating'
+    required: false
+    default: ''
   exclude_sources:
     description: 'Comma seperated list of source folders to ignore for lookup'
     required: false

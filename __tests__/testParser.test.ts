@@ -210,6 +210,39 @@ describe('parseFile', () => {
         ]);
     });
 
+    it('should parse pytest results', async () => {
+        const { count, skipped, annotations } = await parseFile('test_results/python/report.xml', '', false, false, ['/build/', '/__pycache__/'], undefined, 'subproject/');
+
+        expect(count).toBe(3);
+        expect(skipped).toBe(0);
+        expect(annotations).toStrictEqual([
+            {
+                path: 'subproject/test_results/python/test_sample.py',
+                start_line: 10,
+                end_line: 10,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: 'failure',
+                title: 'test_sample.test_which_fails',
+                message: "AssertionError: assert 'test' == 'xyz'\n  - xyz\n  + test",
+                raw_details:
+                    "def test_which_fails():\n        event = { 'attr': 'test'}\n>       assert event['attr'] == 'xyz'\nE       AssertionError: assert 'test' == 'xyz'\nE         - xyz\nE         + test\n\npython/test_sample.py:10: AssertionError"
+            },
+            {
+                path: 'subproject/test_results/python/test_sample.py',
+                start_line: 14,
+                end_line: 14,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: 'failure',
+                title: 'test_sample.test_with_error',
+                message: "AttributeError: 'dict' object has no attribute 'attr'",
+                raw_details:
+                    "def test_with_error():\n        event = { 'attr': 'test'}\n>       assert event.attr == 'test'\nE       AttributeError: 'dict' object has no attribute 'attr'\n\npython/test_sample.py:14: AttributeError"
+            }
+        ]);
+    });
+
     it('should parse marathon results', async () => {
         const { count, skipped, annotations } = await parseFile('test_results/marathon_tests/com.mikepenz.DummyTest#test_02_dummy.xml');
 
@@ -432,6 +465,24 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         expect(skipped).toBe(0);
         expect(annotations).toStrictEqual([{
             "path": "/path/test/config.js",
+            "start_line": 1,
+            "end_line": 1,
+            "start_column": 0,
+            "end_column": 0,
+            "annotation_level": "notice",
+            "title": "Config files default config projectUTCOffset should be a callable with current UTC offset",
+            "message": "Config files default config projectUTCOffset should be a callable with current UTC offset",
+            "raw_details": ""
+        }]);
+    });
+
+    it('parse mocha test case, test files prefix', async () => {
+        const { count, skipped, annotations } = await parseFile('test_results/mocha/mocha.xml', '*', true, false, ['/build/', '/__pycache__/'], '{{TEST_NAME}}', 'subproject');
+
+        expect(count).toBe(1);
+        expect(skipped).toBe(0);
+        expect(annotations).toStrictEqual([{
+            "path": "subproject/path/test/config.js",
             "start_line": 1,
             "end_line": 1,
             "start_column": 0,

@@ -42,7 +42,8 @@ export async function run(): Promise<void> {
       includePassed,
       checkRetries,
       excludeSources,
-      checkTitleTemplate
+      checkTitleTemplate,
+      testFilesPrefix
     )
     const foundResults = testResult.count > 0 || testResult.skipped > 0
 
@@ -93,7 +94,7 @@ export async function run(): Promise<void> {
         for (const annotation of testResult.annotations) {
           const properties: core.AnnotationProperties = {
             title: annotation.title,
-            file: testFilesPrefix + '/' + annotation.path,
+            file: annotation.path,
             startLine: annotation.start_line,
             endLine: annotation.end_line,
             startColumn: annotation.start_column,
