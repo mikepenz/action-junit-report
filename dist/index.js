@@ -152,18 +152,17 @@ function run() {
                         yield octokit.rest.checks.create(createCheckRequest);
                     }
                 }
+                let table = [
+                    [{ data: '', header: true }, { data: 'Result', header: true }],
+                    ['Tests', `${testResult.count} run`]
+                ];
+                if (includePassed) {
+                    table.push(['Passed ✅', `${passed} passed`]);
+                }
+                table.push(['Skipped ↪️', `${testResult.skipped} skipped`], ['Failed ❌', `${failed} failed`]);
                 yield core.summary
                     .addHeading(checkName)
-                    .addTable([
-                    [
-                        { data: '', header: true },
-                        { data: 'Result', header: true }
-                    ],
-                    ['Tests', `${testResult.count} tests run`],
-                    ['Passed', `${passed} passed ✅`],
-                    ['Skipped', `${testResult.skipped}`],
-                    ['Failed', `${failed} ❌`]
-                ])
+                    .addTable(table)
                     .write();
                 if (failOnFailure && conclusion === 'failure') {
                     core.setFailed(`❌ Tests reported ${failed} failures`);
