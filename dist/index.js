@@ -152,7 +152,7 @@ function run() {
                         yield octokit.rest.checks.create(createCheckRequest);
                     }
                 }
-                let table = [
+                const table = [
                     [{ data: '', header: true }, { data: 'Result', header: true }],
                     ['Tests', `${testResult.count} run`]
                 ];

@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { SummaryTableRow } from '@actions/core/lib/summary'
+import {SummaryTableRow} from '@actions/core/lib/summary'
 import * as github from '@actions/github'
 import {parseTestReports} from './testParser'
 
@@ -160,11 +160,14 @@ export async function run(): Promise<void> {
         }
       }
 
-      let table: SummaryTableRow[] = [
-        [{data: '', header: true}, {data: 'Result', header: true}],
+      const table: SummaryTableRow[] = [
+        [
+          {data: '', header: true},
+          {data: 'Result', header: true}
+        ],
         ['Tests', `${testResult.count} run`]
       ]
-      if(includePassed) {
+      if (includePassed) {
         table.push(['Passed ✅', `${passed} passed`])
       }
       table.push(
@@ -172,10 +175,7 @@ export async function run(): Promise<void> {
         ['Failed ❌', `${failed} failed`]
       )
 
-      await core.summary
-        .addHeading(checkName)
-        .addTable(table)
-        .write()
+      await core.summary.addHeading(checkName).addTable(table).write()
 
       if (failOnFailure && conclusion === 'failure') {
         core.setFailed(`❌ Tests reported ${failed} failures`)
