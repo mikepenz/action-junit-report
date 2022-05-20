@@ -1,4 +1,5 @@
 import * as core from '@actions/core'
+import {SummaryTableRow} from '@actions/core/lib/summary'
 import * as github from '@actions/github'
 import {parseTestReports} from './testParser'
 
@@ -158,6 +159,23 @@ export async function run(): Promise<void> {
           await octokit.rest.checks.create(createCheckRequest)
         }
       }
+
+      const table: SummaryTableRow[] = [
+        [
+          {data: '', header: true},
+          {data: 'Result', header: true}
+        ],
+        ['Tests', `${testResult.count} run`]
+      ]
+      if (includePassed) {
+        table.push(['Passed ✅', `${passed} passed`])
+      }
+      table.push(
+        ['Skipped ↪️', `${testResult.skipped} skipped`],
+        ['Failed ❌', `${failed} failed`]
+      )
+
+      await core.summary.addHeading(checkName).addTable(table).write()
 
       if (failOnFailure && conclusion === 'failure') {
         core.setFailed(`❌ Tests reported ${failed} failures`)
