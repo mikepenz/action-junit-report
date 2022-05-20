@@ -159,6 +159,20 @@ export async function run(): Promise<void> {
         }
       }
 
+      await core.summary
+        .addHeading(checkName)
+        .addTable([
+          [
+            {data: '', header: true},
+            {data: 'Result', header: true}
+          ],
+          ['Tests', `${testResult.count} tests run`],
+          ['Passed', `${passed} passed ✅`],
+          ['Skipped', `${testResult.skipped}`],
+          ['Failed', `${failed} ❌`]
+        ])
+        .write()
+
       if (failOnFailure && conclusion === 'failure') {
         core.setFailed(`❌ Tests reported ${failed} failures`)
       }
