@@ -50,6 +50,7 @@ function run() {
             const summary = core.getInput('summary');
             const checkTitleTemplate = core.getInput('check_title_template');
             const reportPaths = core.getInput('report_paths');
+            const testFilesPrefix = core.getInput('test_files_prefix');
             const suiteRegex = core.getInput('suite_regex');
             const token = core.getInput('token') ||
                 core.getInput('github_token') ||
@@ -71,7 +72,7 @@ function run() {
             const checkRetries = core.getInput('check_retries') === 'true';
             core.endGroup();
             core.startGroup(`📦 Process test results`);
-            const testResult = yield (0, testParser_1.parseTestReports)(reportPaths, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate);
+            const testResult = yield (0, testParser_1.parseTestReports)(reportPaths, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix);
             const foundResults = testResult.count > 0 || testResult.skipped > 0;
             // get the count of passed and failed tests.
             const passed = testResult.annotations.filter(a => a.annotation_level === 'notice').length;
@@ -153,17 +154,17 @@ function run() {
                     }
                 }
                 const table = [
-                    [{ data: '', header: true }, { data: 'Result', header: true }],
+                    [
+                        { data: '', header: true },
+                        { data: 'Result', header: true }
+                    ],
                     ['Tests', `${testResult.count} run`]
                 ];
                 if (includePassed) {
                     table.push(['Passed ✅', `${passed} passed`]);
                 }
                 table.push(['Skipped ↪️', `${testResult.skipped} skipped`], ['Failed ❌', `${failed} failed`]);
-                yield core.summary
-                    .addHeading(checkName)
-                    .addTable(table)
-                    .write();
+                yield core.summary.addHeading(checkName).addTable(table).write();
                 if (failOnFailure && conclusion === 'failure') {
                     core.setFailed(`❌ Tests reported ${failed} failures`);
                 }
@@ -235,6 +236,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const glob = __importStar(__nccwpck_require__(8090));
 const fs = __importStar(__nccwpck_require__(7147));
 const parser = __importStar(__nccwpck_require__(8821));
+const path = __importStar(__nccwpck_require__(1017));
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
@@ -335,12 +337,12 @@ exports.resolvePath = resolvePath;
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseFile(file, suiteRegex = '', includePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined) {
+function parseFile(file, suiteRegex = '', includePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, testFilesPrefix = '') {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Parsing file ${file}`);
         const data = fs.readFileSync(file, 'utf8');
         const report = JSON.parse(parser.xml2json(data, { compact: true }));
-        return parseSuite(report, '', suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate);
+        return parseSuite(report, '', suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix);
     });
 }
 exports.parseFile = parseFile;
@@ -349,7 +351,7 @@ function templateVar(varName) {
 }
 function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined) {
+suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '') {
     return __awaiter(this, void 0, void 0, function* () {
         let count = 0;
         let skipped = 0;
@@ -380,7 +382,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
                     suiteName = testsuite._attributes.name;
                 }
             }
-            const res = yield parseSuite(testsuite, suiteName, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate);
+            const res = yield parseSuite(testsuite, suiteName, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix);
             count += res.count;
             skipped += res.skipped;
             annotations.push(...res.annotations);
@@ -467,6 +469,10 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
                             ? `${suiteName}/${testcase._attributes.name}`
                             : `${testcase._attributes.name}`;
                     }
+                    // optionally attach the prefix to the path
+                    resolvedPath = testFilesPrefix
+                        ? path.join(testFilesPrefix, resolvedPath)
+                        : resolvedPath;
                     core.info(`${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`);
                     annotations.push({
                         path: resolvedPath,
@@ -492,7 +498,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseTestReports(reportPaths, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined) {
+function parseTestReports(reportPaths, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '') {
     var e_2, _a;
     return __awaiter(this, void 0, void 0, function* () {
         const globber = yield glob.create(reportPaths, { followSymbolicLinks: false });
@@ -502,7 +508,7 @@ function parseTestReports(reportPaths, suiteRegex, includePassed = false, checkR
         try {
             for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
                 const file = _c.value;
-                const { count: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate);
+                const { count: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix);
                 if (c === 0)
                     continue;
                 count += c;

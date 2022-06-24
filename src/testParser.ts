@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import * as glob from '@actions/glob'
 import * as fs from 'fs'
 import * as parser from 'xml-js'
+import * as path from 'path'
 
 export interface TestResult {
   count: number
@@ -133,7 +134,8 @@ export async function parseFile(
   includePassed = false,
   checkRetries = false,
   excludeSources: string[] = ['/build/', '/__pycache__/'],
-  checkTitleTemplate: string | undefined = undefined
+  checkTitleTemplate: string | undefined = undefined,
+  testFilesPrefix = ''
 ): Promise<TestResult> {
   core.debug(`Parsing file ${file}`)
 
@@ -147,7 +149,8 @@ export async function parseFile(
     includePassed,
     checkRetries,
     excludeSources,
-    checkTitleTemplate
+    checkTitleTemplate,
+    testFilesPrefix
   )
 }
 
@@ -163,7 +166,8 @@ async function parseSuite(
   includePassed = false,
   checkRetries = false,
   excludeSources: string[],
-  checkTitleTemplate: string | undefined = undefined
+  checkTitleTemplate: string | undefined = undefined,
+  testFilesPrefix = ''
 ): Promise<TestResult> {
   let count = 0
   let skipped = 0
@@ -205,7 +209,8 @@ async function parseSuite(
       includePassed,
       checkRetries,
       excludeSources,
-      checkTitleTemplate
+      checkTitleTemplate,
+      testFilesPrefix
     )
     count += res.count
     skipped += res.skipped
@@ -313,6 +318,11 @@ async function parseSuite(
             : `${testcase._attributes.name}`
         }
 
+        // optionally attach the prefix to the path
+        resolvedPath = testFilesPrefix
+          ? path.join(testFilesPrefix, resolvedPath)
+          : resolvedPath
+
         core.info(
           `${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`
         )
@@ -347,7 +357,8 @@ export async function parseTestReports(
   includePassed = false,
   checkRetries = false,
   excludeSources: string[],
-  checkTitleTemplate: string | undefined = undefined
+  checkTitleTemplate: string | undefined = undefined,
+  testFilesPrefix = ''
 ): Promise<TestResult> {
   const globber = await glob.create(reportPaths, {followSymbolicLinks: false})
   let annotations: Annotation[] = []
@@ -364,7 +375,8 @@ export async function parseTestReports(
       includePassed,
       checkRetries,
       excludeSources,
-      checkTitleTemplate
+      checkTitleTemplate,
+      testFilesPrefix
     )
     if (c === 0) continue
     count += c
