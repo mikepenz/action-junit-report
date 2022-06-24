@@ -236,7 +236,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const glob = __importStar(__nccwpck_require__(8090));
 const fs = __importStar(__nccwpck_require__(7147));
 const parser = __importStar(__nccwpck_require__(8821));
-const path = __importStar(__nccwpck_require__(1017));
+const pathHelper = __importStar(__nccwpck_require__(1017));
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
@@ -471,7 +471,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
                     }
                     // optionally attach the prefix to the path
                     resolvedPath = testFilesPrefix
-                        ? path.join(testFilesPrefix, resolvedPath)
+                        ? pathHelper.join(testFilesPrefix, resolvedPath)
                         : resolvedPath;
                     core.info(`${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`);
                     annotations.push({
