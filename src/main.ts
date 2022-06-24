@@ -10,6 +10,7 @@ export async function run(): Promise<void> {
     const summary = core.getInput('summary')
     const checkTitleTemplate = core.getInput('check_title_template')
     const reportPaths = core.getInput('report_paths')
+    const testFilesPrefix = core.getInput('test_files_prefix')
     const suiteRegex = core.getInput('suite_regex')
     const token =
       core.getInput('token') ||
@@ -42,7 +43,8 @@ export async function run(): Promise<void> {
       includePassed,
       checkRetries,
       excludeSources,
-      checkTitleTemplate
+      checkTitleTemplate,
+      testFilesPrefix
     )
     const foundResults = testResult.count > 0 || testResult.skipped > 0
 
