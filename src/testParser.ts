@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import * as glob from '@actions/glob'
 import * as fs from 'fs'
 import * as parser from 'xml-js'
-import * as path from 'path'
+import * as pathHelper from 'path'
 
 export interface TestResult {
   count: number
@@ -320,7 +320,7 @@ async function parseSuite(
 
         // optionally attach the prefix to the path
         resolvedPath = testFilesPrefix
-          ? path.join(testFilesPrefix, resolvedPath)
+          ? pathHelper.join(testFilesPrefix, resolvedPath)
           : resolvedPath
 
         core.info(
