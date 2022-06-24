@@ -155,15 +155,20 @@ function run() {
                 }
                 const table = [
                     [
-                        { data: '', header: true },
-                        { data: 'Result', header: true }
+                        { data: 'Tests', header: true },
+                        { data: 'Skipped ↪️', header: true },
+                        { data: 'Failed ❌', header: true }
                     ],
-                    ['Tests', `${testResult.count} run`]
+                    [
+                        `${testResult.count} run`,
+                        `${testResult.skipped} skipped`,
+                        `${failed} failed`
+                    ]
                 ];
                 if (includePassed) {
-                    table.push(['Passed ✅', `${passed} passed`]);
+                    table[0].splice(1, 0, { data: 'Passed ✅', header: true });
+                    table[1].splice(1, 0, `${passed} passed`);
                 }
-                table.push(['Skipped ↪️', `${testResult.skipped} skipped`], ['Failed ❌', `${failed} failed`]);
                 yield core.summary.addHeading(checkName).addTable(table).write();
                 if (failOnFailure && conclusion === 'failure') {
                     core.setFailed(`❌ Tests reported ${failed} failures`);
