@@ -33,7 +33,7 @@
     "@actions/github": "^5.0.3",
     "@actions/glob": "^0.3.0",
     "@octokit/rest": "^18.12.0",
-    "nock": "^13.2.7",
+    "nock": "^13.2.8",
     "webpack": "^5.73.0",
     "xml-js": "^1.6.11"
   },
