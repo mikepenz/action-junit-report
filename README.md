@@ -75,7 +75,7 @@ jobs:
 |----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `report_paths`    | **Required**. [Glob](https://github.com/actions/toolkit/tree/master/packages/glob) expression to junit report paths. The default is `**/junit-reports/TEST-*.xml`. |
 | `token`           | Optional. GitHub token for creating a check run. Set to `${{ github.token }}` by default.                                                                          |
-| `test_files_prefix` | Optional. Prepands the provided prefix to test file paths within the report when annotating on GitHub.                                                           |
+| `test_files_prefix` | Optional. Prepends the provided prefix to test file paths within the report when annotating on GitHub.                                                           |
 | `exclude_sources` | Optional. Provide `,` seperated array of folders to ignore for source lookup. Defaults to: `/build/,/__pycache__/`                                                 |
 | `check_name`      | Optional. Check name to use when creating a check run. The default is `JUnit Test Report`.                                                                         |
 | `suite_regex`     | Optional. Regular expression for the named test suites. E.g. `Test*`                                                                                               |
