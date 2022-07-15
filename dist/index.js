@@ -75,18 +75,13 @@ function run() {
             const testResult = yield (0, testParser_1.parseTestReports)(reportPaths, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix);
             const foundResults = testResult.count > 0 || testResult.skipped > 0;
             // get the count of passed and failed tests.
-            const passed = testResult.annotations.filter(a => a.annotation_level === 'notice').length;
-            const failed = testResult.annotations.length - passed;
+            const failed = testResult.annotations.filter(a => a.annotation_level === 'failure').length;
+            const passed = testResult.count - failed - testResult.skipped;
             core.setOutput('passed', passed);
             core.setOutput('failed', failed);
             let title = 'No test results found!';
             if (foundResults) {
-                if (includePassed) {
-                    title = `${testResult.count} tests run, ${passed} passed, ${testResult.skipped} skipped, ${failed} failed.`;
-                }
-                else {
-                    title = `${testResult.count} tests run, ${testResult.skipped} skipped, ${failed} failed.`;
-                }
+                title = `${testResult.count} tests, ${passed} passed, ${testResult.skipped} skipped, ${failed} failed.`;
             }
             core.info(`ℹ️ ${title}`);
             if (!foundResults) {
@@ -156,19 +151,17 @@ function run() {
                 const table = [
                     [
                         { data: 'Tests', header: true },
+                        { data: 'Passed ✅', header: true },
                         { data: 'Skipped ↪️', header: true },
                         { data: 'Failed ❌', header: true }
                     ],
                     [
                         `${testResult.count} run`,
+                        `${passed} passed`,
                         `${testResult.skipped} skipped`,
                         `${failed} failed`
                     ]
                 ];
-                if (includePassed) {
-                    table[0].splice(1, 0, { data: 'Passed ✅', header: true });
-                    table[1].splice(1, 0, `${passed} passed`);
-                }
                 yield core.summary.addHeading(checkName).addTable(table).write();
                 if (failOnFailure && conclusion === 'failure') {
                     core.setFailed(`❌ Tests reported ${failed} failures`);
@@ -428,8 +421,9 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
                 count++;
                 const failed = testcase.failure || testcase.error;
                 const success = !failed;
-                if (testcase.skipped || testcase._attributes.status === 'disabled')
+                if (testcase.skipped || testcase._attributes.status === 'disabled') {
                     skipped++;
+                }
                 if (failed || (includePassed && success)) {
                     const stackTrace = ((testcase.failure && testcase.failure._cdata) ||
                         (testcase.failure && testcase.failure._text) ||

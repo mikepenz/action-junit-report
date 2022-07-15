@@ -49,21 +49,17 @@ export async function run(): Promise<void> {
     const foundResults = testResult.count > 0 || testResult.skipped > 0
 
     // get the count of passed and failed tests.
-    const passed = testResult.annotations.filter(
-      a => a.annotation_level === 'notice'
+    const failed = testResult.annotations.filter(
+      a => a.annotation_level === 'failure'
     ).length
-    const failed = testResult.annotations.length - passed
+    const passed = testResult.count - failed - testResult.skipped
 
     core.setOutput('passed', passed)
     core.setOutput('failed', failed)
 
     let title = 'No test results found!'
     if (foundResults) {
-      if (includePassed) {
-        title = `${testResult.count} tests run, ${passed} passed, ${testResult.skipped} skipped, ${failed} failed.`
-      } else {
-        title = `${testResult.count} tests run, ${testResult.skipped} skipped, ${failed} failed.`
-      }
+      title = `${testResult.count} tests, ${passed} passed, ${testResult.skipped} skipped, ${failed} failed.`
     }
 
     core.info(`ℹ️ ${title}`)
@@ -165,19 +161,18 @@ export async function run(): Promise<void> {
       const table: SummaryTableRow[] = [
         [
           {data: 'Tests', header: true},
+          {data: 'Passed ✅', header: true},
           {data: 'Skipped ↪️', header: true},
           {data: 'Failed ❌', header: true}
         ],
         [
           `${testResult.count} run`,
+          `${passed} passed`,
           `${testResult.skipped} skipped`,
           `${failed} failed`
         ]
       ]
-      if (includePassed) {
-        table[0].splice(1, 0, {data: 'Passed ✅', header: true})
-        table[1].splice(1, 0, `${passed} passed`)
-      }
+
       await core.summary.addHeading(checkName).addTable(table).write()
 
       if (failOnFailure && conclusion === 'failure') {
