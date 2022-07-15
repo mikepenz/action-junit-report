@@ -81,7 +81,7 @@ function run() {
             core.setOutput('failed', failed);
             let title = 'No test results found!';
             if (foundResults) {
-                title = `${testResult.count} tests, ${passed} passed, ${testResult.skipped} skipped, ${failed} failed.`;
+                title = `${testResult.count} tests run, ${passed} passed, ${testResult.skipped} skipped, ${failed} failed.`;
             }
             core.info(`ℹ️ ${title}`);
             if (!foundResults) {
