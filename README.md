@@ -88,6 +88,23 @@ jobs:
 | `update_check`    | Optional. Uses an alternative API to update checks, use for cases with more than 50 annotations.                                                                   |
 | `annotate_only`   | Optional. Will only annotate the results on the files, won't create a check run.                                                                                   |
 
+### Action outputs
+
+After action execution it will return the test counts as output.
+
+```yml
+# ${{steps.{CHANGELOG_STEP_ID}.outputs.total}}
+```
+
+A full set list of possible output values for this action.
+
+| **Output**            | **Description**                                                                        |
+|-----------------------|----------------------------------------------------------------------------------------|
+| `outputs.total`       | The total number of test cases covered by this test-step.                              |
+| `outputs.passed`      | The number of passed test cases.                                                       |
+| `outputs.skipped`     | The number of skipped test cases.                                                      |
+| `outputs.failed`      | Then umber of failed test cases.                                                       |
+
 ## Sample 🖥️
 
 <div align="center">
