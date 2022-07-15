@@ -257,8 +257,9 @@ async function parseSuite(
       const failed = testcase.failure || testcase.error
       const success = !failed
 
-      if (testcase.skipped || testcase._attributes.status === 'disabled')
+      if (testcase.skipped || testcase._attributes.status === 'disabled') {
         skipped++
+      }
       if (failed || (includePassed && success)) {
         const stackTrace: string = (
           (testcase.failure && testcase.failure._cdata) ||
