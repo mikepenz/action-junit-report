@@ -77,7 +77,9 @@ function run() {
             // get the count of passed and failed tests.
             const failed = testResult.annotations.filter(a => a.annotation_level === 'failure').length;
             const passed = testResult.count - failed - testResult.skipped;
+            core.setOutput('total', testResult.count);
             core.setOutput('passed', passed);
+            core.setOutput('skipped', testResult.skipped);
             core.setOutput('failed', failed);
             let title = 'No test results found!';
             if (foundResults) {

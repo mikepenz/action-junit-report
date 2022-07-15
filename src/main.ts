@@ -54,7 +54,9 @@ export async function run(): Promise<void> {
     ).length
     const passed = testResult.count - failed - testResult.skipped
 
+    core.setOutput('total', testResult.count)
     core.setOutput('passed', passed)
+    core.setOutput('skipped', testResult.skipped)
     core.setOutput('failed', failed)
 
     let title = 'No test results found!'
