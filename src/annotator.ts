@@ -107,7 +107,7 @@ export async function attachSummary(testResults: TestResult[]): Promise<void> {
 
   for (const testResult of testResults) {
     table.push([
-      `${testResult.checkName} run`,
+      `${testResult.checkName}`,
       `${testResult.totalCount} run`,
       `${testResult.passed} passed`,
       `${testResult.skipped} skipped`,

@@ -9,15 +9,15 @@ export function retrieve(name: string, items: string[], index: number, total: nu
     if (items.length === 0) {
       return ''
     } else if (items.length === 1) {
-      return items[0]
+      return items[0].replace("\n","")
     } else if (items.length > index) {
-      return items[index]
+      return items[index].replace("\n","")
     } else {
       core.error(`${name} has no valid config for position ${index}.`)
       return ''
     }
   } else if (items.length === 1) {
-    return items[0]
+    return items[0].replace("\n","")
   } else {
     return ''
   }
