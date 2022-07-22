@@ -199,6 +199,12 @@ function run() {
             const suiteRegex = core.getMultilineInput('suite_regex');
             const excludeSources = core.getMultilineInput('exclude_sources') ? core.getMultilineInput('exclude_sources') : [];
             const checkTitleTemplate = core.getMultilineInput('check_title_template');
+            for (let c of checkName) {
+                core.warning(`ℹ️ checkName: ${c}`);
+            }
+            for (let c of reportPaths) {
+                core.warning(`ℹ️ reportPaths: ${c}`);
+            }
             core.endGroup();
             core.startGroup(`📦 Process test results`);
             const reportsCount = reportPaths.length;
@@ -655,7 +661,7 @@ exports.retrieve = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 function retrieve(name, items, index, total) {
     if (total > 1) {
-        if (items.length !== total) {
+        if (items.length != 0 && items.length !== total) {
             core.warning(`${name} has a different number of items than the 'reportPaths' input. This is usually a bug.`);
         }
         if (items.length === 0) {

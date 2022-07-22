@@ -30,6 +30,13 @@ export async function run(): Promise<void> {
     const excludeSources = core.getMultilineInput('exclude_sources') ? core.getMultilineInput('exclude_sources') : []
     const checkTitleTemplate = core.getMultilineInput('check_title_template')
 
+    for (let c of checkName) {
+      core.warning(`ℹ️ checkName: ${c}`)
+    }
+    for (let c of reportPaths) {
+      core.warning(`ℹ️ reportPaths: ${c}`)
+    }
+
     core.endGroup()
     core.startGroup(`📦 Process test results`)
 
