@@ -199,12 +199,6 @@ function run() {
             const suiteRegex = core.getMultilineInput('suite_regex');
             const excludeSources = core.getMultilineInput('exclude_sources') ? core.getMultilineInput('exclude_sources') : [];
             const checkTitleTemplate = core.getMultilineInput('check_title_template');
-            for (let c of checkName) {
-                core.warning(`ℹ️ checkName: ${c}`);
-            }
-            for (let c of reportPaths) {
-                core.warning(`ℹ️ reportPaths: ${c}`);
-            }
             core.endGroup();
             core.startGroup(`📦 Process test results`);
             const reportsCount = reportPaths.length;
@@ -579,6 +573,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
 function parseTestReports(checkName, summary, reportPaths, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '') {
     var e_2, _a;
     return __awaiter(this, void 0, void 0, function* () {
+        core.info(`Process test report for: ${reportPaths} (${checkName})`);
         const globber = yield glob.create(reportPaths, { followSymbolicLinks: false });
         let annotations = [];
         let totalCount = 0;
@@ -586,6 +581,7 @@ function parseTestReports(checkName, summary, reportPaths, suiteRegex, includePa
         try {
             for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
                 const file = _c.value;
+                core.info("Parsing report file: " + file);
                 const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix);
                 if (c === 0)
                     continue;

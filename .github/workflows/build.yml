@@ -39,7 +39,7 @@ jobs:
             Example Multi JUnit Test Report
             Example Multi Pytest Report
           report_paths: |
-            '**/surefire-reports/TEST-*.xml'
+            **/surefire-reports/TEST-*.xml
             test_results/python/report.xml
           summary: |
             '<table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> multi test </td></tr></tbody></table>'
