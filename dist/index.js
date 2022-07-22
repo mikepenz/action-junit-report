@@ -49,7 +49,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
         if (foundResults) {
             title = `${testResult.totalCount} tests run, ${testResult.passed} passed, ${testResult.skipped} skipped, ${testResult.failed} failed.`;
         }
-        core.info(`ℹ️ ${title}`);
+        core.info(`ℹ️ - ${testResult.checkName} - ${title}`);
         const conclusion = foundResults && testResult.failed <= 0 ? 'success' : 'failure';
         const octokit = github.getOctokit(token);
         if (annotateOnly) {
@@ -78,7 +78,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
                 const checks = yield octokit.rest.checks.listForRef(Object.assign(Object.assign({}, github.context.repo), { ref: headSha, check_name: github.context.job, status: 'in_progress', filter: 'latest' }));
                 core.debug(JSON.stringify(checks, null, 2));
                 const check_run_id = checks.data.check_runs[0].id;
-                core.info(`ℹ️ Updating checks ${testResult.annotations.length}`);
+                core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${testResult.annotations.length}`);
                 for (let i = 0; i < testResult.annotations.length; i = i + 50) {
                     const sliced = testResult.annotations.slice(i, i + 50);
                     const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
@@ -97,7 +97,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
                         annotations: testResult.annotations.slice(0, 50)
                     } });
                 core.debug(JSON.stringify(createCheckRequest, null, 2));
-                core.info(`ℹ️ Creating check`);
+                core.info(`ℹ️ - ${testResult.checkName} - Creating check for`);
                 yield octokit.rest.checks.create(createCheckRequest);
             }
         }
@@ -212,6 +212,7 @@ function run() {
                 passed: 0,
                 annotations: []
             };
+            core.info(`Retrieved ${reportsCount} reports to process.`);
             for (let i = 0; i < reportsCount; i++) {
                 const testResult = yield (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount));
                 mergedResult.totalCount += testResult.totalCount;
@@ -573,7 +574,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
 function parseTestReports(checkName, summary, reportPaths, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '') {
     var e_2, _a;
     return __awaiter(this, void 0, void 0, function* () {
-        core.info(`Process test report for: ${reportPaths} (${checkName})`);
+        core.debug(`Process test report for: ${reportPaths} (${checkName})`);
         const globber = yield glob.create(reportPaths, { followSymbolicLinks: false });
         let annotations = [];
         let totalCount = 0;
@@ -581,7 +582,7 @@ function parseTestReports(checkName, summary, reportPaths, suiteRegex, includePa
         try {
             for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
                 const file = _c.value;
-                core.info("Parsing report file: " + file);
+                core.debug(`Parsing report file: ${file}`);
                 const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix);
                 if (c === 0)
                     continue;
@@ -657,7 +658,7 @@ exports.retrieve = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 function retrieve(name, items, index, total) {
     if (total > 1) {
-        if (items.length != 0 && items.length !== total) {
+        if (items.length !== 0 && items.length !== total) {
             core.warning(`${name} has a different number of items than the 'reportPaths' input. This is usually a bug.`);
         }
         if (items.length === 0) {

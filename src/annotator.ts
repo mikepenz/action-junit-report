@@ -17,7 +17,7 @@ export async function annotateTestResult(
     title = `${testResult.totalCount} tests run, ${testResult.passed} passed, ${testResult.skipped} skipped, ${testResult.failed} failed.`
   }
 
-  core.info(`ℹ️ ${title}`)
+  core.info(`ℹ️ - ${testResult.checkName} - ${title}`)
 
   const conclusion: 'success' | 'failure' = foundResults && testResult.failed <= 0 ? 'success' : 'failure'
 
@@ -54,7 +54,7 @@ export async function annotateTestResult(
 
       const check_run_id = checks.data.check_runs[0].id
 
-      core.info(`ℹ️ Updating checks ${testResult.annotations.length}`)
+      core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${testResult.annotations.length}`)
       for (let i = 0; i < testResult.annotations.length; i = i + 50) {
         const sliced = testResult.annotations.slice(i, i + 50)
 
@@ -88,7 +88,7 @@ export async function annotateTestResult(
 
       core.debug(JSON.stringify(createCheckRequest, null, 2))
 
-      core.info(`ℹ️ Creating check`)
+      core.info(`ℹ️ - ${testResult.checkName} - Creating check for`)
       await octokit.rest.checks.create(createCheckRequest)
     }
   }

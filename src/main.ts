@@ -46,6 +46,8 @@ export async function run(): Promise<void> {
       annotations: []
     }
 
+    core.info(`Retrieved ${reportsCount} reports to process.`)
+
     for (let i = 0; i < reportsCount; i++) {
       const testResult = await parseTestReports(
         retrieve('checkName', checkName, i, reportsCount),

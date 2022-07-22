@@ -350,13 +350,13 @@ export async function parseTestReports(
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = ''
 ): Promise<TestResult> {
-  core.info(`Process test report for: ${reportPaths} (${checkName})`)
+  core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const globber = await glob.create(reportPaths, {followSymbolicLinks: false})
   let annotations: Annotation[] = []
   let totalCount = 0
   let skipped = 0
   for await (const file of globber.globGenerator()) {
-    core.info("Parsing report file: " + file)
+    core.debug(`Parsing report file: ${file}`)
 
     const {
       totalCount: c,
