@@ -42,7 +42,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.attachSummary = exports.annotateTestResult = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-function annotateTestResult(testResult, token, checkName, summary, headSha, annotateOnly, updateCheck) {
+function annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck) {
     return __awaiter(this, void 0, void 0, function* () {
         const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
         let title = 'No test results found!';
@@ -83,7 +83,7 @@ function annotateTestResult(testResult, token, checkName, summary, headSha, anno
                     const sliced = testResult.annotations.slice(i, i + 50);
                     const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
                             title,
-                            summary,
+                            summary: testResult.summary,
                             annotations: sliced
                         } });
                     core.debug(JSON.stringify(updateCheckRequest, null, 2));
@@ -91,9 +91,9 @@ function annotateTestResult(testResult, token, checkName, summary, headSha, anno
                 }
             }
             else {
-                const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: checkName, head_sha: headSha, status: 'completed', conclusion, output: {
+                const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: testResult.checkName, head_sha: headSha, status: 'completed', conclusion, output: {
                         title,
-                        summary,
+                        summary: testResult.summary,
                         annotations: testResult.annotations.slice(0, 50)
                     } });
                 core.debug(JSON.stringify(createCheckRequest, null, 2));
@@ -104,10 +104,11 @@ function annotateTestResult(testResult, token, checkName, summary, headSha, anno
     });
 }
 exports.annotateTestResult = annotateTestResult;
-function attachSummary(testResults, checkName) {
+function attachSummary(testResults) {
     return __awaiter(this, void 0, void 0, function* () {
         const table = [
             [
+                { data: '', header: true },
                 { data: 'Tests', header: true },
                 { data: 'Passed ✅', header: true },
                 { data: 'Skipped ↪️', header: true },
@@ -116,13 +117,14 @@ function attachSummary(testResults, checkName) {
         ];
         for (const testResult of testResults) {
             table.push([
+                `${testResult.checkName} run`,
                 `${testResult.totalCount} run`,
                 `${testResult.passed} passed`,
                 `${testResult.skipped} skipped`,
                 `${testResult.failed} failed`
             ]);
         }
-        yield core.summary.addHeading(checkName).addTable(table).write();
+        yield core.summary.addTable(table).write();
     });
 }
 exports.attachSummary = attachSummary;
@@ -173,15 +175,11 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const annotator_1 = __nccwpck_require__(1365);
 const testParser_1 = __nccwpck_require__(1465);
+const utils_1 = __nccwpck_require__(918);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             core.startGroup(`📘 Reading input values`);
-            const summary = core.getInput('summary');
-            const checkTitleTemplate = core.getInput('check_title_template');
-            const reportPaths = core.getInput('report_paths');
-            const testFilesPrefix = core.getInput('test_files_prefix');
-            const suiteRegex = core.getInput('suite_regex');
             const token = core.getInput('token') || core.getInput('github_token') || process.env.GITHUB_TOKEN;
             if (!token) {
                 core.setFailed('❌ A token is required to execute this action');
@@ -189,49 +187,74 @@ function run() {
             }
             const annotateOnly = core.getInput('annotate_only') === 'true';
             const updateCheck = core.getInput('update_check') === 'true';
-            const checkName = core.getInput('check_name');
             const commit = core.getInput('commit');
             const failOnFailure = core.getInput('fail_on_failure') === 'true';
             const requireTests = core.getInput('require_tests') === 'true';
             const includePassed = core.getInput('include_passed') === 'true';
-            const excludeSources = core.getInput('exclude_sources') ? core.getInput('exclude_sources').split(',') : [];
             const checkRetries = core.getInput('check_retries') === 'true';
+            const reportPaths = core.getMultilineInput('report_paths');
+            const summary = core.getMultilineInput('summary');
+            const checkName = core.getMultilineInput('check_name');
+            const testFilesPrefix = core.getMultilineInput('test_files_prefix');
+            const suiteRegex = core.getMultilineInput('suite_regex');
+            const excludeSources = core.getMultilineInput('exclude_sources') ? core.getMultilineInput('exclude_sources') : [];
+            const checkTitleTemplate = core.getMultilineInput('check_title_template');
             core.endGroup();
             core.startGroup(`📦 Process test results`);
-            const testResult = yield (0, testParser_1.parseTestReports)(reportPaths, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix);
-            core.setOutput('total', testResult.totalCount);
-            core.setOutput('passed', testResult.passed);
-            core.setOutput('skipped', testResult.skipped);
-            core.setOutput('failed', testResult.failed);
-            const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
-            if (!foundResults) {
-                if (requireTests) {
-                    core.setFailed(`❌ No test results found for ${checkName}`);
+            const reportsCount = reportPaths.length;
+            const testResults = [];
+            const mergedResult = {
+                checkName: '',
+                summary: '',
+                totalCount: 0,
+                skipped: 0,
+                failed: 0,
+                passed: 0,
+                annotations: []
+            };
+            for (let i = 0; i < reportsCount; i++) {
+                const testResult = yield (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, 0, reportsCount), (0, utils_1.retrieve)('summary', summary, 0, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, 0, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, 0, reportsCount), includePassed, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, 0, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, 0, reportsCount));
+                mergedResult.totalCount += testResult.totalCount;
+                mergedResult.skipped += testResult.skipped;
+                mergedResult.failed += testResult.failed;
+                mergedResult.passed += testResult.passed;
+                const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
+                if (!foundResults) {
+                    if (requireTests) {
+                        core.setFailed(`❌ No test results found for ${checkName}`);
+                    }
+                    return;
                 }
-                return;
+                testResults.push(testResult);
             }
+            core.setOutput('total', mergedResult.totalCount);
+            core.setOutput('passed', mergedResult.passed);
+            core.setOutput('skipped', mergedResult.skipped);
+            core.setOutput('failed', mergedResult.failed);
             const pullRequest = github.context.payload.pull_request;
             const link = (pullRequest && pullRequest.html_url) || github.context.ref;
-            const conclusion = foundResults && testResult.failed <= 0 ? 'success' : 'failure';
+            const conclusion = mergedResult.totalCount > 0 && mergedResult.failed <= 0 ? 'success' : 'failure';
             const headSha = commit || (pullRequest && pullRequest.head.sha) || github.context.sha;
             core.info(`ℹ️ Posting with conclusion '${conclusion}' to ${link} (sha: ${headSha})`);
             core.endGroup();
             core.startGroup(`🚀 Publish results`);
             try {
-                (0, annotator_1.annotateTestResult)(testResult, token, checkName, summary, headSha, annotateOnly, updateCheck);
+                for (const testResult of testResults) {
+                    (0, annotator_1.annotateTestResult)(testResult, token, headSha, annotateOnly, updateCheck);
+                }
             }
             catch (error) {
                 core.error(`❌ Failed to create checks using the provided token. (${error})`);
                 core.warning(`⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/23`);
             }
             try {
-                (0, annotator_1.attachSummary)([testResult], checkName);
+                (0, annotator_1.attachSummary)(testResults);
             }
             catch (error) {
                 core.error(`❌ Failed to set the summary using the provided token. (${error})`);
             }
             if (failOnFailure && conclusion === 'failure') {
-                core.setFailed(`❌ Tests reported ${testResult.failed} failures`);
+                core.setFailed(`❌ Tests reported ${mergedResult.failed} failures`);
             }
             core.endGroup();
         }
@@ -415,7 +438,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
         let skipped = 0;
         const annotations = [];
         if (!suite.testsuite && !suite.testsuites) {
-            return { totalCount, skipped, failed: 0, passed: 0, annotations };
+            return { totalCount, skipped, annotations };
         }
         const testsuites = suite.testsuite
             ? Array.isArray(suite.testsuite)
@@ -426,7 +449,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
                 : [suite.testsuites.testsuite];
         for (const testsuite of testsuites) {
             if (!testsuite) {
-                return { totalCount, skipped, failed: 0, passed: 0, annotations };
+                return { totalCount, skipped, annotations };
             }
             let suiteName = '';
             if (suiteRegex) {
@@ -537,7 +560,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
                 }
             }
         }
-        return { totalCount, skipped, failed: 0, passed: 0, annotations };
+        return { totalCount, skipped, annotations };
     });
 }
 /**
@@ -547,7 +570,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseTestReports(reportPaths, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '') {
+function parseTestReports(checkName, summary, reportPaths, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '') {
     var e_2, _a;
     return __awaiter(this, void 0, void 0, function* () {
         const globber = yield glob.create(reportPaths, { followSymbolicLinks: false });
@@ -576,6 +599,8 @@ function parseTestReports(reportPaths, suiteRegex, includePassed = false, checkR
         const failed = annotations.filter(a => a.annotation_level === 'failure').length;
         const passed = totalCount - failed - skipped;
         return {
+            checkName,
+            summary,
             totalCount,
             skipped,
             failed,
@@ -593,6 +618,68 @@ function escapeEmoji(input) {
     return input.replace(regex, ``); // replace emoji with empty string (\\u${(match.codePointAt(0) || "").toString(16)})
 }
 exports.escapeEmoji = escapeEmoji;
+
+
+/***/ }),
+
+/***/ 918:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.retrieve = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+function retrieve(name, items, index, total) {
+    if (total > 1) {
+        if (items.length !== total) {
+            core.warning(`${name} has a different number of items than the 'reportPaths' input. This is usually a bug.`);
+        }
+        if (items.length === 0) {
+            return '';
+        }
+        else if (items.length === 1) {
+            return items[0];
+        }
+        else if (items.length > index) {
+            return items[index];
+        }
+        else {
+            core.error(`${name} has no valid config for position ${index}.`);
+            return '';
+        }
+    }
+    else if (items.length === 1) {
+        return items[0];
+    }
+    else {
+        return '';
+    }
+}
+exports.retrieve = retrieve;
 
 
 /***/ }),

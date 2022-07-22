@@ -6,8 +6,6 @@ import {SummaryTableRow} from '@actions/core/lib/summary'
 export async function annotateTestResult(
   testResult: TestResult,
   token: string,
-  checkName: string,
-  summary: string,
   headSha: string,
   annotateOnly: boolean,
   updateCheck: boolean
@@ -65,7 +63,7 @@ export async function annotateTestResult(
           check_run_id,
           output: {
             title,
-            summary,
+            summary: testResult.summary,
             annotations: sliced
           }
         }
@@ -77,13 +75,13 @@ export async function annotateTestResult(
     } else {
       const createCheckRequest = {
         ...github.context.repo,
-        name: checkName,
+        name: testResult.checkName,
         head_sha: headSha,
         status: 'completed',
         conclusion,
         output: {
           title,
-          summary,
+          summary: testResult.summary,
           annotations: testResult.annotations.slice(0, 50)
         }
       }
@@ -96,9 +94,10 @@ export async function annotateTestResult(
   }
 }
 
-export async function attachSummary(testResults: TestResult[], checkName: string): Promise<void> {
+export async function attachSummary(testResults: TestResult[]): Promise<void> {
   const table: SummaryTableRow[] = [
     [
+      {data: '', header: true},
       {data: 'Tests', header: true},
       {data: 'Passed ✅', header: true},
       {data: 'Skipped ↪️', header: true},
@@ -108,6 +107,7 @@ export async function attachSummary(testResults: TestResult[], checkName: string
 
   for (const testResult of testResults) {
     table.push([
+      `${testResult.checkName} run`,
       `${testResult.totalCount} run`,
       `${testResult.passed} passed`,
       `${testResult.skipped} skipped`,
@@ -115,5 +115,5 @@ export async function attachSummary(testResults: TestResult[], checkName: string
     ])
   }
 
-  await core.summary.addHeading(checkName).addTable(table).write()
+  await core.summary.addTable(table).write()
 }

@@ -4,7 +4,15 @@ import * as fs from 'fs'
 import * as parser from 'xml-js'
 import * as pathHelper from 'path'
 
+interface InternalTestResult {
+  totalCount: number
+  skipped: number
+  annotations: Annotation[]
+}
+
 export interface TestResult {
+  checkName: string
+  summary: string
   totalCount: number
   skipped: number
   failed: number
@@ -129,7 +137,7 @@ export async function parseFile(
   excludeSources: string[] = ['/build/', '/__pycache__/'],
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = ''
-): Promise<TestResult> {
+): Promise<InternalTestResult> {
   core.debug(`Parsing file ${file}`)
 
   const data: string = fs.readFileSync(file, 'utf8')
@@ -161,13 +169,13 @@ async function parseSuite(
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = ''
-): Promise<TestResult> {
+): Promise<InternalTestResult> {
   let totalCount = 0
   let skipped = 0
   const annotations: Annotation[] = []
 
   if (!suite.testsuite && !suite.testsuites) {
-    return {totalCount, skipped, failed: 0, passed: 0, annotations}
+    return {totalCount, skipped, annotations}
   }
 
   const testsuites = suite.testsuite
@@ -180,7 +188,7 @@ async function parseSuite(
 
   for (const testsuite of testsuites) {
     if (!testsuite) {
-      return {totalCount, skipped, failed: 0, passed: 0, annotations}
+      return {totalCount, skipped, annotations}
     }
 
     let suiteName = ''
@@ -321,7 +329,7 @@ async function parseSuite(
       }
     }
   }
-  return {totalCount, skipped, failed: 0, passed: 0, annotations}
+  return {totalCount, skipped, annotations}
 }
 
 /**
@@ -332,6 +340,8 @@ async function parseSuite(
  * https://github.com/mikepenz/action-junit-report/
  */
 export async function parseTestReports(
+  checkName: string,
+  summary: string,
   reportPaths: string,
   suiteRegex: string,
   includePassed = false,
@@ -369,6 +379,8 @@ export async function parseTestReports(
   const passed = totalCount - failed - skipped
 
   return {
+    checkName,
+    summary,
     totalCount,
     skipped,
     failed,
