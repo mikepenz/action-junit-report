@@ -78,7 +78,7 @@ export async function annotateTestResult(
       const createCheckRequest = {
         ...github.context.repo,
         name: checkName,
-        headSha,
+        head_sha: headSha,
         status: 'completed',
         conclusion,
         output: {

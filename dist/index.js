@@ -91,7 +91,7 @@ function annotateTestResult(testResult, token, checkName, summary, headSha, anno
                 }
             }
             else {
-                const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: checkName, headSha, status: 'completed', conclusion, output: {
+                const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: checkName, head_sha: headSha, status: 'completed', conclusion, output: {
                         title,
                         summary,
                         annotations: testResult.annotations.slice(0, 50)
