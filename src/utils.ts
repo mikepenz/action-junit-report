@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 
 export function retrieve(name: string, items: string[], index: number, total: number): string {
   if (total > 1) {
-    if (items.length !== total) {
+    if (items.length != 0 && items.length !== total) {
       core.warning(`${name} has a different number of items than the 'reportPaths' input. This is usually a bug.`)
     }
 
