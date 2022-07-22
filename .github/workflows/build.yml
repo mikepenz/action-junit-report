@@ -35,18 +35,18 @@ jobs:
         uses: ./
         if: endsWith(github.ref, 'main') == false
         with:
-          check_name: |
+          check_name: |-
             Example Multi JUnit Test Report
             Example Multi Pytest Report
-          report_paths: |
+          report_paths: |-
             **/surefire-reports/TEST-*.xml
             test_results/python/report.xml
-          summary: |
-            '<table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> multi test </td></tr></tbody></table>'
-            ''
-          check_title_template: |
-            '{{SUITE_NAME}} | {{TEST_NAME}}'
-            ''
+          summary: |-
+            <table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> multi test </td></tr></tbody></table>
+            \n
+          check_title_template: |-
+            {{SUITE_NAME}} | {{TEST_NAME}}
+            \n
         
       - name: Install NPM
         run: |

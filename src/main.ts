@@ -48,15 +48,15 @@ export async function run(): Promise<void> {
 
     for (let i = 0; i < reportsCount; i++) {
       const testResult = await parseTestReports(
-        retrieve('checkName', checkName, 0, reportsCount),
-        retrieve('summary', summary, 0, reportsCount),
-        retrieve('reportPaths', reportPaths, 0, reportsCount),
-        retrieve('suiteRegex', suiteRegex, 0, reportsCount),
+        retrieve('checkName', checkName, i, reportsCount),
+        retrieve('summary', summary, i, reportsCount),
+        retrieve('reportPaths', reportPaths, i, reportsCount),
+        retrieve('suiteRegex', suiteRegex, i, reportsCount),
         includePassed,
         checkRetries,
         excludeSources,
-        retrieve('checkTitleTemplate', checkTitleTemplate, 0, reportsCount),
-        retrieve('testFilesPrefix', testFilesPrefix, 0, reportsCount)
+        retrieve('checkTitleTemplate', checkTitleTemplate, i, reportsCount),
+        retrieve('testFilesPrefix', testFilesPrefix, i, reportsCount)
       )
 
       mergedResult.totalCount += testResult.totalCount
