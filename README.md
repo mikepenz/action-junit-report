@@ -105,15 +105,17 @@ A full set list of possible output values for this action.
 | `outputs.skipped`     | The number of skipped test cases.                                                      |
 | `outputs.failed`      | Then umber of failed test cases.                                                       |
 
-### Run for pull requests
+### PR run permissions
 
 For [security reasons], the github token used for `pull_request` workflows is [maxed at read-only].
 If you want to post checks to a PR from an external repository, you will need to use a separate workflow
-which has a read/write tokan; this is the purpose of the [`workflow_run`] event. Instead of the above workflow:
+which has a read/write token, or use a PAT with elevated permissions. 
 
 [security reasons]: https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
 [maxed at read-only]: https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
-[`workflow_run`]: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_run
+
+<details><summary><b>Example</b></summary>
+<p>
 
 ```yml
 name: build
@@ -126,7 +128,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Build and Run Tests
         run: # execute your tests generating test results
       - name: Upload Test Report
@@ -143,6 +145,7 @@ on:
   workflow_run:
     workflows: [build]
     types: [completed]
+    
 permissions:
   checks: write
 
@@ -151,11 +154,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download Test Report
-        uses: dawidd6/action-download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: junit-test-results
-          workflow: ${{ github.event.workflow.id }}
-          run_id: ${{ github.event.workflow_run.id }}
+        
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v3
         with:
@@ -164,6 +166,9 @@ jobs:
 ```
 
 This will securely post the check results from the privileged workflow onto the PR's checks report. 
+
+</p>
+</details>
 
 ## Sample 🖥️
 
