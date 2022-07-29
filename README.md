@@ -105,6 +105,71 @@ A full set list of possible output values for this action.
 | `outputs.skipped`     | The number of skipped test cases.                                                      |
 | `outputs.failed`      | Then umber of failed test cases.                                                       |
 
+### PR run permissions
+
+For [security reasons], the github token used for `pull_request` workflows is [maxed at read-only].
+If you want to post checks to a PR from an external repository, you will need to use a separate workflow
+which has a read/write token, or use a PAT with elevated permissions. 
+
+[security reasons]: https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+[maxed at read-only]: https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+
+<details><summary><b>Example</b></summary>
+<p>
+
+```yml
+name: build
+on:
+  pull_request:
+
+jobs:
+  build:
+    name: Build and Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Build and Run Tests
+        run: # execute your tests generating test results
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v3
+        if: always() # always run even if the previous step fails
+        with:
+          name: junit-test-results
+          path: '**/build/test-results/test/TEST-*.xml'
+          retention-days: 1
+
+---
+name: report
+on:
+  workflow_run:
+    workflows: [build]
+    types: [completed]
+    
+permissions:
+  checks: write
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Test Report
+        uses: actions/download-artifact@v3
+        with:
+          name: junit-test-results
+        
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v3
+        with:
+          commit: ${{github.event.workflow_run.head_sha}}
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+```
+
+This will securely post the check results from the privileged workflow onto the PR's checks report. 
+
+</p>
+</details>
+
 ## Sample 🖥️
 
 <div align="center">
