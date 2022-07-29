@@ -154,10 +154,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download Test Report
-        uses: actions/download-artifact@v3
+        uses: dawidd6/action-download-artifact@v2
         with:
           name: junit-test-results
-        
+          workflow: ${{ github.event.workflow.id }}
+          run_id: ${{ github.event.workflow_run.id }}
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v3
         with:
