@@ -4,9 +4,19 @@ import * as fs from 'fs'
 import * as parser from 'xml-js'
 import * as pathHelper from 'path'
 
-export interface TestResult {
-  count: number
+interface InternalTestResult {
+  totalCount: number
   skipped: number
+  annotations: Annotation[]
+}
+
+export interface TestResult {
+  checkName: string
+  summary: string
+  totalCount: number
+  skipped: number
+  failed: number
+  passed: number
   annotations: Annotation[]
 }
 
@@ -47,13 +57,9 @@ export async function resolveFileAndLine(
       return {fileName, line: lineNumber}
     }
 
-    const escapedFileName = fileName
-      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      .replace('::', '/') // Rust test output contains colons between package names - See: https://github.com/mikepenz/action-junit-report/pull/359
+    const escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('::', '/') // Rust test output contains colons between package names - See: https://github.com/mikepenz/action-junit-report/pull/359
 
-    const matches = output.match(
-      new RegExp(` [^ ]*${escapedFileName}.*?:\\d+`, 'g')
-    )
+    const matches = output.match(new RegExp(` [^ ]*${escapedFileName}.*?:\\d+`, 'g'))
     if (!matches) return {fileName, line: lineNumber || 1}
 
     const [lastItem] = matches.slice(-1)
@@ -74,9 +80,7 @@ export async function resolveFileAndLine(
 
     return {fileName, line: safeParseInt(line) || -1}
   } catch (error) {
-    core.warning(
-      `⚠️ Failed to resolve file (${file}) and/or line (${line}) for ${className}`
-    )
+    core.warning(`⚠️ Failed to resolve file (${file}) and/or line (${line}) for ${className}`)
     return {fileName, line: safeParseInt(line) || -1}
   }
 }
@@ -98,10 +102,7 @@ function safeParseInt(line: string | null): number | null {
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-export async function resolvePath(
-  fileName: string,
-  excludeSources: string[]
-): Promise<string> {
+export async function resolvePath(fileName: string, excludeSources: string[]): Promise<string> {
   core.debug(`Resolving path for ${fileName}`)
   const normalizedFilename = fileName.replace(/^\.\//, '') // strip relative prefix (./)
   const globber = await glob.create(`**/${normalizedFilename}.*`, {
@@ -136,7 +137,7 @@ export async function parseFile(
   excludeSources: string[] = ['/build/', '/__pycache__/'],
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = ''
-): Promise<TestResult> {
+): Promise<InternalTestResult> {
   core.debug(`Parsing file ${file}`)
 
   const data: string = fs.readFileSync(file, 'utf8')
@@ -168,13 +169,13 @@ async function parseSuite(
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = ''
-): Promise<TestResult> {
-  let count = 0
+): Promise<InternalTestResult> {
+  let totalCount = 0
   let skipped = 0
   const annotations: Annotation[] = []
 
   if (!suite.testsuite && !suite.testsuites) {
-    return {count, skipped, annotations}
+    return {totalCount, skipped, annotations}
   }
 
   const testsuites = suite.testsuite
@@ -187,7 +188,7 @@ async function parseSuite(
 
   for (const testsuite of testsuites) {
     if (!testsuite) {
-      return {count, skipped, annotations}
+      return {totalCount, skipped, annotations}
     }
 
     let suiteName = ''
@@ -212,7 +213,7 @@ async function parseSuite(
       checkTitleTemplate,
       testFilesPrefix
     )
-    count += res.count
+    totalCount += res.totalCount
     skipped += res.skipped
     annotations.push(...res.annotations)
 
@@ -234,8 +235,7 @@ async function parseSuite(
         if (testcaseMap.get(key) !== undefined) {
           // testcase with matching name exists
           const failed = testcase.failure || testcase.error
-          const previousFailed =
-            testcaseMap.get(key).failure || testcaseMap.get(key).error
+          const previousFailed = testcaseMap.get(key).failure || testcaseMap.get(key).error
           if (failed && !previousFailed) {
             // previous is a success, drop failure
             core.debug(`Drop flaky test failure for (1): ${key}`)
@@ -252,7 +252,7 @@ async function parseSuite(
     }
 
     for (const testcase of testcases) {
-      count++
+      totalCount++
 
       const failed = testcase.failure || testcase.error
       const success = !failed
@@ -272,12 +272,8 @@ async function parseSuite(
           .trim()
 
         const message: string = (
-          (testcase.failure &&
-            testcase.failure._attributes &&
-            testcase.failure._attributes.message) ||
-          (testcase.error &&
-            testcase.error._attributes &&
-            testcase.error._attributes.message) ||
+          (testcase.failure && testcase.failure._attributes && testcase.failure._attributes.message) ||
+          (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
           stackTrace.split('\n').slice(0, 2).join('\n') ||
           testcase._attributes.name
         ).trim()
@@ -285,9 +281,7 @@ async function parseSuite(
         const pos = await resolveFileAndLine(
           testcase._attributes.file || testsuite._attributes.file,
           testcase._attributes.line || testsuite._attributes.line,
-          testcase._attributes.classname
-            ? testcase._attributes.classname
-            : testcase._attributes.name,
+          testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name,
           stackTrace
         )
 
@@ -303,8 +297,7 @@ async function parseSuite(
         let title = ''
         if (checkTitleTemplate) {
           // ensure to not duplicate the test_name if file_name is equal
-          const fileName =
-            pos.fileName !== testcase._attributes.name ? pos.fileName : ''
+          const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : ''
           title = checkTitleTemplate
             .replace(templateVar('FILE_NAME'), fileName)
             .replace(templateVar('SUITE_NAME'), suiteName ?? '')
@@ -314,19 +307,13 @@ async function parseSuite(
             ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
             : `${pos.fileName}.${testcase._attributes.name}`
         } else {
-          title = suiteName
-            ? `${suiteName}/${testcase._attributes.name}`
-            : `${testcase._attributes.name}`
+          title = suiteName ? `${suiteName}/${testcase._attributes.name}` : `${testcase._attributes.name}`
         }
 
         // optionally attach the prefix to the path
-        resolvedPath = testFilesPrefix
-          ? pathHelper.join(testFilesPrefix, resolvedPath)
-          : resolvedPath
+        resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath
 
-        core.info(
-          `${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`
-        )
+        core.info(`${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`)
 
         annotations.push({
           path: resolvedPath,
@@ -342,7 +329,7 @@ async function parseSuite(
       }
     }
   }
-  return {count, skipped, annotations}
+  return {totalCount, skipped, annotations}
 }
 
 /**
@@ -353,6 +340,8 @@ async function parseSuite(
  * https://github.com/mikepenz/action-junit-report/
  */
 export async function parseTestReports(
+  checkName: string,
+  summary: string,
   reportPaths: string,
   suiteRegex: string,
   includePassed = false,
@@ -361,13 +350,16 @@ export async function parseTestReports(
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = ''
 ): Promise<TestResult> {
+  core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const globber = await glob.create(reportPaths, {followSymbolicLinks: false})
   let annotations: Annotation[] = []
-  let count = 0
+  let totalCount = 0
   let skipped = 0
   for await (const file of globber.globGenerator()) {
+    core.debug(`Parsing report file: ${file}`)
+
     const {
-      count: c,
+      totalCount: c,
       skipped: s,
       annotations: a
     } = await parseFile(
@@ -380,11 +372,24 @@ export async function parseTestReports(
       testFilesPrefix
     )
     if (c === 0) continue
-    count += c
+    totalCount += c
     skipped += s
     annotations = annotations.concat(a)
   }
-  return {count, skipped, annotations}
+
+  // get the count of passed and failed tests.
+  const failed = annotations.filter(a => a.annotation_level === 'failure').length
+  const passed = totalCount - failed - skipped
+
+  return {
+    checkName,
+    summary,
+    totalCount,
+    skipped,
+    failed,
+    passed,
+    annotations
+  }
 }
 
 /**
