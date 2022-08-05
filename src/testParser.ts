@@ -3,6 +3,7 @@ import * as glob from '@actions/glob'
 import * as fs from 'fs'
 import * as parser from 'xml-js'
 import * as pathHelper from 'path'
+import {applyTransformer} from './utils'
 
 interface InternalTestResult {
   totalCount: number
@@ -37,6 +38,11 @@ export interface Position {
   line: number
 }
 
+export interface Transformer {
+  searchValue: string
+  replaceValue: string
+}
+
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
@@ -48,7 +54,8 @@ export async function resolveFileAndLine(
   file: string | null,
   line: string | null,
   className: string,
-  output: String
+  output: string,
+  transformer: Transformer[] = []
 ): Promise<Position> {
   let fileName = file ? file : className.split('.').slice(-1)[0]
   const lineNumber = safeParseInt(line)
@@ -57,8 +64,10 @@ export async function resolveFileAndLine(
       return {fileName, line: lineNumber}
     }
 
-    const escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('::', '/') // Rust test output contains colons between package names - See: https://github.com/mikepenz/action-junit-report/pull/359
-
+    let escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    for (const r of transformer) {
+      escapedFileName = applyTransformer(r, escapedFileName)
+    }
     const matches = output.match(new RegExp(` [^ ]*${escapedFileName}.*?:\\d+`, 'g'))
     if (!matches) return {fileName, line: lineNumber || 1}
 
@@ -136,7 +145,8 @@ export async function parseFile(
   checkRetries = false,
   excludeSources: string[] = ['/build/', '/__pycache__/'],
   checkTitleTemplate: string | undefined = undefined,
-  testFilesPrefix = ''
+  testFilesPrefix = '',
+  transformer: Transformer[] = []
 ): Promise<InternalTestResult> {
   core.debug(`Parsing file ${file}`)
 
@@ -151,7 +161,8 @@ export async function parseFile(
     checkRetries,
     excludeSources,
     checkTitleTemplate,
-    testFilesPrefix
+    testFilesPrefix,
+    transformer
   )
 }
 
@@ -168,7 +179,8 @@ async function parseSuite(
   checkRetries = false,
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
-  testFilesPrefix = ''
+  testFilesPrefix = '',
+  transformer: Transformer[]
 ): Promise<InternalTestResult> {
   let totalCount = 0
   let skipped = 0
@@ -211,7 +223,8 @@ async function parseSuite(
       checkRetries,
       excludeSources,
       checkTitleTemplate,
-      testFilesPrefix
+      testFilesPrefix,
+      transformer
     )
     totalCount += res.totalCount
     skipped += res.skipped
@@ -282,7 +295,8 @@ async function parseSuite(
           testcase._attributes.file || testsuite._attributes.file,
           testcase._attributes.line || testsuite._attributes.line,
           testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name,
-          stackTrace
+          stackTrace,
+          transformer
         )
 
         let resolvedPath = await resolvePath(pos.fileName, excludeSources)
@@ -348,7 +362,8 @@ export async function parseTestReports(
   checkRetries = false,
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
-  testFilesPrefix = ''
+  testFilesPrefix = '',
+  transformer: Transformer[]
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const globber = await glob.create(reportPaths, {followSymbolicLinks: false})
@@ -369,7 +384,8 @@ export async function parseTestReports(
       checkRetries,
       excludeSources,
       checkTitleTemplate,
-      testFilesPrefix
+      testFilesPrefix,
+      transformer
     )
     if (c === 0) continue
     totalCount += c

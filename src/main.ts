@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {annotateTestResult, attachSummary} from './annotator'
 import {parseTestReports, TestResult} from './testParser'
-import {retrieve} from './utils'
+import {readTransformers, retrieve} from './utils'
 
 export async function run(): Promise<void> {
   try {
@@ -29,6 +29,7 @@ export async function run(): Promise<void> {
     const suiteRegex = core.getMultilineInput('suite_regex')
     const excludeSources = core.getMultilineInput('exclude_sources') ? core.getMultilineInput('exclude_sources') : []
     const checkTitleTemplate = core.getMultilineInput('check_title_template')
+    const transformers = readTransformers(core.getInput('transformers', {trimWhitespace: true}))
 
     core.endGroup()
     core.startGroup(`📦 Process test results`)
@@ -58,7 +59,8 @@ export async function run(): Promise<void> {
         checkRetries,
         excludeSources,
         retrieve('checkTitleTemplate', checkTitleTemplate, i, reportsCount),
-        retrieve('testFilesPrefix', testFilesPrefix, i, reportsCount)
+        retrieve('testFilesPrefix', testFilesPrefix, i, reportsCount),
+        transformers
       )
 
       mergedResult.totalCount += testResult.totalCount

@@ -101,7 +101,8 @@ test.py:14: AttributeError
         `thread &#x27;project::admission_webhook_tests::it_should_be_possible_to_update_projects&#x27; panicked at &#x27;boom&#x27;, tests/project/admission_webhook_tests.rs:48:38
 note: run with &#x60;RUST_BACKTRACE&#x3D;1&#x60; environment variable to display a backtrace
 
-  `
+  `,
+        [{"searchValue":"::","replaceValue":"/"}]
       );
       expect(line).toBe(48);
       expect(fileName).toBe('tests/project/admission_webhook_tests.rs');
@@ -115,7 +116,8 @@ note: run with &#x60;RUST_BACKTRACE&#x3D;1&#x60; environment variable to display
       `thread 'project::manifest_secrets::it_should_skip_annotated_manifests' panicked at 'assertion failed: \`(left == right)\`\\n" +
         '  left: \`0\`,\\n' +
         " right: \`42\`: all manifests should be skipped', tests/project/manifest_secrets.rs:305:5
-  `
+  `,
+      [{"searchValue":"::","replaceValue":"/"}]
     );
     expect(line).toBe(305);
     expect(fileName).toBe('tests/project/manifest_secrets.rs');

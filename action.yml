@@ -66,6 +66,10 @@ inputs:
     description: 'If a testcase is retried, ignore the original failure.'
     required: false
     default: 'false'
+  transformers:
+    description: 'Provide a regex pattern and target pattern'
+    required: false
+    default: '[{"searchValue":"::","replaceValue":"/"}]' # Rust test output contains colons between package names - See: https://github.com/mikepenz/action-junit-report/pull/359
 runs:
   using: 'node16'
   main: 'dist/index.js'
