@@ -701,6 +701,7 @@ function readTransformers(raw) {
     }
     catch (error) {
         core.info(`⚠️ Transformers provided, but they couldn't be parsed. Fallback to Defaults.`);
+        core.debug(`  Provided input: ${raw}`);
         return [];
     }
 }
