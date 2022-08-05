@@ -66,6 +66,10 @@ inputs:
     description: 'If a testcase is retried, ignore the original failure.'
     required: false
     default: 'false'
+  transformers:
+    description: 'Provide a regex pattern and target pattern'
+    required: false
+    default: '[]'
 runs:
   using: 'node16'
   main: 'dist/index.js'

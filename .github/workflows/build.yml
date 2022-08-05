@@ -47,6 +47,8 @@ jobs:
           check_title_template: |-
             {{SUITE_NAME}} | {{TEST_NAME}}
             \n
+          transformers: |
+            [{"searchValue":"::","replaceValue":"/"}]
         
       - name: Install NPM
         run: |

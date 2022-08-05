@@ -199,6 +199,7 @@ function run() {
             const suiteRegex = core.getMultilineInput('suite_regex');
             const excludeSources = core.getMultilineInput('exclude_sources') ? core.getMultilineInput('exclude_sources') : [];
             const checkTitleTemplate = core.getMultilineInput('check_title_template');
+            const transformers = (0, utils_1.readTransformers)(core.getInput('transformers', { trimWhitespace: true }));
             core.endGroup();
             core.startGroup(`📦 Process test results`);
             const reportsCount = reportPaths.length;
@@ -214,7 +215,7 @@ function run() {
             };
             core.info(`Retrieved ${reportsCount} reports to process.`);
             for (let i = 0; i < reportsCount; i++) {
-                const testResult = yield (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount));
+                const testResult = yield (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers);
                 mergedResult.totalCount += testResult.totalCount;
                 mergedResult.skipped += testResult.skipped;
                 mergedResult.failed += testResult.failed;
@@ -321,6 +322,7 @@ const glob = __importStar(__nccwpck_require__(8090));
 const fs = __importStar(__nccwpck_require__(7147));
 const parser = __importStar(__nccwpck_require__(8821));
 const pathHelper = __importStar(__nccwpck_require__(1017));
+const utils_1 = __nccwpck_require__(918);
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
@@ -419,12 +421,12 @@ exports.resolvePath = resolvePath;
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseFile(file, suiteRegex = '', includePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, testFilesPrefix = '') {
+function parseFile(file, suiteRegex = '', includePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, testFilesPrefix = '', transformer = []) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Parsing file ${file}`);
         const data = fs.readFileSync(file, 'utf8');
         const report = JSON.parse(parser.xml2json(data, { compact: true }));
-        return parseSuite(report, '', suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix);
+        return parseSuite(report, '', suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer);
     });
 }
 exports.parseFile = parseFile;
@@ -433,7 +435,7 @@ function templateVar(varName) {
 }
 function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '') {
+suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer) {
     return __awaiter(this, void 0, void 0, function* () {
         let totalCount = 0;
         let skipped = 0;
@@ -464,7 +466,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
                     suiteName = testsuite._attributes.name;
                 }
             }
-            const res = yield parseSuite(testsuite, suiteName, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix);
+            const res = yield parseSuite(testsuite, suiteName, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer);
             totalCount += res.totalCount;
             skipped += res.skipped;
             annotations.push(...res.annotations);
@@ -521,7 +523,11 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
                         stackTrace.split('\n').slice(0, 2).join('\n') ||
                         testcase._attributes.name).trim();
                     const pos = yield resolveFileAndLine(testcase._attributes.file || testsuite._attributes.file, testcase._attributes.line || testsuite._attributes.line, testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
-                    let resolvedPath = yield resolvePath(pos.fileName, excludeSources);
+                    let transformedFileName = pos.fileName;
+                    for (const r of transformer) {
+                        transformedFileName = (0, utils_1.applyTransformer)(r, transformedFileName);
+                    }
+                    let resolvedPath = yield resolvePath(transformedFileName, excludeSources);
                     core.debug(`Path prior to stripping: ${resolvedPath}`);
                     const githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
                     if (githubWorkspacePath) {
@@ -571,7 +577,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseTestReports(checkName, summary, reportPaths, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '') {
+function parseTestReports(checkName, summary, reportPaths, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer) {
     var e_2, _a;
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Process test report for: ${reportPaths} (${checkName})`);
@@ -583,7 +589,7 @@ function parseTestReports(checkName, summary, reportPaths, suiteRegex, includePa
             for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
                 const file = _c.value;
                 core.debug(`Parsing report file: ${file}`);
-                const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix);
+                const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer);
                 if (c === 0)
                     continue;
                 totalCount += c;
@@ -654,7 +660,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.retrieve = void 0;
+exports.applyTransformer = exports.readTransformers = exports.retrieve = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 function retrieve(name, items, index, total) {
     if (total > 1) {
@@ -665,10 +671,10 @@ function retrieve(name, items, index, total) {
             return '';
         }
         else if (items.length === 1) {
-            return items[0].replace("\n", "");
+            return items[0].replace('\n', '');
         }
         else if (items.length > index) {
-            return items[index].replace("\n", "");
+            return items[index].replace('\n', '');
         }
         else {
             core.error(`${name} has no valid config for position ${index}.`);
@@ -676,13 +682,42 @@ function retrieve(name, items, index, total) {
         }
     }
     else if (items.length === 1) {
-        return items[0].replace("\n", "");
+        return items[0].replace('\n', '');
     }
     else {
         return '';
     }
 }
 exports.retrieve = retrieve;
+/**
+ * Reads in the configuration from the JSON file
+ */
+function readTransformers(raw) {
+    if (!raw) {
+        return [];
+    }
+    try {
+        const transformers = JSON.parse(raw);
+        return transformers;
+    }
+    catch (error) {
+        core.info(`⚠️ Transformers provided, but they couldn't be parsed. Fallback to Defaults.`);
+        core.debug(`  Provided input: ${raw}`);
+        return [];
+    }
+}
+exports.readTransformers = readTransformers;
+function applyTransformer(transformer, string) {
+    try {
+        const regExp = new RegExp(transformer.searchValue.replace('\\\\', '\\'), 'gu');
+        return string.replace(regExp, transformer.replaceValue);
+    }
+    catch (e) {
+        core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue}`);
+        return string.replace(transformer.searchValue, transformer.replaceValue);
+    }
+}
+exports.applyTransformer = applyTransformer;
 
 
 /***/ }),

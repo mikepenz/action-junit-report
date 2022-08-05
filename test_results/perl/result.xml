@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="common" tests="1" failures="0" errors="0" skipped="0" time="0.001" timestamp="2020-10-12T20:17:41">
+    <testcase name="L123: ..." classname="t.Foo.Bar.Blah.Blah.Blah.FileName_t" time="4.50611114501953e-05" />
+</testsuite>

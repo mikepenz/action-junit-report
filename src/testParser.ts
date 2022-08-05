@@ -3,6 +3,7 @@ import * as glob from '@actions/glob'
 import * as fs from 'fs'
 import * as parser from 'xml-js'
 import * as pathHelper from 'path'
+import {applyTransformer} from './utils'
 
 interface InternalTestResult {
   totalCount: number
@@ -37,6 +38,11 @@ export interface Position {
   line: number
 }
 
+export interface Transformer {
+  searchValue: string
+  replaceValue: string
+}
+
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
@@ -48,7 +54,7 @@ export async function resolveFileAndLine(
   file: string | null,
   line: string | null,
   className: string,
-  output: String
+  output: string
 ): Promise<Position> {
   let fileName = file ? file : className.split('.').slice(-1)[0]
   const lineNumber = safeParseInt(line)
@@ -136,7 +142,8 @@ export async function parseFile(
   checkRetries = false,
   excludeSources: string[] = ['/build/', '/__pycache__/'],
   checkTitleTemplate: string | undefined = undefined,
-  testFilesPrefix = ''
+  testFilesPrefix = '',
+  transformer: Transformer[] = []
 ): Promise<InternalTestResult> {
   core.debug(`Parsing file ${file}`)
 
@@ -151,7 +158,8 @@ export async function parseFile(
     checkRetries,
     excludeSources,
     checkTitleTemplate,
-    testFilesPrefix
+    testFilesPrefix,
+    transformer
   )
 }
 
@@ -168,7 +176,8 @@ async function parseSuite(
   checkRetries = false,
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
-  testFilesPrefix = ''
+  testFilesPrefix = '',
+  transformer: Transformer[]
 ): Promise<InternalTestResult> {
   let totalCount = 0
   let skipped = 0
@@ -211,7 +220,8 @@ async function parseSuite(
       checkRetries,
       excludeSources,
       checkTitleTemplate,
-      testFilesPrefix
+      testFilesPrefix,
+      transformer
     )
     totalCount += res.totalCount
     skipped += res.skipped
@@ -285,7 +295,11 @@ async function parseSuite(
           stackTrace
         )
 
-        let resolvedPath = await resolvePath(pos.fileName, excludeSources)
+        let transformedFileName = pos.fileName
+        for (const r of transformer) {
+          transformedFileName = applyTransformer(r, transformedFileName)
+        }
+        let resolvedPath = await resolvePath(transformedFileName, excludeSources)
 
         core.debug(`Path prior to stripping: ${resolvedPath}`)
 
@@ -348,7 +362,8 @@ export async function parseTestReports(
   checkRetries = false,
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
-  testFilesPrefix = ''
+  testFilesPrefix = '',
+  transformer: Transformer[]
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const globber = await glob.create(reportPaths, {followSymbolicLinks: false})
@@ -369,7 +384,8 @@ export async function parseTestReports(
       checkRetries,
       excludeSources,
       checkTitleTemplate,
-      testFilesPrefix
+      testFilesPrefix,
+      transformer
     )
     if (c === 0) continue
     totalCount += c

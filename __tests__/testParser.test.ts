@@ -1,4 +1,4 @@
-import { resolveFileAndLine, resolvePath, parseFile } from '../src/testParser'
+import { resolveFileAndLine, resolvePath, parseFile, Transformer } from '../src/testParser'
 
 /**
  * Original test cases:
@@ -582,6 +582,37 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
                 start_line: 15,
                 title: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.retried flaky test",
             }
+        ]);
+    });
+
+    it('should parse and transform perl results', async () => {
+        
+        const transformer: Transformer[] =  [
+            {
+              searchValue: "\\.",
+              replaceValue: "/",
+            },
+            {
+                searchValue: "(.+?)_t",
+                replaceValue: "$1\.t",
+            }
+        ]
+        const { totalCount, skipped, annotations } = await parseFile('test_results/perl/result.xml', '', true, undefined, undefined, undefined, undefined, transformer);
+
+        expect(totalCount).toBe(1);
+        expect(skipped).toBe(0);
+        expect(annotations).toStrictEqual([
+            {
+              path: "FileName.t",
+              start_line: 1,
+              end_line: 1,
+              start_column: 0,
+              end_column: 0,
+              annotation_level: "notice",
+              title: "FileName_t.L123: ...",
+              message: "L123: ...",
+              raw_details: "",
+            },
         ]);
     });
 });
