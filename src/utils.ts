@@ -42,13 +42,11 @@ export function readTransformers(raw: string | undefined): Transformer[] {
 }
 
 export function applyTransformer(transformer: Transformer, string: string): string {
-  if (transformer.searchValue.startsWith('/')) {
-    try {
-      const regExp = new RegExp(transformer.searchValue.replace('\\\\', '\\'), 'gu')
-      return string.replace(regExp, transformer.replaceValue)
-    } catch (e) {
-      core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue}`)
-    }
+  try {
+    const regExp = new RegExp(transformer.searchValue.replace('\\\\', '\\'), 'gu')
+    return string.replace(regExp, transformer.replaceValue)
+  } catch (e) {
+    core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue}`)
+    return string.replace(transformer.searchValue, transformer.replaceValue)
   }
-  return string.replace(transformer.searchValue, transformer.replaceValue)
 }

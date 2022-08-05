@@ -1,4 +1,4 @@
-import { resolveFileAndLine, resolvePath, parseFile } from '../src/testParser'
+import { resolveFileAndLine, resolvePath, parseFile, Transformer } from '../src/testParser'
 
 /**
  * Original test cases:
@@ -101,8 +101,7 @@ test.py:14: AttributeError
         `thread &#x27;project::admission_webhook_tests::it_should_be_possible_to_update_projects&#x27; panicked at &#x27;boom&#x27;, tests/project/admission_webhook_tests.rs:48:38
 note: run with &#x60;RUST_BACKTRACE&#x3D;1&#x60; environment variable to display a backtrace
 
-  `,
-        [{"searchValue":"::","replaceValue":"/"}]
+  `
       );
       expect(line).toBe(48);
       expect(fileName).toBe('tests/project/admission_webhook_tests.rs');
@@ -116,8 +115,7 @@ note: run with &#x60;RUST_BACKTRACE&#x3D;1&#x60; environment variable to display
       `thread 'project::manifest_secrets::it_should_skip_annotated_manifests' panicked at 'assertion failed: \`(left == right)\`\\n" +
         '  left: \`0\`,\\n' +
         " right: \`42\`: all manifests should be skipped', tests/project/manifest_secrets.rs:305:5
-  `,
-      [{"searchValue":"::","replaceValue":"/"}]
+  `
     );
     expect(line).toBe(305);
     expect(fileName).toBe('tests/project/manifest_secrets.rs');
@@ -584,6 +582,37 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
                 start_line: 15,
                 title: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.retried flaky test",
             }
+        ]);
+    });
+
+    it('should parse and transform perl results', async () => {
+        
+        const transformer: Transformer[] =  [
+            {
+              searchValue: "\\.",
+              replaceValue: "/",
+            },
+            {
+                searchValue: "(.+?)_t",
+                replaceValue: "$1\.t",
+            }
+        ]
+        const { totalCount, skipped, annotations } = await parseFile('test_results/perl/result.xml', '', true, undefined, undefined, undefined, undefined, transformer);
+
+        expect(totalCount).toBe(1);
+        expect(skipped).toBe(0);
+        expect(annotations).toStrictEqual([
+            {
+              path: "FileName.t",
+              start_line: 1,
+              end_line: 1,
+              start_column: 0,
+              end_column: 0,
+              annotation_level: "notice",
+              title: "FileName_t.L123: ...",
+              message: "L123: ...",
+              raw_details: "",
+            },
         ]);
     });
 });

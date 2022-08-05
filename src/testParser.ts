@@ -54,8 +54,7 @@ export async function resolveFileAndLine(
   file: string | null,
   line: string | null,
   className: string,
-  output: string,
-  transformer: Transformer[] = []
+  output: string
 ): Promise<Position> {
   let fileName = file ? file : className.split('.').slice(-1)[0]
   const lineNumber = safeParseInt(line)
@@ -64,10 +63,8 @@ export async function resolveFileAndLine(
       return {fileName, line: lineNumber}
     }
 
-    let escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    for (const r of transformer) {
-      escapedFileName = applyTransformer(r, escapedFileName)
-    }
+    const escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('::', '/') // Rust test output contains colons between package names - See: https://github.com/mikepenz/action-junit-report/pull/359
+
     const matches = output.match(new RegExp(` [^ ]*${escapedFileName}.*?:\\d+`, 'g'))
     if (!matches) return {fileName, line: lineNumber || 1}
 
@@ -295,11 +292,14 @@ async function parseSuite(
           testcase._attributes.file || testsuite._attributes.file,
           testcase._attributes.line || testsuite._attributes.line,
           testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name,
-          stackTrace,
-          transformer
+          stackTrace
         )
 
-        let resolvedPath = await resolvePath(pos.fileName, excludeSources)
+        let transformedFileName = pos.fileName
+        for (const r of transformer) {
+          transformedFileName = applyTransformer(r, transformedFileName)
+        }
+        let resolvedPath = await resolvePath(transformedFileName, excludeSources)
 
         core.debug(`Path prior to stripping: ${resolvedPath}`)
 

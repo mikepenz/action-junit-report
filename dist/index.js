@@ -330,7 +330,7 @@ const utils_1 = __nccwpck_require__(918);
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function resolveFileAndLine(file, line, className, output, transformer = []) {
+function resolveFileAndLine(file, line, className, output) {
     return __awaiter(this, void 0, void 0, function* () {
         let fileName = file ? file : className.split('.').slice(-1)[0];
         const lineNumber = safeParseInt(line);
@@ -338,10 +338,7 @@ function resolveFileAndLine(file, line, className, output, transformer = []) {
             if (fileName && lineNumber) {
                 return { fileName, line: lineNumber };
             }
-            let escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            for (const r of transformer) {
-                escapedFileName = (0, utils_1.applyTransformer)(r, escapedFileName);
-            }
+            const escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('::', '/'); // Rust test output contains colons between package names - See: https://github.com/mikepenz/action-junit-report/pull/359
             const matches = output.match(new RegExp(` [^ ]*${escapedFileName}.*?:\\d+`, 'g'));
             if (!matches)
                 return { fileName, line: lineNumber || 1 };
@@ -525,8 +522,12 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
                         (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
                         stackTrace.split('\n').slice(0, 2).join('\n') ||
                         testcase._attributes.name).trim();
-                    const pos = yield resolveFileAndLine(testcase._attributes.file || testsuite._attributes.file, testcase._attributes.line || testsuite._attributes.line, testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace, transformer);
-                    let resolvedPath = yield resolvePath(pos.fileName, excludeSources);
+                    const pos = yield resolveFileAndLine(testcase._attributes.file || testsuite._attributes.file, testcase._attributes.line || testsuite._attributes.line, testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
+                    let transformedFileName = pos.fileName;
+                    for (const r of transformer) {
+                        transformedFileName = (0, utils_1.applyTransformer)(r, transformedFileName);
+                    }
+                    let resolvedPath = yield resolvePath(transformedFileName, excludeSources);
                     core.debug(`Path prior to stripping: ${resolvedPath}`);
                     const githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
                     if (githubWorkspacePath) {
@@ -707,16 +708,14 @@ function readTransformers(raw) {
 }
 exports.readTransformers = readTransformers;
 function applyTransformer(transformer, string) {
-    if (transformer.searchValue.startsWith('/')) {
-        try {
-            const regExp = new RegExp(transformer.searchValue.replace('\\\\', '\\'), 'gu');
-            return string.replace(regExp, transformer.replaceValue);
-        }
-        catch (e) {
-            core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue}`);
-        }
+    try {
+        const regExp = new RegExp(transformer.searchValue.replace('\\\\', '\\'), 'gu');
+        return string.replace(regExp, transformer.replaceValue);
     }
-    return string.replace(transformer.searchValue, transformer.replaceValue);
+    catch (e) {
+        core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue}`);
+        return string.replace(transformer.searchValue, transformer.replaceValue);
+    }
 }
 exports.applyTransformer = applyTransformer;
 
