@@ -8,7 +8,8 @@ export async function annotateTestResult(
   token: string,
   headSha: string,
   annotateOnly: boolean,
-  updateCheck: boolean
+  updateCheck: boolean,
+  annotateNotice: boolean
 ): Promise<void> {
   const foundResults = testResult.totalCount > 0 || testResult.skipped > 0
 
@@ -36,7 +37,7 @@ export async function annotateTestResult(
         core.error(annotation.message, properties)
       } else if (annotation.annotation_level === 'warning') {
         core.warning(annotation.message, properties)
-      } else {
+      } else if (annotateNotice) {
         core.notice(annotation.message, properties)
       }
     }
@@ -94,7 +95,7 @@ export async function annotateTestResult(
   }
 }
 
-export async function attachSummary(testResults: TestResult[]): Promise<void> {
+export async function attachSummary(testResults: TestResult[], detailedSummary: boolean): Promise<void> {
   const table: SummaryTableRow[] = [
     [
       {data: '', header: true},
@@ -122,15 +123,19 @@ export async function attachSummary(testResults: TestResult[]): Promise<void> {
       `${testResult.failed} failed`
     ])
 
-    for (const annotation of testResult.annotations) {
-      detailsTable.push([
-        `${testResult.checkName}`,
-        `${annotation.title}`,
-        `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`
-      ])
+    if (detailedSummary) {
+      for (const annotation of testResult.annotations) {
+        detailsTable.push([
+          `${testResult.checkName}`,
+          `${annotation.title}`,
+          `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`
+        ])
+      }
     }
   }
 
   await core.summary.addTable(table).write()
-  await core.summary.addTable(detailsTable).write()
+  if (detailedSummary) {
+    await core.summary.addTable(detailsTable).write()
+  }
 }

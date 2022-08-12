@@ -42,7 +42,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.attachSummary = exports.annotateTestResult = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-function annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck) {
+function annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice) {
     return __awaiter(this, void 0, void 0, function* () {
         const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
         let title = 'No test results found!';
@@ -68,7 +68,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
                 else if (annotation.annotation_level === 'warning') {
                     core.warning(annotation.message, properties);
                 }
-                else {
+                else if (annotateNotice) {
                     core.notice(annotation.message, properties);
                 }
             }
@@ -104,7 +104,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
     });
 }
 exports.annotateTestResult = annotateTestResult;
-function attachSummary(testResults) {
+function attachSummary(testResults, detailedSummary) {
     return __awaiter(this, void 0, void 0, function* () {
         const table = [
             [
@@ -130,16 +130,20 @@ function attachSummary(testResults) {
                 `${testResult.skipped} skipped`,
                 `${testResult.failed} failed`
             ]);
-            for (const annotation of testResult.annotations) {
-                detailsTable.push([
-                    `${testResult.checkName}`,
-                    `${annotation.title}`,
-                    `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`
-                ]);
+            if (detailedSummary) {
+                for (const annotation of testResult.annotations) {
+                    detailsTable.push([
+                        `${testResult.checkName}`,
+                        `${annotation.title}`,
+                        `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`
+                    ]);
+                }
             }
         }
         yield core.summary.addTable(table).write();
-        yield core.summary.addTable(detailsTable).write();
+        if (detailedSummary) {
+            yield core.summary.addTable(detailsTable).write();
+        }
     });
 }
 exports.attachSummary = attachSummary;
@@ -207,6 +211,8 @@ function run() {
             const requireTests = core.getInput('require_tests') === 'true';
             const includePassed = core.getInput('include_passed') === 'true';
             const checkRetries = core.getInput('check_retries') === 'true';
+            const annotateNotice = core.getInput('annotate_notice') === 'true';
+            const detailedSummary = core.getInput('detailed_summary') === 'true';
             const reportPaths = core.getMultilineInput('report_paths');
             const summary = core.getMultilineInput('summary');
             const checkName = core.getMultilineInput('check_name');
@@ -257,7 +263,7 @@ function run() {
             core.startGroup(`🚀 Publish results`);
             try {
                 for (const testResult of testResults) {
-                    (0, annotator_1.annotateTestResult)(testResult, token, headSha, annotateOnly, updateCheck);
+                    (0, annotator_1.annotateTestResult)(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice);
                 }
             }
             catch (error) {
@@ -265,7 +271,7 @@ function run() {
                 core.warning(`⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/23`);
             }
             try {
-                (0, annotator_1.attachSummary)(testResults);
+                (0, annotator_1.attachSummary)(testResults, detailedSummary);
             }
             catch (error) {
                 core.error(`❌ Failed to set the summary using the provided token. (${error})`);
