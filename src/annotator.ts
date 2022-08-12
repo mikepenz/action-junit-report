@@ -105,6 +105,14 @@ export async function attachSummary(testResults: TestResult[]): Promise<void> {
     ]
   ]
 
+  const detailsTable: SummaryTableRow[] = [
+    [
+      {data: '', header: true},
+      {data: 'Test', header: true},
+      {data: 'Result', header: true}
+    ]
+  ]
+
   for (const testResult of testResults) {
     table.push([
       `${testResult.checkName}`,
@@ -113,7 +121,16 @@ export async function attachSummary(testResults: TestResult[]): Promise<void> {
       `${testResult.skipped} skipped`,
       `${testResult.failed} failed`
     ])
+
+    for (const annotation of testResult.annotations) {
+      detailsTable.push([
+        `${testResult.checkName}`,
+        `${annotation.title}`,
+        `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`
+      ])
+    }
   }
 
   await core.summary.addTable(table).write()
+  await core.summary.addTable(detailsTable).write()
 }

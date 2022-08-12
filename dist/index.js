@@ -115,6 +115,13 @@ function attachSummary(testResults) {
                 { data: 'Failed ❌', header: true }
             ]
         ];
+        const detailsTable = [
+            [
+                { data: '', header: true },
+                { data: 'Test', header: true },
+                { data: 'Result', header: true }
+            ]
+        ];
         for (const testResult of testResults) {
             table.push([
                 `${testResult.checkName}`,
@@ -123,8 +130,16 @@ function attachSummary(testResults) {
                 `${testResult.skipped} skipped`,
                 `${testResult.failed} failed`
             ]);
+            for (const annotation of testResult.annotations) {
+                detailsTable.push([
+                    `${testResult.checkName}`,
+                    `${annotation.title}`,
+                    `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`
+                ]);
+            }
         }
         yield core.summary.addTable(table).write();
+        yield core.summary.addTable(detailsTable).write();
     });
 }
 exports.attachSummary = attachSummary;
