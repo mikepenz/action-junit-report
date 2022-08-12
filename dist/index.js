@@ -44,6 +44,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 function annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice) {
     return __awaiter(this, void 0, void 0, function* () {
+        const annotations = testResult.annotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
         const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
         let title = 'No test results found!';
         if (foundResults) {
@@ -53,7 +54,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
         const conclusion = foundResults && testResult.failed <= 0 ? 'success' : 'failure';
         const octokit = github.getOctokit(token);
         if (annotateOnly) {
-            for (const annotation of testResult.annotations) {
+            for (const annotation of annotations) {
                 const properties = {
                     title: annotation.title,
                     file: annotation.path,
@@ -78,9 +79,9 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
                 const checks = yield octokit.rest.checks.listForRef(Object.assign(Object.assign({}, github.context.repo), { ref: headSha, check_name: github.context.job, status: 'in_progress', filter: 'latest' }));
                 core.debug(JSON.stringify(checks, null, 2));
                 const check_run_id = checks.data.check_runs[0].id;
-                core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${testResult.annotations.length}`);
-                for (let i = 0; i < testResult.annotations.length; i = i + 50) {
-                    const sliced = testResult.annotations.slice(i, i + 50);
+                core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${annotations.length}`);
+                for (let i = 0; i < annotations.length; i = i + 50) {
+                    const sliced = annotations.slice(i, i + 50);
                     const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
                             title,
                             summary: testResult.summary,
@@ -94,7 +95,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
                 const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: testResult.checkName, head_sha: headSha, status: 'completed', conclusion, output: {
                         title,
                         summary: testResult.summary,
-                        annotations: testResult.annotations.slice(0, 50)
+                        annotations: annotations.slice(0, 50)
                     } });
                 core.debug(JSON.stringify(createCheckRequest, null, 2));
                 core.info(`ℹ️ - ${testResult.checkName} - Creating check for`);

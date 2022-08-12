@@ -11,6 +11,9 @@ export async function annotateTestResult(
   updateCheck: boolean,
   annotateNotice: boolean
 ): Promise<void> {
+  const annotations = testResult.annotations.filter(
+    annotation => annotateNotice || annotation.annotation_level !== 'notice'
+  )
   const foundResults = testResult.totalCount > 0 || testResult.skipped > 0
 
   let title = 'No test results found!'
@@ -24,7 +27,7 @@ export async function annotateTestResult(
 
   const octokit = github.getOctokit(token)
   if (annotateOnly) {
-    for (const annotation of testResult.annotations) {
+    for (const annotation of annotations) {
       const properties: core.AnnotationProperties = {
         title: annotation.title,
         file: annotation.path,
@@ -55,9 +58,9 @@ export async function annotateTestResult(
 
       const check_run_id = checks.data.check_runs[0].id
 
-      core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${testResult.annotations.length}`)
-      for (let i = 0; i < testResult.annotations.length; i = i + 50) {
-        const sliced = testResult.annotations.slice(i, i + 50)
+      core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${annotations.length}`)
+      for (let i = 0; i < annotations.length; i = i + 50) {
+        const sliced = annotations.slice(i, i + 50)
 
         const updateCheckRequest = {
           ...github.context.repo,
@@ -83,7 +86,7 @@ export async function annotateTestResult(
         output: {
           title,
           summary: testResult.summary,
-          annotations: testResult.annotations.slice(0, 50)
+          annotations: annotations.slice(0, 50)
         }
       }
 
