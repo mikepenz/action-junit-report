@@ -6,7 +6,7 @@ import {readTransformers, retrieve} from './utils'
 
 export async function run(): Promise<void> {
   try {
-    core.startGroup(`📘 Reading input values`)
+    core.startGroup(`📘 Reading input value` )
 
     const token = core.getInput('token') || core.getInput('github_token') || process.env.GITHUB_TOKEN
     if (!token) {

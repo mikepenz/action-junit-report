@@ -199,7 +199,7 @@ const utils_1 = __nccwpck_require__(918);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            core.startGroup(`📘 Reading input values`);
+            core.startGroup(`📘 Reading input value`);
             const token = core.getInput('token') || core.getInput('github_token') || process.env.GITHUB_TOKEN;
             if (!token) {
                 core.setFailed('❌ A token is required to execute this action');
