@@ -22,6 +22,7 @@ export async function run(): Promise<void> {
     const includePassed = core.getInput('include_passed') === 'true'
     const checkRetries = core.getInput('check_retries') === 'true'
     const annotateNotice = core.getInput('annotate_notice') === 'true'
+    const jobSummary = core.getInput('job_summary') === 'true'
     const detailedSummary = core.getInput('detailed_summary') === 'true'
 
     const reportPaths = core.getMultilineInput('report_paths')
@@ -107,10 +108,14 @@ export async function run(): Promise<void> {
       )
     }
 
-    try {
-      attachSummary(testResults, detailedSummary)
-    } catch (error) {
-      core.error(`❌ Failed to set the summary using the provided token. (${error})`)
+    if (jobSummary) {
+      try {
+        attachSummary(testResults, detailedSummary)
+      } catch (error) {
+        core.error(`❌ Failed to set the summary using the provided token. (${error})`)
+      }
+    } else {
+      core.info('⏩ Skipped creation of job summary')
     }
 
     if (failOnFailure && conclusion === 'failure') {
