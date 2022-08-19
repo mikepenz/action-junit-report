@@ -70,6 +70,10 @@ inputs:
     description: 'Provide a regex pattern and target pattern'
     required: false
     default: '[]'
+  job_summary:
+    description: 'Enables the publishing of a JOB_SUMMARY with the report.'
+    required: false
+    default: false
   detailed_summary:
     description: 'Include table with all test results in summary'
     required: false
