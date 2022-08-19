@@ -70,6 +70,14 @@ inputs:
     description: 'Provide a regex pattern and target pattern'
     required: false
     default: '[]'
+  detailed_summary:
+    description: 'Include table with all test results in summary'
+    required: false
+    default: false
+  annotate_notice:
+    description: 'Annotate success tests along with warning and failed ones'
+    required: false
+    default: false
 runs:
   using: 'node16'
   main: 'dist/index.js'

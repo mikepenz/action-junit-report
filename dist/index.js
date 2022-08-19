@@ -42,8 +42,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.attachSummary = exports.annotateTestResult = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-function annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck) {
+function annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice) {
     return __awaiter(this, void 0, void 0, function* () {
+        const annotations = testResult.annotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
         const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
         let title = 'No test results found!';
         if (foundResults) {
@@ -53,7 +54,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
         const conclusion = foundResults && testResult.failed <= 0 ? 'success' : 'failure';
         const octokit = github.getOctokit(token);
         if (annotateOnly) {
-            for (const annotation of testResult.annotations) {
+            for (const annotation of annotations) {
                 const properties = {
                     title: annotation.title,
                     file: annotation.path,
@@ -68,7 +69,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
                 else if (annotation.annotation_level === 'warning') {
                     core.warning(annotation.message, properties);
                 }
-                else {
+                else if (annotateNotice) {
                     core.notice(annotation.message, properties);
                 }
             }
@@ -78,9 +79,9 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
                 const checks = yield octokit.rest.checks.listForRef(Object.assign(Object.assign({}, github.context.repo), { ref: headSha, check_name: github.context.job, status: 'in_progress', filter: 'latest' }));
                 core.debug(JSON.stringify(checks, null, 2));
                 const check_run_id = checks.data.check_runs[0].id;
-                core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${testResult.annotations.length}`);
-                for (let i = 0; i < testResult.annotations.length; i = i + 50) {
-                    const sliced = testResult.annotations.slice(i, i + 50);
+                core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${annotations.length}`);
+                for (let i = 0; i < annotations.length; i = i + 50) {
+                    const sliced = annotations.slice(i, i + 50);
                     const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
                             title,
                             summary: testResult.summary,
@@ -94,7 +95,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
                 const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: testResult.checkName, head_sha: headSha, status: 'completed', conclusion, output: {
                         title,
                         summary: testResult.summary,
-                        annotations: testResult.annotations.slice(0, 50)
+                        annotations: annotations.slice(0, 50)
                     } });
                 core.debug(JSON.stringify(createCheckRequest, null, 2));
                 core.info(`ℹ️ - ${testResult.checkName} - Creating check for`);
@@ -104,7 +105,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
     });
 }
 exports.annotateTestResult = annotateTestResult;
-function attachSummary(testResults) {
+function attachSummary(testResults, detailedSummary) {
     return __awaiter(this, void 0, void 0, function* () {
         const table = [
             [
@@ -115,6 +116,13 @@ function attachSummary(testResults) {
                 { data: 'Failed ❌', header: true }
             ]
         ];
+        const detailsTable = [
+            [
+                { data: '', header: true },
+                { data: 'Test', header: true },
+                { data: 'Result', header: true }
+            ]
+        ];
         for (const testResult of testResults) {
             table.push([
                 `${testResult.checkName}`,
@@ -123,8 +131,20 @@ function attachSummary(testResults) {
                 `${testResult.skipped} skipped`,
                 `${testResult.failed} failed`
             ]);
+            if (detailedSummary) {
+                for (const annotation of testResult.annotations) {
+                    detailsTable.push([
+                        `${testResult.checkName}`,
+                        `${annotation.title}`,
+                        `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`
+                    ]);
+                }
+            }
         }
         yield core.summary.addTable(table).write();
+        if (detailedSummary) {
+            yield core.summary.addTable(detailsTable).write();
+        }
     });
 }
 exports.attachSummary = attachSummary;
@@ -192,6 +212,8 @@ function run() {
             const requireTests = core.getInput('require_tests') === 'true';
             const includePassed = core.getInput('include_passed') === 'true';
             const checkRetries = core.getInput('check_retries') === 'true';
+            const annotateNotice = core.getInput('annotate_notice') === 'true';
+            const detailedSummary = core.getInput('detailed_summary') === 'true';
             const reportPaths = core.getMultilineInput('report_paths');
             const summary = core.getMultilineInput('summary');
             const checkName = core.getMultilineInput('check_name');
@@ -242,7 +264,7 @@ function run() {
             core.startGroup(`🚀 Publish results`);
             try {
                 for (const testResult of testResults) {
-                    (0, annotator_1.annotateTestResult)(testResult, token, headSha, annotateOnly, updateCheck);
+                    (0, annotator_1.annotateTestResult)(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice);
                 }
             }
             catch (error) {
@@ -250,7 +272,7 @@ function run() {
                 core.warning(`⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/23`);
             }
             try {
-                (0, annotator_1.attachSummary)(testResults);
+                (0, annotator_1.attachSummary)(testResults, detailedSummary);
             }
             catch (error) {
                 core.error(`❌ Failed to set the summary using the provided token. (${error})`);

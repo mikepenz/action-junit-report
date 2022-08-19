@@ -8,8 +8,12 @@ export async function annotateTestResult(
   token: string,
   headSha: string,
   annotateOnly: boolean,
-  updateCheck: boolean
+  updateCheck: boolean,
+  annotateNotice: boolean
 ): Promise<void> {
+  const annotations = testResult.annotations.filter(
+    annotation => annotateNotice || annotation.annotation_level !== 'notice'
+  )
   const foundResults = testResult.totalCount > 0 || testResult.skipped > 0
 
   let title = 'No test results found!'
@@ -23,7 +27,7 @@ export async function annotateTestResult(
 
   const octokit = github.getOctokit(token)
   if (annotateOnly) {
-    for (const annotation of testResult.annotations) {
+    for (const annotation of annotations) {
       const properties: core.AnnotationProperties = {
         title: annotation.title,
         file: annotation.path,
@@ -36,7 +40,7 @@ export async function annotateTestResult(
         core.error(annotation.message, properties)
       } else if (annotation.annotation_level === 'warning') {
         core.warning(annotation.message, properties)
-      } else {
+      } else if (annotateNotice) {
         core.notice(annotation.message, properties)
       }
     }
@@ -54,9 +58,9 @@ export async function annotateTestResult(
 
       const check_run_id = checks.data.check_runs[0].id
 
-      core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${testResult.annotations.length}`)
-      for (let i = 0; i < testResult.annotations.length; i = i + 50) {
-        const sliced = testResult.annotations.slice(i, i + 50)
+      core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${annotations.length}`)
+      for (let i = 0; i < annotations.length; i = i + 50) {
+        const sliced = annotations.slice(i, i + 50)
 
         const updateCheckRequest = {
           ...github.context.repo,
@@ -82,7 +86,7 @@ export async function annotateTestResult(
         output: {
           title,
           summary: testResult.summary,
-          annotations: testResult.annotations.slice(0, 50)
+          annotations: annotations.slice(0, 50)
         }
       }
 
@@ -94,7 +98,7 @@ export async function annotateTestResult(
   }
 }
 
-export async function attachSummary(testResults: TestResult[]): Promise<void> {
+export async function attachSummary(testResults: TestResult[], detailedSummary: boolean): Promise<void> {
   const table: SummaryTableRow[] = [
     [
       {data: '', header: true},
@@ -102,6 +106,14 @@ export async function attachSummary(testResults: TestResult[]): Promise<void> {
       {data: 'Passed ✅', header: true},
       {data: 'Skipped ↪️', header: true},
       {data: 'Failed ❌', header: true}
+    ]
+  ]
+
+  const detailsTable: SummaryTableRow[] = [
+    [
+      {data: '', header: true},
+      {data: 'Test', header: true},
+      {data: 'Result', header: true}
     ]
   ]
 
@@ -113,7 +125,20 @@ export async function attachSummary(testResults: TestResult[]): Promise<void> {
       `${testResult.skipped} skipped`,
       `${testResult.failed} failed`
     ])
+
+    if (detailedSummary) {
+      for (const annotation of testResult.annotations) {
+        detailsTable.push([
+          `${testResult.checkName}`,
+          `${annotation.title}`,
+          `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`
+        ])
+      }
+    }
   }
 
   await core.summary.addTable(table).write()
+  if (detailedSummary) {
+    await core.summary.addTable(detailsTable).write()
+  }
 }

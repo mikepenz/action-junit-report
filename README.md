@@ -88,6 +88,8 @@ jobs:
 | `update_check`    | Optional. Uses an alternative API to update checks, use for cases with more than 50 annotations.                                                                   |
 | `annotate_only`   | Optional. Will only annotate the results on the files, won't create a check run.                                                                                   |
 | `transformers`    | Optional. Array of `Transformer`s offering the ability to adjust the fileName. Defaults to: `[{"searchValue":"::","replaceValue":"/"}]`                            |
+| `detailed_summary`    | Optional. Include table with all test results in the summary. Defaults to false.                            |
+| `annotate_notice`    | Optional. Annotate success test results along with warning/failed ones. Defaults to false.                            |
 
 ### Action outputs
 
