@@ -272,7 +272,7 @@ function run() {
                 core.error(`❌ Failed to create checks using the provided token. (${error})`);
                 core.warning(`⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/23`);
             }
-            const supportsJobSummary = process.env[exports.SUMMARY_ENV_VAR];
+            const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
             if (jobSummary && supportsJobSummary) {
                 try {
                     (0, annotator_1.attachSummary)(testResults, detailedSummary);
