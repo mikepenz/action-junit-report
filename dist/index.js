@@ -265,7 +265,7 @@ function run() {
             core.startGroup(`🚀 Publish results`);
             try {
                 for (const testResult of testResults) {
-                    (0, annotator_1.annotateTestResult)(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice);
+                    yield (0, annotator_1.annotateTestResult)(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice);
                 }
             }
             catch (error) {
@@ -275,7 +275,7 @@ function run() {
             const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
             if (jobSummary && supportsJobSummary) {
                 try {
-                    (0, annotator_1.attachSummary)(testResults, detailedSummary);
+                    yield (0, annotator_1.attachSummary)(testResults, detailedSummary);
                 }
                 catch (error) {
                     core.error(`❌ Failed to set the summary using the provided token. (${error})`);
