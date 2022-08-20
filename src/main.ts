@@ -108,12 +108,15 @@ export async function run(): Promise<void> {
       )
     }
 
-    if (jobSummary) {
+    const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY']
+    if (jobSummary && supportsJobSummary) {
       try {
         attachSummary(testResults, detailedSummary)
       } catch (error) {
         core.error(`❌ Failed to set the summary using the provided token. (${error})`)
       }
+    } else if (jobSummary && !supportsJobSummary) {
+      core.warning(`⚠️ Your environment seems to not support job summaries.`)
     } else {
       core.info('⏩ Skipped creation of job summary')
     }
