@@ -99,7 +99,7 @@ export async function run(): Promise<void> {
 
     try {
       for (const testResult of testResults) {
-        annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice)
+        await annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice)
       }
     } catch (error) {
       core.error(`❌ Failed to create checks using the provided token. (${error})`)
@@ -111,7 +111,7 @@ export async function run(): Promise<void> {
     const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY']
     if (jobSummary && supportsJobSummary) {
       try {
-        attachSummary(testResults, detailedSummary)
+        await attachSummary(testResults, detailedSummary)
       } catch (error) {
         core.error(`❌ Failed to set the summary using the provided token. (${error})`)
       }
