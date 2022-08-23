@@ -127,12 +127,18 @@ export async function attachSummary(testResults: TestResult[], detailedSummary: 
     ])
 
     if (detailedSummary) {
-      for (const annotation of testResult.annotations) {
-        detailsTable.push([
-          `${testResult.checkName}`,
-          `${annotation.title}`,
-          `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`
-        ])
+      if (testResult.annotations.length === 0) {
+        core.warning(
+          `⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`
+        )
+      } else {
+        for (const annotation of testResult.annotations) {
+          detailsTable.push([
+            `${testResult.checkName}`,
+            `${annotation.title}`,
+            `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`
+          ])
+        }
       }
     }
   }
