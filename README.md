@@ -82,6 +82,7 @@ jobs:
 | `commit`          | Optional. The commit SHA to update the status. This is useful when you run it with `workflow_run`.                                                                 |
 | `fail_on_failure` | Optional. Fail the build in case of a test failure.                                                                                                                |
 | `require_tests`   | Optional. Fail if no test are found.                                                                                                                               |
+| `include_passed`   | Optional. By default the action will skip passed items for the annotations. Enable this flag to include them.                                                                                                                               |
 | `check_retries`         | Optional. If a testcase is retried, ignore the original failure.                                                                                             |
 | `check_title_template`  | Optional. Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}.                                                |
 | `summary`         | Optional. Additional text to summary output                                                                                                                        |
