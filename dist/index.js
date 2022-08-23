@@ -132,7 +132,7 @@ function attachSummary(testResults, detailedSummary) {
                 `${testResult.failed} failed`
             ]);
             if (detailedSummary) {
-                if (testResult.annotations.length == 0) {
+                if (testResult.annotations.length === 0) {
                     core.warning(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
                 }
                 else {
