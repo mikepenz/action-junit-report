@@ -138,7 +138,7 @@ export async function resolvePath(fileName: string, excludeSources: string[]): P
 export async function parseFile(
   file: string,
   suiteRegex = '',
-  includePassed = false,
+  annotatePassed = false,
   checkRetries = false,
   excludeSources: string[] = ['/build/', '/__pycache__/'],
   checkTitleTemplate: string | undefined = undefined,
@@ -154,7 +154,7 @@ export async function parseFile(
     report,
     '',
     suiteRegex,
-    includePassed,
+    annotatePassed,
     checkRetries,
     excludeSources,
     checkTitleTemplate,
@@ -172,7 +172,7 @@ async function parseSuite(
   suite: any,
   parentName: string,
   suiteRegex: string,
-  includePassed = false,
+  annotatePassed = false,
   checkRetries = false,
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
@@ -216,7 +216,7 @@ async function parseSuite(
       testsuite,
       suiteName,
       suiteRegex,
-      includePassed,
+      annotatePassed,
       checkRetries,
       excludeSources,
       checkTitleTemplate,
@@ -270,77 +270,79 @@ async function parseSuite(
       if (testcase.skipped || testcase._attributes.status === 'disabled') {
         skipped++
       }
-      if (failed || (includePassed && success)) {
-        const stackTrace: string = (
-          (testcase.failure && testcase.failure._cdata) ||
-          (testcase.failure && testcase.failure._text) ||
-          (testcase.error && testcase.error._cdata) ||
-          (testcase.error && testcase.error._text) ||
-          ''
-        )
-          .toString()
-          .trim()
+      const stackTrace: string = (
+        (testcase.failure && testcase.failure._cdata) ||
+        (testcase.failure && testcase.failure._text) ||
+        (testcase.error && testcase.error._cdata) ||
+        (testcase.error && testcase.error._text) ||
+        ''
+      )
+        .toString()
+        .trim()
 
-        const message: string = (
-          (testcase.failure && testcase.failure._attributes && testcase.failure._attributes.message) ||
-          (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
-          stackTrace.split('\n').slice(0, 2).join('\n') ||
-          testcase._attributes.name
-        ).trim()
+      const message: string = (
+        (testcase.failure && testcase.failure._attributes && testcase.failure._attributes.message) ||
+        (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
+        stackTrace.split('\n').slice(0, 2).join('\n') ||
+        testcase._attributes.name
+      ).trim()
 
-        const pos = await resolveFileAndLine(
-          testcase._attributes.file || testsuite._attributes.file,
-          testcase._attributes.line || testsuite._attributes.line,
-          testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name,
-          stackTrace
-        )
+      const pos = await resolveFileAndLine(
+        testcase._attributes.file || testsuite._attributes.file,
+        testcase._attributes.line || testsuite._attributes.line,
+        testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name,
+        stackTrace
+      )
 
-        let transformedFileName = pos.fileName
-        for (const r of transformer) {
-          transformedFileName = applyTransformer(r, transformedFileName)
-        }
-        let resolvedPath = await resolvePath(transformedFileName, excludeSources)
-
-        core.debug(`Path prior to stripping: ${resolvedPath}`)
-
-        const githubWorkspacePath = process.env['GITHUB_WORKSPACE']
-        if (githubWorkspacePath) {
-          resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, '') // strip workspace prefix, make the path relative
-        }
-
-        let title = ''
-        if (checkTitleTemplate) {
-          // ensure to not duplicate the test_name if file_name is equal
-          const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : ''
-          title = checkTitleTemplate
-            .replace(templateVar('FILE_NAME'), fileName)
-            .replace(templateVar('SUITE_NAME'), suiteName ?? '')
-            .replace(templateVar('TEST_NAME'), testcase._attributes.name)
-        } else if (pos.fileName !== testcase._attributes.name) {
-          title = suiteName
-            ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
-            : `${pos.fileName}.${testcase._attributes.name}`
-        } else {
-          title = suiteName ? `${suiteName}/${testcase._attributes.name}` : `${testcase._attributes.name}`
-        }
-
-        // optionally attach the prefix to the path
-        resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath
-
-        core.info(`${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`)
-
-        annotations.push({
-          path: resolvedPath,
-          start_line: pos.line,
-          end_line: pos.line,
-          start_column: 0,
-          end_column: 0,
-          annotation_level: success ? 'notice' : 'failure',
-          title: escapeEmoji(title),
-          message: escapeEmoji(message),
-          raw_details: escapeEmoji(stackTrace)
-        })
+      let transformedFileName = pos.fileName
+      for (const r of transformer) {
+        transformedFileName = applyTransformer(r, transformedFileName)
       }
+
+      let resolvedPath =
+        failed || (annotatePassed && success)
+          ? await resolvePath(transformedFileName, excludeSources)
+          : transformedFileName
+
+      core.debug(`Path prior to stripping: ${resolvedPath}`)
+
+      const githubWorkspacePath = process.env['GITHUB_WORKSPACE']
+      if (githubWorkspacePath) {
+        resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, '') // strip workspace prefix, make the path relative
+      }
+
+      let title = ''
+      if (checkTitleTemplate) {
+        // ensure to not duplicate the test_name if file_name is equal
+        const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : ''
+        title = checkTitleTemplate
+          .replace(templateVar('FILE_NAME'), fileName)
+          .replace(templateVar('SUITE_NAME'), suiteName ?? '')
+          .replace(templateVar('TEST_NAME'), testcase._attributes.name)
+      } else if (pos.fileName !== testcase._attributes.name) {
+        title = suiteName
+          ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
+          : `${pos.fileName}.${testcase._attributes.name}`
+      } else {
+        title = suiteName ? `${suiteName}/${testcase._attributes.name}` : `${testcase._attributes.name}`
+      }
+
+      // optionally attach the prefix to the path
+      resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath
+
+      core.info(`${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`)
+
+      annotations.push({
+        path: resolvedPath,
+        start_line: pos.line,
+        end_line: pos.line,
+        start_column: 0,
+        end_column: 0,
+        annotation_level: success ? 'notice' : 'failure',
+        title: escapeEmoji(title),
+        message: escapeEmoji(message),
+        raw_details: escapeEmoji(stackTrace)
+      })
     }
   }
   return {totalCount, skipped, annotations}
@@ -358,7 +360,7 @@ export async function parseTestReports(
   summary: string,
   reportPaths: string,
   suiteRegex: string,
-  includePassed = false,
+  annotatePassed = false,
   checkRetries = false,
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
@@ -380,7 +382,7 @@ export async function parseTestReports(
     } = await parseFile(
       file,
       suiteRegex,
-      includePassed,
+      annotatePassed,
       checkRetries,
       excludeSources,
       checkTitleTemplate,

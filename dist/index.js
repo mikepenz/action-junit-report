@@ -105,7 +105,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
     });
 }
 exports.annotateTestResult = annotateTestResult;
-function attachSummary(testResults, detailedSummary) {
+function attachSummary(testResults, detailedSummary, includePassed) {
     return __awaiter(this, void 0, void 0, function* () {
         const table = [
             [
@@ -132,11 +132,13 @@ function attachSummary(testResults, detailedSummary) {
                 `${testResult.failed} failed`
             ]);
             if (detailedSummary) {
-                if (testResult.annotations.length === 0) {
+                const annotations = testResult.annotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
+                if (annotations.length === 0) {
                     core.warning(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
+                    detailsTable.push([`-`, `No test annotations available`, `-`]);
                 }
                 else {
-                    for (const annotation of testResult.annotations) {
+                    for (const annotation of annotations) {
                         detailsTable.push([
                             `${testResult.checkName}`,
                             `${annotation.title}`,
@@ -243,7 +245,7 @@ function run() {
             };
             core.info(`Retrieved ${reportsCount} reports to process.`);
             for (let i = 0; i < reportsCount; i++) {
-                const testResult = yield (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers);
+                const testResult = yield (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed && annotateNotice, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers);
                 mergedResult.totalCount += testResult.totalCount;
                 mergedResult.skipped += testResult.skipped;
                 mergedResult.failed += testResult.failed;
@@ -280,7 +282,7 @@ function run() {
             const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
             if (jobSummary && supportsJobSummary) {
                 try {
-                    yield (0, annotator_1.attachSummary)(testResults, detailedSummary);
+                    yield (0, annotator_1.attachSummary)(testResults, detailedSummary, includePassed);
                 }
                 catch (error) {
                     core.error(`❌ Failed to set the summary using the provided token. (${error})`);
@@ -458,12 +460,12 @@ exports.resolvePath = resolvePath;
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseFile(file, suiteRegex = '', includePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, testFilesPrefix = '', transformer = []) {
+function parseFile(file, suiteRegex = '', annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, testFilesPrefix = '', transformer = []) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Parsing file ${file}`);
         const data = fs.readFileSync(file, 'utf8');
         const report = JSON.parse(parser.xml2json(data, { compact: true }));
-        return parseSuite(report, '', suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer);
+        return parseSuite(report, '', suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer);
     });
 }
 exports.parseFile = parseFile;
@@ -472,7 +474,7 @@ function templateVar(varName) {
 }
 function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer) {
+suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer) {
     return __awaiter(this, void 0, void 0, function* () {
         let totalCount = 0;
         let skipped = 0;
@@ -503,7 +505,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
                     suiteName = testsuite._attributes.name;
                 }
             }
-            const res = yield parseSuite(testsuite, suiteName, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer);
+            const res = yield parseSuite(testsuite, suiteName, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer);
             totalCount += res.totalCount;
             skipped += res.skipped;
             annotations.push(...res.annotations);
@@ -547,61 +549,61 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
                 if (testcase.skipped || testcase._attributes.status === 'disabled') {
                     skipped++;
                 }
-                if (failed || (includePassed && success)) {
-                    const stackTrace = ((testcase.failure && testcase.failure._cdata) ||
-                        (testcase.failure && testcase.failure._text) ||
-                        (testcase.error && testcase.error._cdata) ||
-                        (testcase.error && testcase.error._text) ||
-                        '')
-                        .toString()
-                        .trim();
-                    const message = ((testcase.failure && testcase.failure._attributes && testcase.failure._attributes.message) ||
-                        (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
-                        stackTrace.split('\n').slice(0, 2).join('\n') ||
-                        testcase._attributes.name).trim();
-                    const pos = yield resolveFileAndLine(testcase._attributes.file || testsuite._attributes.file, testcase._attributes.line || testsuite._attributes.line, testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
-                    let transformedFileName = pos.fileName;
-                    for (const r of transformer) {
-                        transformedFileName = (0, utils_1.applyTransformer)(r, transformedFileName);
-                    }
-                    let resolvedPath = yield resolvePath(transformedFileName, excludeSources);
-                    core.debug(`Path prior to stripping: ${resolvedPath}`);
-                    const githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
-                    if (githubWorkspacePath) {
-                        resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, ''); // strip workspace prefix, make the path relative
-                    }
-                    let title = '';
-                    if (checkTitleTemplate) {
-                        // ensure to not duplicate the test_name if file_name is equal
-                        const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : '';
-                        title = checkTitleTemplate
-                            .replace(templateVar('FILE_NAME'), fileName)
-                            .replace(templateVar('SUITE_NAME'), suiteName !== null && suiteName !== void 0 ? suiteName : '')
-                            .replace(templateVar('TEST_NAME'), testcase._attributes.name);
-                    }
-                    else if (pos.fileName !== testcase._attributes.name) {
-                        title = suiteName
-                            ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
-                            : `${pos.fileName}.${testcase._attributes.name}`;
-                    }
-                    else {
-                        title = suiteName ? `${suiteName}/${testcase._attributes.name}` : `${testcase._attributes.name}`;
-                    }
-                    // optionally attach the prefix to the path
-                    resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath;
-                    core.info(`${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`);
-                    annotations.push({
-                        path: resolvedPath,
-                        start_line: pos.line,
-                        end_line: pos.line,
-                        start_column: 0,
-                        end_column: 0,
-                        annotation_level: success ? 'notice' : 'failure',
-                        title: escapeEmoji(title),
-                        message: escapeEmoji(message),
-                        raw_details: escapeEmoji(stackTrace)
-                    });
+                const stackTrace = ((testcase.failure && testcase.failure._cdata) ||
+                    (testcase.failure && testcase.failure._text) ||
+                    (testcase.error && testcase.error._cdata) ||
+                    (testcase.error && testcase.error._text) ||
+                    '')
+                    .toString()
+                    .trim();
+                const message = ((testcase.failure && testcase.failure._attributes && testcase.failure._attributes.message) ||
+                    (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
+                    stackTrace.split('\n').slice(0, 2).join('\n') ||
+                    testcase._attributes.name).trim();
+                const pos = yield resolveFileAndLine(testcase._attributes.file || testsuite._attributes.file, testcase._attributes.line || testsuite._attributes.line, testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
+                let transformedFileName = pos.fileName;
+                for (const r of transformer) {
+                    transformedFileName = (0, utils_1.applyTransformer)(r, transformedFileName);
                 }
+                let resolvedPath = failed || (annotatePassed && success)
+                    ? yield resolvePath(transformedFileName, excludeSources)
+                    : transformedFileName;
+                core.debug(`Path prior to stripping: ${resolvedPath}`);
+                const githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
+                if (githubWorkspacePath) {
+                    resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, ''); // strip workspace prefix, make the path relative
+                }
+                let title = '';
+                if (checkTitleTemplate) {
+                    // ensure to not duplicate the test_name if file_name is equal
+                    const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : '';
+                    title = checkTitleTemplate
+                        .replace(templateVar('FILE_NAME'), fileName)
+                        .replace(templateVar('SUITE_NAME'), suiteName !== null && suiteName !== void 0 ? suiteName : '')
+                        .replace(templateVar('TEST_NAME'), testcase._attributes.name);
+                }
+                else if (pos.fileName !== testcase._attributes.name) {
+                    title = suiteName
+                        ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
+                        : `${pos.fileName}.${testcase._attributes.name}`;
+                }
+                else {
+                    title = suiteName ? `${suiteName}/${testcase._attributes.name}` : `${testcase._attributes.name}`;
+                }
+                // optionally attach the prefix to the path
+                resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath;
+                core.info(`${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`);
+                annotations.push({
+                    path: resolvedPath,
+                    start_line: pos.line,
+                    end_line: pos.line,
+                    start_column: 0,
+                    end_column: 0,
+                    annotation_level: success ? 'notice' : 'failure',
+                    title: escapeEmoji(title),
+                    message: escapeEmoji(message),
+                    raw_details: escapeEmoji(stackTrace)
+                });
             }
         }
         return { totalCount, skipped, annotations };
@@ -614,7 +616,7 @@ suite, parentName, suiteRegex, includePassed = false, checkRetries = false, excl
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseTestReports(checkName, summary, reportPaths, suiteRegex, includePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer) {
+function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer) {
     var e_2, _a;
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Process test report for: ${reportPaths} (${checkName})`);
@@ -626,7 +628,7 @@ function parseTestReports(checkName, summary, reportPaths, suiteRegex, includePa
             for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
                 const file = _c.value;
                 core.debug(`Parsing report file: ${file}`);
-                const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, includePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer);
+                const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer);
                 if (c === 0)
                     continue;
                 totalCount += c;
