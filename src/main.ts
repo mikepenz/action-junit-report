@@ -58,7 +58,7 @@ export async function run(): Promise<void> {
         retrieve('summary', summary, i, reportsCount),
         retrieve('reportPaths', reportPaths, i, reportsCount),
         retrieve('suiteRegex', suiteRegex, i, reportsCount),
-        includePassed,
+        includePassed && annotateNotice,
         checkRetries,
         excludeSources,
         retrieve('checkTitleTemplate', checkTitleTemplate, i, reportsCount),
@@ -111,7 +111,7 @@ export async function run(): Promise<void> {
     const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY']
     if (jobSummary && supportsJobSummary) {
       try {
-        await attachSummary(testResults, detailedSummary)
+        await attachSummary(testResults, detailedSummary, includePassed)
       } catch (error) {
         core.error(`❌ Failed to set the summary using the provided token. (${error})`)
       }

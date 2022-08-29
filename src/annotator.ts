@@ -98,7 +98,11 @@ export async function annotateTestResult(
   }
 }
 
-export async function attachSummary(testResults: TestResult[], detailedSummary: boolean): Promise<void> {
+export async function attachSummary(
+  testResults: TestResult[],
+  detailedSummary: boolean,
+  includePassed: boolean
+): Promise<void> {
   const table: SummaryTableRow[] = [
     [
       {data: '', header: true},
@@ -127,12 +131,17 @@ export async function attachSummary(testResults: TestResult[], detailedSummary: 
     ])
 
     if (detailedSummary) {
-      if (testResult.annotations.length === 0) {
+      const annotations = testResult.annotations.filter(
+        annotation => includePassed || annotation.annotation_level !== 'notice'
+      )
+
+      if (annotations.length === 0) {
         core.warning(
           `⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`
         )
+        detailsTable.push([`-`, `No test annotations available`, `-`])
       } else {
-        for (const annotation of testResult.annotations) {
+        for (const annotation of annotations) {
           detailsTable.push([
             `${testResult.checkName}`,
             `${annotation.title}`,
