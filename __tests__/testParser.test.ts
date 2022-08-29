@@ -179,10 +179,11 @@ describe('parseFile', () => {
     });
     it('should parse pytest results', async () => {
         const { totalCount, skipped, annotations } = await parseFile('test_results/python/report.xml');
+        const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
 
         expect(totalCount).toBe(3);
         expect(skipped).toBe(0);
-        expect(annotations).toStrictEqual([
+        expect(filtered).toStrictEqual([
             {
                 path: 'test_results/python/test_sample.py',
                 start_line: 10,
@@ -210,12 +211,13 @@ describe('parseFile', () => {
         ]);
     });
 
-    it('should parse pytest results', async () => {
+    it('should parse pytest results 2', async () => {
         const { totalCount, skipped, annotations } = await parseFile('test_results/python/report.xml', '', false, false, ['/build/', '/__pycache__/'], undefined, 'subproject/');
+        const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
 
         expect(totalCount).toBe(3);
         expect(skipped).toBe(0);
-        expect(annotations).toStrictEqual([
+        expect(filtered).toStrictEqual([
             {
                 path: 'subproject/test_results/python/test_sample.py',
                 start_line: 10,
@@ -245,10 +247,11 @@ describe('parseFile', () => {
 
     it('should parse marathon results', async () => {
         const { totalCount, skipped, annotations } = await parseFile('test_results/marathon_tests/com.mikepenz.DummyTest#test_02_dummy.xml');
+        const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
 
         expect(totalCount).toBe(1);
         expect(skipped).toBe(0);
-        expect(annotations).toStrictEqual([]);
+        expect(filtered).toStrictEqual([]);
     });
 
     it('should parse marathon results and retrieve message', async () => {
@@ -301,10 +304,11 @@ describe('parseFile', () => {
 
     it('should parse failure cunit results', async () => {
         const { totalCount, skipped, annotations } = await parseFile('test_results/cunit/testFailure.xml');
+        const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
 
         expect(totalCount).toBe(4);
         expect(skipped).toBe(0);
-        expect(annotations).toStrictEqual([
+        expect(filtered).toStrictEqual([
             {
                 "annotation_level": "failure",
                 "end_column": 0,
@@ -336,10 +340,11 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
 
     it('should parse correctly nested test suites', async () => {
         const { totalCount, skipped, annotations } = await parseFile('test_results/nested/junit.xml', 'Test*');
+        const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
 
         expect(totalCount).toBe(5);
         expect(skipped).toBe(0);
-        expect(annotations).toStrictEqual([{
+        expect(filtered).toStrictEqual([{
             "path": "A",
             "start_line": 1,
             "end_line": 1,
@@ -374,10 +379,11 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
 
     it('should parse disabled tests', async () => {
         const { totalCount, skipped, annotations } = await parseFile('test_results/issues/testDisabled.xml', '*');
+        const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
 
         expect(totalCount).toBe(22);
         expect(skipped).toBe(10);
-        expect(annotations).toStrictEqual([{
+        expect(filtered).toStrictEqual([{
             path: "factorial_of_value_from_fixture",
             start_line: 1,
             end_line: 1,
@@ -496,10 +502,11 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
 
     it('should parse xunit results', async () => {
         const { totalCount, skipped, annotations } = await parseFile('test_results/xunit/report.xml');
+        const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
 
         expect(totalCount).toBe(4);
         expect(skipped).toBe(0);
-        expect(annotations).toStrictEqual([
+        expect(filtered).toStrictEqual([
             {
                 path: "main.c",
                 start_line: 38,
@@ -516,10 +523,11 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
 
     it('should parse junit web test results', async () => {
         const { totalCount, skipped, annotations } = await parseFile('test_results/junit-web-test/expected.xml');
+        const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
 
         expect(totalCount).toBe(6);
         expect(skipped).toBe(1);
-        expect(annotations).toStrictEqual([
+        expect(filtered).toStrictEqual([
             {
                 path: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js",
                 start_line: 15,
@@ -536,10 +544,11 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
 
     it('should handle retries', async () => {
         const { totalCount, skipped, annotations } = await parseFile('test_results/junit-web-test/expectedRetries.xml', '', false, true, ['/build/', '/__pycache__/']);
+        const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
 
         expect(totalCount).toBe(7);
         expect(skipped).toBe(1);
-        expect(annotations).toStrictEqual([
+        expect(filtered).toStrictEqual([
             {
                 path: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js",
                 start_line: 15,
@@ -556,10 +565,11 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
 
     it('there should be two errors if retries are not handled', async () => {
         const { totalCount, skipped, annotations } = await parseFile('test_results/junit-web-test/expectedRetries.xml', '', false);
+        const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
 
         expect(totalCount).toBe(8);
         expect(skipped).toBe(1);
-        expect(annotations).toStrictEqual([
+        expect(filtered).toStrictEqual([
             {
                 path: "packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js",
                 start_line: 15,
