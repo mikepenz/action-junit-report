@@ -86,12 +86,12 @@ jobs:
 | `check_retries`         | Optional. If a testcase is retried, ignore the original failure.                                                                                             |
 | `check_title_template`  | Optional. Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}.                                                |
 | `summary`         | Optional. Additional text to summary output                                                                                                                        |
-| `update_check`    | Optional. Uses an alternative API to update checks, use for cases with more than 50 annotations.                                                                   |
-| `annotate_only`   | Optional. Will only annotate the results on the files, won't create a check run.                                                                                   |
+| `update_check`    | Optional. Uses an alternative API to update checks, use for cases with more than 50 annotations. Default: `false`.                                                                  |
+| `annotate_only`   | Optional. Will only annotate the results on the files, won't create a check run. Defaults to `false`.                                                                                  |
 | `transformers`    | Optional. Array of `Transformer`s offering the ability to adjust the fileName. Defaults to: `[{"searchValue":"::","replaceValue":"/"}]`                            |
 | `job_summary`     | Optional. Enables the publishing of the job summary for the results. Defaults to `true`. May be required to disable [Enterprise Server](https://github.com/mikepenz/action-junit-report/issues/637)                           |
 | `detailed_summary`    | Optional. Include table with all test results in the summary. Defaults to `false`.                            |
-| `annotate_notice`    | Optional. Annotate passed test results along with warning/failed ones. Defaults to `true`.                            |
+| `annotate_notice`    | Optional. Annotate passed test results along with warning/failed ones. Defaults to `false`. (Changed in v3.5.0)                           |
 
 ### Action outputs
 
