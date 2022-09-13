@@ -81,7 +81,7 @@ inputs:
   annotate_notice:
     description: 'Annotate passed tests along with warning and failed ones'
     required: false
-    default: true
+    default: false
 runs:
   using: 'node16'
   main: 'dist/index.js'
