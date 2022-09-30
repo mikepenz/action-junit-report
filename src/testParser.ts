@@ -288,8 +288,8 @@ async function parseSuite(
       ).trim()
 
       const pos = await resolveFileAndLine(
-        testcase._attributes.file || testsuite._attributes.file,
-        testcase._attributes.line || testsuite._attributes.line,
+        testcase._attributes.file || (testsuite._attributes !== undefined ? testsuite._attributes.file : null),
+        testcase._attributes.line || (testsuite._attributes !== undefined ? testsuite._attributes.line : null),
         testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name,
         stackTrace
       )

@@ -1,0 +1,7 @@
+<testsuites failures="0" tests="8" time="1967986371">
+    <testsuite>
+        <testcase name="Command Test: apt-get upgrade" time="999638317"></testcase>
+        <testcase name="File Existence Test: /home/app/app" time="0"></testcase>
+        <testcase name="Metadata Test" time="0"></testcase>
+    </testsuite>
+</testsuites>
