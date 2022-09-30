@@ -625,4 +625,47 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             },
         ]);
     });
+
+    it('should parse and transform container-structure results (with no testsuite attributes)', async () => {
+
+        const { totalCount, skipped, annotations } = await parseFile('test_results/container-structure/test.xml', '', true, undefined, undefined, undefined, undefined, undefined);
+
+        expect(totalCount).toBe(3);
+        expect(skipped).toBe(0);
+        expect(annotations).toStrictEqual([
+            {
+                path: "Command Test: apt-get upgrade",
+                start_line: 1,
+                end_line: 1,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: "notice",
+                title: "Command Test: apt-get upgrade",
+                message: "Command Test: apt-get upgrade",
+                raw_details: "",
+            },
+            {
+                path: "File Existence Test: /home/app/app",
+                start_line: 1,
+                end_line: 1,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: "notice",
+                title: "File Existence Test: /home/app/app",
+                message: "File Existence Test: /home/app/app",
+                raw_details: "",
+            },
+            {
+                path: "Metadata Test",
+                start_line: 1,
+                end_line: 1,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: "notice",
+                title: "Metadata Test",
+                message: "Metadata Test",
+                raw_details: "",
+            },
+        ]);
+    });
 });

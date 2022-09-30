@@ -560,7 +560,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
                     stackTrace.split('\n').slice(0, 2).join('\n') ||
                     testcase._attributes.name).trim();
-                const pos = yield resolveFileAndLine(testcase._attributes.file || testsuite._attributes.file, testcase._attributes.line || testsuite._attributes.line, testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
+                const pos = yield resolveFileAndLine(testcase._attributes.file || (testsuite._attributes !== undefined ? testsuite._attributes.file : null), testcase._attributes.line || (testsuite._attributes !== undefined ? testsuite._attributes.line : null), testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
                 let transformedFileName = pos.fileName;
                 for (const r of transformer) {
                     transformedFileName = (0, utils_1.applyTransformer)(r, transformedFileName);
