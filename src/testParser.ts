@@ -108,11 +108,11 @@ function safeParseInt(line: string | null): number | null {
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-export async function resolvePath(fileName: string, excludeSources: string[]): Promise<string> {
+export async function resolvePath(fileName: string, excludeSources: string[], followSymlink = false): Promise<string> {
   core.debug(`Resolving path for ${fileName}`)
   const normalizedFilename = fileName.replace(/^\.\//, '') // strip relative prefix (./)
   const globber = await glob.create(`**/${normalizedFilename}.*`, {
-    followSymbolicLinks: false
+    followSymbolicLinks: followSymlink
   })
   const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : ''
   for await (const result of globber.globGenerator()) {
@@ -143,7 +143,8 @@ export async function parseFile(
   excludeSources: string[] = ['/build/', '/__pycache__/'],
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = '',
-  transformer: Transformer[] = []
+  transformer: Transformer[] = [],
+  followSymlink = false
 ): Promise<InternalTestResult> {
   core.debug(`Parsing file ${file}`)
 
@@ -159,7 +160,8 @@ export async function parseFile(
     excludeSources,
     checkTitleTemplate,
     testFilesPrefix,
-    transformer
+    transformer,
+    followSymlink
   )
 }
 
@@ -177,7 +179,8 @@ async function parseSuite(
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = '',
-  transformer: Transformer[]
+  transformer: Transformer[],
+  followSymlink: boolean
 ): Promise<InternalTestResult> {
   let totalCount = 0
   let skipped = 0
@@ -221,7 +224,8 @@ async function parseSuite(
       excludeSources,
       checkTitleTemplate,
       testFilesPrefix,
-      transformer
+      transformer,
+      followSymlink
     )
     totalCount += res.totalCount
     skipped += res.skipped
@@ -301,7 +305,7 @@ async function parseSuite(
 
       let resolvedPath =
         failed || (annotatePassed && success)
-          ? await resolvePath(transformedFileName, excludeSources)
+          ? await resolvePath(transformedFileName, excludeSources, followSymlink)
           : transformedFileName
 
       core.debug(`Path prior to stripping: ${resolvedPath}`)
@@ -365,10 +369,11 @@ export async function parseTestReports(
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = '',
-  transformer: Transformer[]
+  transformer: Transformer[],
+  followSymlink = false
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
-  const globber = await glob.create(reportPaths, {followSymbolicLinks: false})
+  const globber = await glob.create(reportPaths, {followSymbolicLinks: followSymlink})
   let annotations: Annotation[] = []
   let totalCount = 0
   let skipped = 0
@@ -387,7 +392,8 @@ export async function parseTestReports(
       excludeSources,
       checkTitleTemplate,
       testFilesPrefix,
-      transformer
+      transformer,
+      followSymlink
     )
     if (c === 0) continue
     totalCount += c

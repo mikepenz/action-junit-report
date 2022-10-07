@@ -33,6 +33,7 @@ export async function run(): Promise<void> {
     const excludeSources = core.getMultilineInput('exclude_sources') ? core.getMultilineInput('exclude_sources') : []
     const checkTitleTemplate = core.getMultilineInput('check_title_template')
     const transformers = readTransformers(core.getInput('transformers', {trimWhitespace: true}))
+    const followSymlink = core.getBooleanInput('follow_symlink')
 
     core.endGroup()
     core.startGroup(`📦 Process test results`)
@@ -63,7 +64,8 @@ export async function run(): Promise<void> {
         excludeSources,
         retrieve('checkTitleTemplate', checkTitleTemplate, i, reportsCount),
         retrieve('testFilesPrefix', testFilesPrefix, i, reportsCount),
-        transformers
+        transformers,
+        followSymlink
       )
 
       mergedResult.totalCount += testResult.totalCount

@@ -92,6 +92,7 @@ jobs:
 | `job_summary`     | Optional. Enables the publishing of the job summary for the results. Defaults to `true`. May be required to disable [Enterprise Server](https://github.com/mikepenz/action-junit-report/issues/637)                           |
 | `detailed_summary`    | Optional. Include table with all test results in the summary. Defaults to `false`.                            |
 | `annotate_notice`    | Optional. Annotate passed test results along with warning/failed ones. Defaults to `false`. (Changed in v3.5.0)                           |
+| `follow_symlink`    | Optional. Enables to follow symlinks when searching test files via the globber. Defaults to `false`.                           |
 
 ### Action outputs
 
