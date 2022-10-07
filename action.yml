@@ -82,6 +82,10 @@ inputs:
     description: 'Annotate passed tests along with warning and failed ones'
     required: false
     default: false
+  follow_symlink:
+    description: 'Enables the file globber to follow symlinks. Default: false'
+    required: false
+    default: false
 runs:
   using: 'node16'
   main: 'dist/index.js'

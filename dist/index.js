@@ -230,6 +230,7 @@ function run() {
             const excludeSources = core.getMultilineInput('exclude_sources') ? core.getMultilineInput('exclude_sources') : [];
             const checkTitleTemplate = core.getMultilineInput('check_title_template');
             const transformers = (0, utils_1.readTransformers)(core.getInput('transformers', { trimWhitespace: true }));
+            const followSymlink = core.getBooleanInput('follow_symlink');
             core.endGroup();
             core.startGroup(`📦 Process test results`);
             const reportsCount = reportPaths.length;
@@ -245,7 +246,7 @@ function run() {
             };
             core.info(`Retrieved ${reportsCount} reports to process.`);
             for (let i = 0; i < reportsCount; i++) {
-                const testResult = yield (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed && annotateNotice, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers);
+                const testResult = yield (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed && annotateNotice, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink);
                 mergedResult.totalCount += testResult.totalCount;
                 mergedResult.skipped += testResult.skipped;
                 mergedResult.failed += testResult.failed;
@@ -421,13 +422,13 @@ function safeParseInt(line) {
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function resolvePath(fileName, excludeSources) {
+function resolvePath(fileName, excludeSources, followSymlink = false) {
     var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Resolving path for ${fileName}`);
         const normalizedFilename = fileName.replace(/^\.\//, ''); // strip relative prefix (./)
         const globber = yield glob.create(`**/${normalizedFilename}.*`, {
-            followSymbolicLinks: false
+            followSymbolicLinks: followSymlink
         });
         const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : '';
         try {
@@ -460,12 +461,12 @@ exports.resolvePath = resolvePath;
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseFile(file, suiteRegex = '', annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, testFilesPrefix = '', transformer = []) {
+function parseFile(file, suiteRegex = '', annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, testFilesPrefix = '', transformer = [], followSymlink = false) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Parsing file ${file}`);
         const data = fs.readFileSync(file, 'utf8');
         const report = JSON.parse(parser.xml2json(data, { compact: true }));
-        return parseSuite(report, '', suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer);
+        return parseSuite(report, '', suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink);
     });
 }
 exports.parseFile = parseFile;
@@ -474,7 +475,7 @@ function templateVar(varName) {
 }
 function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer) {
+suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink) {
     return __awaiter(this, void 0, void 0, function* () {
         let totalCount = 0;
         let skipped = 0;
@@ -505,7 +506,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     suiteName = testsuite._attributes.name;
                 }
             }
-            const res = yield parseSuite(testsuite, suiteName, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer);
+            const res = yield parseSuite(testsuite, suiteName, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink);
             totalCount += res.totalCount;
             skipped += res.skipped;
             annotations.push(...res.annotations);
@@ -566,7 +567,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     transformedFileName = (0, utils_1.applyTransformer)(r, transformedFileName);
                 }
                 let resolvedPath = failed || (annotatePassed && success)
-                    ? yield resolvePath(transformedFileName, excludeSources)
+                    ? yield resolvePath(transformedFileName, excludeSources, followSymlink)
                     : transformedFileName;
                 core.debug(`Path prior to stripping: ${resolvedPath}`);
                 const githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
@@ -616,11 +617,11 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer) {
+function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink = false) {
     var e_2, _a;
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Process test report for: ${reportPaths} (${checkName})`);
-        const globber = yield glob.create(reportPaths, { followSymbolicLinks: false });
+        const globber = yield glob.create(reportPaths, { followSymbolicLinks: followSymlink });
         let annotations = [];
         let totalCount = 0;
         let skipped = 0;
@@ -628,7 +629,7 @@ function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotateP
             for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
                 const file = _c.value;
                 core.debug(`Parsing report file: ${file}`);
-                const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer);
+                const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink);
                 if (c === 0)
                     continue;
                 totalCount += c;
