@@ -428,7 +428,7 @@ function safeParseInt(line) {
  * https://github.com/mikepenz/action-junit-report/
  */
 function resolvePath(fileName, excludeSources, followSymlink = false) {
-    var e_1, _a;
+    var _a, e_1, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Resolving path for ${fileName}`);
         const normalizedFilename = fileName.replace(/^\.\//, ''); // strip relative prefix (./)
@@ -437,21 +437,28 @@ function resolvePath(fileName, excludeSources, followSymlink = false) {
         });
         const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : '';
         try {
-            for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
-                const result = _c.value;
-                core.debug(`Matched file: ${result}`);
-                const found = excludeSources.find(v => result.includes(v));
-                if (!found) {
-                    const path = result.slice(searchPath.length + 1);
-                    core.debug(`Resolved path: ${path}`);
-                    return path;
+            for (var _d = true, _e = __asyncValues(globber.globGenerator()), _f; _f = yield _e.next(), _a = _f.done, !_a;) {
+                _c = _f.value;
+                _d = false;
+                try {
+                    const result = _c;
+                    core.debug(`Matched file: ${result}`);
+                    const found = excludeSources.find(v => result.includes(v));
+                    if (!found) {
+                        const path = result.slice(searchPath.length + 1);
+                        core.debug(`Resolved path: ${path}`);
+                        return path;
+                    }
+                }
+                finally {
+                    _d = true;
                 }
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
+                if (!_d && !_a && (_b = _e.return)) yield _b.call(_e);
             }
             finally { if (e_1) throw e_1.error; }
         }
@@ -623,7 +630,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
  * https://github.com/mikepenz/action-junit-report/
  */
 function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink = false) {
-    var e_2, _a;
+    var _a, e_2, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Process test report for: ${reportPaths} (${checkName})`);
         const globber = yield glob.create(reportPaths, { followSymbolicLinks: followSymlink });
@@ -631,21 +638,28 @@ function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotateP
         let totalCount = 0;
         let skipped = 0;
         try {
-            for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
-                const file = _c.value;
-                core.debug(`Parsing report file: ${file}`);
-                const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink);
-                if (c === 0)
-                    continue;
-                totalCount += c;
-                skipped += s;
-                annotations = annotations.concat(a);
+            for (var _d = true, _e = __asyncValues(globber.globGenerator()), _f; _f = yield _e.next(), _a = _f.done, !_a;) {
+                _c = _f.value;
+                _d = false;
+                try {
+                    const file = _c;
+                    core.debug(`Parsing report file: ${file}`);
+                    const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink);
+                    if (c === 0)
+                        continue;
+                    totalCount += c;
+                    skipped += s;
+                    annotations = annotations.concat(a);
+                }
+                finally {
+                    _d = true;
+                }
             }
         }
         catch (e_2_1) { e_2 = { error: e_2_1 }; }
         finally {
             try {
-                if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
+                if (!_d && !_a && (_b = _e.return)) yield _b.call(_e);
             }
             finally { if (e_2) throw e_2.error; }
         }
