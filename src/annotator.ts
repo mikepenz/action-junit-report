@@ -26,7 +26,7 @@ export async function annotateTestResult(
   const conclusion: 'success' | 'failure' = foundResults && testResult.failed <= 0 ? 'success' : 'failure'
 
   for (const annotation of annotations) {
-    core.info(` 🧪 - ${annotation.path} | ${annotation.message}`)
+    core.info(`   🧪 - ${annotation.path} | ${annotation.message.split('\n', 1)[0]}`)
   }
 
   const octokit = github.getOctokit(token)
