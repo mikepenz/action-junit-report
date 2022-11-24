@@ -52,6 +52,9 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
         }
         core.info(`ℹ️ - ${testResult.checkName} - ${title}`);
         const conclusion = foundResults && testResult.failed <= 0 ? 'success' : 'failure';
+        for (const annotation of annotations) {
+            core.info(`   🧪 - ${annotation.path} | ${annotation.message.split('\n', 1)[0]}`);
+        }
         const octokit = github.getOctokit(token);
         if (annotateOnly) {
             for (const annotation of annotations) {
