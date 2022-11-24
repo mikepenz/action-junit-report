@@ -141,7 +141,7 @@ export async function attachSummary(
 
       if (annotations.length === 0) {
         if (!includePassed) {
-          core.warning(
+          core.info(
             `⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`
           )
         }
