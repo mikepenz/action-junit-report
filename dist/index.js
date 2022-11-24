@@ -134,7 +134,9 @@ function attachSummary(testResults, detailedSummary, includePassed) {
             if (detailedSummary) {
                 const annotations = testResult.annotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
                 if (annotations.length === 0) {
-                    core.warning(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
+                    if (!includePassed) {
+                        core.warning(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
+                    }
                     detailsTable.push([`-`, `No test annotations available`, `-`]);
                 }
                 else {
