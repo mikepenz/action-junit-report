@@ -9,7 +9,8 @@ export async function annotateTestResult(
   headSha: string,
   annotateOnly: boolean,
   updateCheck: boolean,
-  annotateNotice: boolean
+  annotateNotice: boolean,
+  jobName: string
 ): Promise<void> {
   const annotations = testResult.annotations.filter(
     annotation => annotateNotice || annotation.annotation_level !== 'notice'
@@ -53,7 +54,7 @@ export async function annotateTestResult(
       const checks = await octokit.rest.checks.listForRef({
         ...github.context.repo,
         ref: headSha,
-        check_name: github.context.job,
+        check_name: jobName,
         status: 'in_progress',
         filter: 'latest'
       })

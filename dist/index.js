@@ -42,7 +42,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.attachSummary = exports.annotateTestResult = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-function annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice) {
+function annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice, jobName) {
     return __awaiter(this, void 0, void 0, function* () {
         const annotations = testResult.annotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
         const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
@@ -79,7 +79,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
         }
         else {
             if (updateCheck) {
-                const checks = yield octokit.rest.checks.listForRef(Object.assign(Object.assign({}, github.context.repo), { ref: headSha, check_name: github.context.job, status: 'in_progress', filter: 'latest' }));
+                const checks = yield octokit.rest.checks.listForRef(Object.assign(Object.assign({}, github.context.repo), { ref: headSha, check_name: jobName, status: 'in_progress', filter: 'latest' }));
                 core.debug(JSON.stringify(checks, null, 2));
                 const check_run_id = checks.data.check_runs[0].id;
                 core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${annotations.length}`);
@@ -227,6 +227,7 @@ function run() {
             const annotateNotice = core.getInput('annotate_notice') === 'true';
             const jobSummary = core.getInput('job_summary') === 'true';
             const detailedSummary = core.getInput('detailed_summary') === 'true';
+            const jobName = core.getInput('job_name');
             const reportPaths = core.getMultilineInput('report_paths');
             const summary = core.getMultilineInput('summary');
             const checkName = core.getMultilineInput('check_name');
@@ -278,7 +279,7 @@ function run() {
             core.startGroup(`🚀 Publish results`);
             try {
                 for (const testResult of testResults) {
-                    yield (0, annotator_1.annotateTestResult)(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice);
+                    yield (0, annotator_1.annotateTestResult)(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice, jobName);
                 }
             }
             catch (error) {

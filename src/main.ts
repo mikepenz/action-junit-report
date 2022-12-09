@@ -24,6 +24,7 @@ export async function run(): Promise<void> {
     const annotateNotice = core.getInput('annotate_notice') === 'true'
     const jobSummary = core.getInput('job_summary') === 'true'
     const detailedSummary = core.getInput('detailed_summary') === 'true'
+    const jobName = core.getInput('job_name')
 
     const reportPaths = core.getMultilineInput('report_paths')
     const summary = core.getMultilineInput('summary')
@@ -101,7 +102,7 @@ export async function run(): Promise<void> {
 
     try {
       for (const testResult of testResults) {
-        await annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice)
+        await annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice, jobName)
       }
     } catch (error) {
       core.error(`❌ Failed to create checks using the provided token. (${error})`)

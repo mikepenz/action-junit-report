@@ -86,6 +86,10 @@ inputs:
     description: 'Enables the file globber to follow symlinks. Default: false'
     required: false
     default: false
+  job_name:
+    description: 'Specify the name of a check to update'
+    required: false
+    default: ${{ github.job }}
 runs:
   using: 'node16'
   main: 'dist/index.js'
