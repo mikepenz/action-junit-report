@@ -144,7 +144,8 @@ export async function parseFile(
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = '',
   transformer: Transformer[] = [],
-  followSymlink = false
+  followSymlink = false,
+  annotationsLimit: Number = -1
 ): Promise<InternalTestResult> {
   core.debug(`Parsing file ${file}`)
 
@@ -161,7 +162,8 @@ export async function parseFile(
     checkTitleTemplate,
     testFilesPrefix,
     transformer,
-    followSymlink
+    followSymlink,
+    annotationsLimit
   )
 }
 
@@ -180,7 +182,8 @@ async function parseSuite(
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = '',
   transformer: Transformer[],
-  followSymlink: boolean
+  followSymlink: boolean,
+  annotationsLimit: Number
 ): Promise<InternalTestResult> {
   let totalCount = 0
   let skipped = 0
@@ -225,7 +228,8 @@ async function parseSuite(
       checkTitleTemplate,
       testFilesPrefix,
       transformer,
-      followSymlink
+      followSymlink,
+      annotationsLimit
     )
     totalCount += res.totalCount
     skipped += res.skipped
@@ -233,6 +237,11 @@ async function parseSuite(
 
     if (!testsuite.testcase) {
       continue
+    } else if (annotationsLimit > 0) {
+      const count = annotations.filter(a => a.annotation_level === 'failure' || annotatePassed).length
+      if (count >= annotationsLimit) {
+        return {totalCount, skipped, annotations}
+      }
     }
 
     let testcases = Array.isArray(testsuite.testcase)
@@ -347,6 +356,13 @@ async function parseSuite(
         message: escapeEmoji(message),
         raw_details: escapeEmoji(stackTrace)
       })
+
+      if (annotationsLimit > 0) {
+        const count = annotations.filter(a => a.annotation_level === 'failure' || annotatePassed).length
+        if (count >= annotationsLimit) {
+          return {totalCount, skipped, annotations}
+        }
+      }
     }
   }
   return {totalCount, skipped, annotations}
@@ -370,7 +386,8 @@ export async function parseTestReports(
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = '',
   transformer: Transformer[],
-  followSymlink = false
+  followSymlink = false,
+  annotationsLimit: Number
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const globber = await glob.create(reportPaths, {followSymbolicLinks: followSymlink})
@@ -393,12 +410,20 @@ export async function parseTestReports(
       checkTitleTemplate,
       testFilesPrefix,
       transformer,
-      followSymlink
+      followSymlink,
+      annotationsLimit
     )
     if (c === 0) continue
     totalCount += c
     skipped += s
     annotations = annotations.concat(a)
+
+    if (annotationsLimit > 0) {
+      const count = annotations.filter(an => an.annotation_level === 'failure' || annotatePassed).length
+      if (count >= annotationsLimit) {
+        break
+      }
+    }
   }
 
   // get the count of passed and failed tests.

@@ -35,6 +35,7 @@ export async function run(): Promise<void> {
     const checkTitleTemplate = core.getMultilineInput('check_title_template')
     const transformers = readTransformers(core.getInput('transformers', {trimWhitespace: true}))
     const followSymlink = core.getBooleanInput('follow_symlink')
+    const annotationsLimit = Number(core.getInput('annotations_limit') || -1)
 
     core.endGroup()
     core.startGroup(`📦 Process test results`)
@@ -66,7 +67,8 @@ export async function run(): Promise<void> {
         retrieve('checkTitleTemplate', checkTitleTemplate, i, reportsCount),
         retrieve('testFilesPrefix', testFilesPrefix, i, reportsCount),
         transformers,
-        followSymlink
+        followSymlink,
+        annotationsLimit
       )
 
       mergedResult.totalCount += testResult.totalCount

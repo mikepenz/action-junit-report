@@ -8,7 +8,7 @@ import { resolveFileAndLine, resolvePath, parseFile, Transformer } from '../src/
  * New test cases:
  *   Copyright Mike Penz
  */
-jest.setTimeout(10000)
+jest.setTimeout(30000)
 
 describe('resolveFileAndLine', () => {
     it('should default to 1 if no line found', async () => {
@@ -177,6 +177,33 @@ describe('parseFile', () => {
             }
         ]);
     });
+
+    it('should skip after reaching annotations_limit', async () => {
+        const annotationsLimit = 1
+        const { totalCount, skipped, annotations } = await parseFile(
+            'test_results/tests/utils/target/surefire-reports/TEST-action.surefire.report.calc.CalcUtilsTest.xml', undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, annotationsLimit
+        );
+
+        expect(totalCount).toBe(1);
+        expect(skipped).toBe(0);
+        expect(annotations).toStrictEqual([
+            {
+                path: 'test_results/tests/utils/src/test/java/action/surefire/report/calc/CalcUtilsTest.kt',
+                start_line: 27,
+                end_line: 27,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: 'failure',
+                title: 'CalcUtilsTest.test error handling',
+                message:
+                    'unexpected exception type thrown; expected:<java.lang.IllegalStateException> but was:<java.lang.IllegalArgumentException>',
+                raw_details:
+                    'java.lang.AssertionError: unexpected exception type thrown; expected:<java.lang.IllegalStateException> but was:<java.lang.IllegalArgumentException>\n\tat action.surefire.report.calc.CalcUtilsTest.test error handling(CalcUtilsTest.kt:27)\nCaused by: java.lang.IllegalArgumentException: Amount must have max 2 non-zero decimal places\n\tat action.surefire.report.calc.CalcUtilsTest.scale(CalcUtilsTest.kt:31)\n\tat action.surefire.report.calc.CalcUtilsTest.access$scale(CalcUtilsTest.kt:9)\n\tat action.surefire.report.calc.CalcUtilsTest.test error handling(CalcUtilsTest.kt:27)'
+            }
+        ]);
+    });
+
+
     it('should parse pytest results', async () => {
         const { totalCount, skipped, annotations } = await parseFile('test_results/python/report.xml');
         const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
