@@ -90,6 +90,9 @@ inputs:
     description: 'Specify the name of a check to update'
     required: false
     default: ${{ github.job }}
+  annotations_limit:
+    description: 'Specify the limit for annotations. This will also interrupt parsing all test-suites if the limit is reached.'
+    required: false
 runs:
   using: 'node16'
   main: 'dist/index.js'

@@ -4,7 +4,7 @@ import { readTransformers } from '../src/utils';
 /**
  *   Copyright 2022 Mike Penz
  */
-jest.setTimeout(10000)
+jest.setTimeout(30000)
 
 describe('readTransformers', () => {
     it('should successfully parse default transformer', async () => {

@@ -237,6 +237,7 @@ function run() {
             const checkTitleTemplate = core.getMultilineInput('check_title_template');
             const transformers = (0, utils_1.readTransformers)(core.getInput('transformers', { trimWhitespace: true }));
             const followSymlink = core.getBooleanInput('follow_symlink');
+            const annotationsLimit = Number(core.getInput('annotations_limit') || -1);
             core.endGroup();
             core.startGroup(`📦 Process test results`);
             const reportsCount = reportPaths.length;
@@ -252,7 +253,7 @@ function run() {
             };
             core.info(`Retrieved ${reportsCount} reports to process.`);
             for (let i = 0; i < reportsCount; i++) {
-                const testResult = yield (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed && annotateNotice, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink);
+                const testResult = yield (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed && annotateNotice, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink, annotationsLimit);
                 mergedResult.totalCount += testResult.totalCount;
                 mergedResult.skipped += testResult.skipped;
                 mergedResult.failed += testResult.failed;
@@ -474,12 +475,12 @@ exports.resolvePath = resolvePath;
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseFile(file, suiteRegex = '', annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, testFilesPrefix = '', transformer = [], followSymlink = false) {
+function parseFile(file, suiteRegex = '', annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Parsing file ${file}`);
         const data = fs.readFileSync(file, 'utf8');
         const report = JSON.parse(parser.xml2json(data, { compact: true }));
-        return parseSuite(report, '', suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink);
+        return parseSuite(report, '', suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit);
     });
 }
 exports.parseFile = parseFile;
@@ -488,7 +489,7 @@ function templateVar(varName) {
 }
 function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink) {
+suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, annotationsLimit) {
     return __awaiter(this, void 0, void 0, function* () {
         let totalCount = 0;
         let skipped = 0;
@@ -519,12 +520,18 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     suiteName = testsuite._attributes.name;
                 }
             }
-            const res = yield parseSuite(testsuite, suiteName, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink);
+            const res = yield parseSuite(testsuite, suiteName, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit);
             totalCount += res.totalCount;
             skipped += res.skipped;
             annotations.push(...res.annotations);
             if (!testsuite.testcase) {
                 continue;
+            }
+            else if (annotationsLimit > 0) {
+                const count = annotations.filter(a => a.annotation_level === 'failure' || annotatePassed).length;
+                if (count >= annotationsLimit) {
+                    return { totalCount, skipped, annotations };
+                }
             }
             let testcases = Array.isArray(testsuite.testcase)
                 ? testsuite.testcase
@@ -618,6 +625,12 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     message: escapeEmoji(message),
                     raw_details: escapeEmoji(stackTrace)
                 });
+                if (annotationsLimit > 0) {
+                    const count = annotations.filter(a => a.annotation_level === 'failure' || annotatePassed).length;
+                    if (count >= annotationsLimit) {
+                        return { totalCount, skipped, annotations };
+                    }
+                }
             }
         }
         return { totalCount, skipped, annotations };
@@ -630,7 +643,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink = false) {
+function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink = false, annotationsLimit) {
     var _a, e_2, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Process test report for: ${reportPaths} (${checkName})`);
@@ -645,12 +658,18 @@ function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotateP
                 try {
                     const file = _c;
                     core.debug(`Parsing report file: ${file}`);
-                    const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink);
+                    const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit);
                     if (c === 0)
                         continue;
                     totalCount += c;
                     skipped += s;
                     annotations = annotations.concat(a);
+                    if (annotationsLimit > 0) {
+                        const count = annotations.filter(an => an.annotation_level === 'failure' || annotatePassed).length;
+                        if (count >= annotationsLimit) {
+                            break;
+                        }
+                    }
                 }
                 finally {
                     _d = true;
