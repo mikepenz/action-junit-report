@@ -548,6 +548,27 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         ]);
     });
 
+    it('should parse xunit results with file and line on failure', async () => {
+        const { totalCount, skipped, annotations } = await parseFile('test_results/xunit/report_fl_on_f.xml');
+        const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
+
+        expect(totalCount).toBe(4);
+        expect(skipped).toBe(0);
+        expect(filtered).toStrictEqual([
+            {
+                path: "main.c",
+                start_line: 38,
+                end_line: 38,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: "failure",
+                title: "main.c.test_my_sum_fail",
+                message: "Expected 2 Was 0",
+                raw_details: "",
+              }
+        ]);
+    });
+
     it('should parse junit web test results', async () => {
         const { totalCount, skipped, annotations } = await parseFile('test_results/junit-web-test/expected.xml');
         const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
