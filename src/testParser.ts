@@ -280,12 +280,21 @@ async function parseSuite(
       const failed = testcase.failure || testcase.error
       const success = !failed
 
+      // in some definitions `failure` may be an array
+      const failures = testcase.failure
+        ? Array.isArray(testcase.failure)
+          ? testcase.failure
+          : [testcase.failure]
+        : undefined
+      // the action only supports 1 failure per testcase
+      const failure = failures ? failures[0] : undefined
+
       if (testcase.skipped || testcase._attributes.status === 'disabled') {
         skipped++
       }
       const stackTrace: string = (
-        (testcase.failure && testcase.failure._cdata) ||
-        (testcase.failure && testcase.failure._text) ||
+        (failure && failure._cdata) ||
+        (failure && failure._text) ||
         (testcase.error && testcase.error._cdata) ||
         (testcase.error && testcase.error._text) ||
         ''
@@ -294,15 +303,19 @@ async function parseSuite(
         .trim()
 
       const message: string = (
-        (testcase.failure && testcase.failure._attributes && testcase.failure._attributes.message) ||
+        (failure && failure._attributes && failure._attributes.message) ||
         (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
         stackTrace.split('\n').slice(0, 2).join('\n') ||
         testcase._attributes.name
       ).trim()
 
       const pos = await resolveFileAndLine(
-        testcase._attributes.file || (testsuite._attributes !== undefined ? testsuite._attributes.file : null),
-        testcase._attributes.line || (testsuite._attributes !== undefined ? testsuite._attributes.line : null),
+        testcase._attributes.file ||
+          failure?._attributes?.file ||
+          (testsuite._attributes !== undefined ? testsuite._attributes.file : null),
+        testcase._attributes.line ||
+          failure?._attributes?.line ||
+          (testsuite._attributes !== undefined ? testsuite._attributes.line : null),
         testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name,
         stackTrace
       )
