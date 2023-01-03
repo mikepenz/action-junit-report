@@ -716,4 +716,25 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
             },
         ]);
     });
+
+    it('should parse catch2 results with file and line on failure', async () => {
+        const { totalCount, skipped, annotations } = await parseFile('test_results/catch2/report.xml');
+        const filtered = annotations.filter(annotation =>  annotation.annotation_level !== 'notice')
+
+        expect(totalCount).toBe(1);
+        expect(skipped).toBe(0);
+        expect(filtered).toStrictEqual([
+            {
+                path: "test/unit/detail/utility/is_constant_evaluated.cpp",
+                start_line: 19,
+                end_line: 19,
+                start_column: 0,
+                end_column: 0,
+                annotation_level: "failure",
+                title: "test/unit/detail/utility/is_constant_evaluated.cpp.is constant evaluated",
+                message: "REQUIRE(v == 1) expands to 0 == 10",
+                raw_details: "FAILED:\n  REQUIRE( v == 1 )\nwith expansion:\n  0 == 1\n0\nat /__w/futures/futures/test/unit/detail/utility/is_constant_evaluated.cpp:19",
+              }
+        ]);
+    });
 });

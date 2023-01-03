@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite errors="0" failures="1" hostname="tbd" name="ut_detail_utility_is_constant_evaluated" tests="1" time="0.000" timestamp="2022-12-29T02:23:00Z">
+    <properties>
+      <property name="filters" value="is constant evaluated" />
+    </properties>
+    <testcase classname="ut_detail_utility_is_constant_evaluated" name="is constant evaluated" status="run" time="0.000">
+      <failure file="test/unit/detail/utility/is_constant_evaluated.cpp" line="19" message="REQUIRE(v == 1) expands to 0 == 10" type="REQUIRE">
+FAILED:
+  REQUIRE( v == 1 )
+with expansion:
+  0 == 1
+0
+at /__w/futures/futures/test/unit/detail/utility/is_constant_evaluated.cpp:19
+      </failure>
+    </testcase>
+    <system-out />
+    <system-err />
+  </testsuite>
+</testsuites>
