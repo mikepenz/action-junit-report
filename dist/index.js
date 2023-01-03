@@ -490,6 +490,7 @@ function templateVar(varName) {
 function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
 suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, annotationsLimit) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         let totalCount = 0;
         let skipped = 0;
@@ -567,21 +568,33 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 totalCount++;
                 const failed = testcase.failure || testcase.error;
                 const success = !failed;
+                // in some definitions `failure` may be an array
+                const failures = testcase.failure
+                    ? Array.isArray(testcase.failure)
+                        ? testcase.failure
+                        : [testcase.failure]
+                    : undefined;
+                // the action only supports 1 failure per testcase
+                const failure = failures ? failures[0] : undefined;
                 if (testcase.skipped || testcase._attributes.status === 'disabled') {
                     skipped++;
                 }
-                const stackTrace = ((testcase.failure && testcase.failure._cdata) ||
-                    (testcase.failure && testcase.failure._text) ||
+                const stackTrace = ((failure && failure._cdata) ||
+                    (failure && failure._text) ||
                     (testcase.error && testcase.error._cdata) ||
                     (testcase.error && testcase.error._text) ||
                     '')
                     .toString()
                     .trim();
-                const message = ((testcase.failure && testcase.failure._attributes && testcase.failure._attributes.message) ||
+                const message = ((failure && failure._attributes && failure._attributes.message) ||
                     (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
                     stackTrace.split('\n').slice(0, 2).join('\n') ||
                     testcase._attributes.name).trim();
-                const pos = yield resolveFileAndLine(testcase._attributes.file || (testsuite._attributes !== undefined ? testsuite._attributes.file : null), testcase._attributes.line || (testsuite._attributes !== undefined ? testsuite._attributes.line : null), testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
+                const pos = yield resolveFileAndLine(testcase._attributes.file ||
+                    ((_a = failure === null || failure === void 0 ? void 0 : failure._attributes) === null || _a === void 0 ? void 0 : _a.file) ||
+                    (testsuite._attributes !== undefined ? testsuite._attributes.file : null), testcase._attributes.line ||
+                    ((_b = failure === null || failure === void 0 ? void 0 : failure._attributes) === null || _b === void 0 ? void 0 : _b.line) ||
+                    (testsuite._attributes !== undefined ? testsuite._attributes.line : null), testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
                 let transformedFileName = pos.fileName;
                 for (const r of transformer) {
                     transformedFileName = (0, utils_1.applyTransformer)(r, transformedFileName);
