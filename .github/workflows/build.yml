@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+        uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '16'
       - name: Test JUnit test import
@@ -66,11 +66,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: "Build Changelog"
         id: github_release
-        uses: mikepenz/release-changelog-builder-action@v2
+        uses: mikepenz/release-changelog-builder-action@v3
         with:
           configuration: ".github/config/configuration.json"
         env:
