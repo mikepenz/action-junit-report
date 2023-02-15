@@ -31,11 +31,15 @@ export async function run(): Promise<void> {
     const checkName = core.getMultilineInput('check_name')
     const testFilesPrefix = core.getMultilineInput('test_files_prefix')
     const suiteRegex = core.getMultilineInput('suite_regex')
-    const excludeSources = core.getMultilineInput('exclude_sources') ? core.getMultilineInput('exclude_sources') : []
+    let excludeSources = core.getMultilineInput('exclude_sources') ? core.getMultilineInput('exclude_sources') : []
     const checkTitleTemplate = core.getMultilineInput('check_title_template')
     const transformers = readTransformers(core.getInput('transformers', {trimWhitespace: true}))
     const followSymlink = core.getBooleanInput('follow_symlink')
     const annotationsLimit = Number(core.getInput('annotations_limit') || -1)
+
+    if (excludeSources.length === 0) {
+      excludeSources = ['/build/', '/__pycache__/']
+    }
 
     core.endGroup()
     core.startGroup(`📦 Process test results`)
