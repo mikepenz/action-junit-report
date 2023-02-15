@@ -22,7 +22,6 @@ inputs:
   exclude_sources:
     description: 'Comma seperated list of source folders to ignore for lookup'
     required: false
-    default: '/build/,/__pycache__/'
   suite_regex:
     description: 'Regular expression for the named test suites'
     required: false
