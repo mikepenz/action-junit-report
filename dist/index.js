@@ -261,19 +261,16 @@ function run() {
                 mergedResult.skipped += testResult.skipped;
                 mergedResult.failed += testResult.failed;
                 mergedResult.passed += testResult.passed;
-                const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
-                if (!foundResults) {
-                    if (requireTests) {
-                        core.setFailed(`❌ No test results found for ${checkName}`);
-                    }
-                    return;
-                }
                 testResults.push(testResult);
             }
             core.setOutput('total', mergedResult.totalCount);
             core.setOutput('passed', mergedResult.passed);
             core.setOutput('skipped', mergedResult.skipped);
             core.setOutput('failed', mergedResult.failed);
+            const foundResults = mergedResult.totalCount > 0 || mergedResult.skipped > 0;
+            if (!foundResults && requireTests) {
+                core.setFailed(`❌ No test results found for ${checkName}`);
+            }
             const pullRequest = github.context.payload.pull_request;
             const link = (pullRequest && pullRequest.html_url) || github.context.ref;
             const conclusion = mergedResult.totalCount > 0 && mergedResult.failed <= 0 ? 'success' : 'failure';
