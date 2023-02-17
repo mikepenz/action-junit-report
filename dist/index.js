@@ -270,10 +270,11 @@ function run() {
             const foundResults = mergedResult.totalCount > 0 || mergedResult.skipped > 0;
             if (!foundResults && requireTests) {
                 core.setFailed(`❌ No test results found for ${checkName}`);
+                return; // end if we failed due to no tests, but configured to require tests
             }
             const pullRequest = github.context.payload.pull_request;
             const link = (pullRequest && pullRequest.html_url) || github.context.ref;
-            const conclusion = mergedResult.totalCount > 0 && mergedResult.failed <= 0 ? 'success' : 'failure';
+            const conclusion = mergedResult.failed <= 0 ? 'success' : 'failure';
             const headSha = commit || (pullRequest && pullRequest.head.sha) || github.context.sha;
             core.info(`ℹ️ Posting with conclusion '${conclusion}' to ${link} (sha: ${headSha})`);
             core.endGroup();
