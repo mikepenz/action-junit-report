@@ -10,7 +10,7 @@ inputs:
     default: ${{ github.token }}
   github_token:
     description: 'Deprecated syntax to specify github token.'
-    required: true
+    required: false
   report_paths:
     description: 'Xml report paths in glob format'
     required: false
