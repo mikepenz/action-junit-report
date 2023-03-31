@@ -145,7 +145,7 @@ export async function parseFile(
   testFilesPrefix = '',
   transformer: Transformer[] = [],
   followSymlink = false,
-  annotationsLimit: number = -1
+  annotationsLimit = -1
 ): Promise<InternalTestResult> {
   core.debug(`Parsing file ${file}`)
 
