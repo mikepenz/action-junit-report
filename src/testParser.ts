@@ -145,7 +145,7 @@ export async function parseFile(
   testFilesPrefix = '',
   transformer: Transformer[] = [],
   followSymlink = false,
-  annotationsLimit: Number = -1
+  annotationsLimit = -1
 ): Promise<InternalTestResult> {
   core.debug(`Parsing file ${file}`)
 
@@ -183,7 +183,7 @@ async function parseSuite(
   testFilesPrefix = '',
   transformer: Transformer[],
   followSymlink: boolean,
-  annotationsLimit: Number
+  annotationsLimit: number
 ): Promise<InternalTestResult> {
   let totalCount = 0
   let skipped = 0
@@ -400,7 +400,7 @@ export async function parseTestReports(
   testFilesPrefix = '',
   transformer: Transformer[],
   followSymlink = false,
-  annotationsLimit: Number
+  annotationsLimit: number
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const globber = await glob.create(reportPaths, {followSymbolicLinks: followSymlink})
