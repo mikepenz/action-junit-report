@@ -587,6 +587,17 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     '')
                     .toString()
                     .trim();
+                const systemOut = ((testsuite['system-out'] && testsuite['system-out']._cdata) ||
+                    (testsuite['system-out'] && testsuite['system-out']._text) ||
+                    '')
+                    .toString()
+                    .trim();
+                const systemErr = ((testsuite['system-err'] && testsuite['system-err']._cdata) ||
+                    (testsuite['system-err'] && testsuite['system-err']._text) ||
+                    '')
+                    .toString()
+                    .trim();
+                const errorOutput = `Stack Trace:\n${stackTrace}\n\n\nSystem Output:\n${systemOut}\n\n\nSystem Error:\n${systemErr}`;
                 const message = ((failure && failure._attributes && failure._attributes.message) ||
                     (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
                     stackTrace.split('\n').slice(0, 2).join('\n') ||
@@ -595,7 +606,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     ((_a = failure === null || failure === void 0 ? void 0 : failure._attributes) === null || _a === void 0 ? void 0 : _a.file) ||
                     (testsuite._attributes !== undefined ? testsuite._attributes.file : null), testcase._attributes.line ||
                     ((_b = failure === null || failure === void 0 ? void 0 : failure._attributes) === null || _b === void 0 ? void 0 : _b.line) ||
-                    (testsuite._attributes !== undefined ? testsuite._attributes.line : null), testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
+                    (testsuite._attributes !== undefined ? testsuite._attributes.line : null), testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, errorOutput);
                 let transformedFileName = pos.fileName;
                 for (const r of transformer) {
                     transformedFileName = (0, utils_1.applyTransformer)(r, transformedFileName);
@@ -637,7 +648,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     annotation_level: success ? 'notice' : 'failure',
                     title: escapeEmoji(title),
                     message: escapeEmoji(message),
-                    raw_details: escapeEmoji(stackTrace)
+                    raw_details: escapeEmoji(errorOutput)
                 });
                 if (annotationsLimit > 0) {
                     const count = annotations.filter(a => a.annotation_level === 'failure' || annotatePassed).length;

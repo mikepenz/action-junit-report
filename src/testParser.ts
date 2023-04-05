@@ -302,6 +302,24 @@ async function parseSuite(
         .toString()
         .trim()
 
+      const systemOut: string = (
+        (testsuite['system-out'] && testsuite['system-out']._cdata) ||
+        (testsuite['system-out'] && testsuite['system-out']._text) ||
+        ''
+      )
+        .toString()
+        .trim()
+
+      const systemErr: string = (
+        (testsuite['system-err'] && testsuite['system-err']._cdata) ||
+        (testsuite['system-err'] && testsuite['system-err']._text) ||
+        ''
+      )
+        .toString()
+        .trim()
+
+      const errorOutput = `Stack Trace:\n${stackTrace}\n\n\nSystem Output:\n${systemOut}\n\n\nSystem Error:\n${systemErr}`
+
       const message: string = (
         (failure && failure._attributes && failure._attributes.message) ||
         (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
@@ -317,7 +335,7 @@ async function parseSuite(
           failure?._attributes?.line ||
           (testsuite._attributes !== undefined ? testsuite._attributes.line : null),
         testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name,
-        stackTrace
+        errorOutput
       )
 
       let transformedFileName = pos.fileName
@@ -367,7 +385,7 @@ async function parseSuite(
         annotation_level: success ? 'notice' : 'failure',
         title: escapeEmoji(title),
         message: escapeEmoji(message),
-        raw_details: escapeEmoji(stackTrace)
+        raw_details: escapeEmoji(errorOutput)
       })
 
       if (annotationsLimit > 0) {
