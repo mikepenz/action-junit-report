@@ -129,7 +129,7 @@ export async function attachSummary(
   for (const testResult of testResults) {
     table.push([
       `${testResult.checkName}`,
-      `${testResult.totalCount} run`,
+      `${testResult.totalCount} ran`,
       `${testResult.passed} passed`,
       `${testResult.skipped} skipped`,
       `${testResult.failed} failed`
