@@ -167,10 +167,6 @@ export async function parseFile(
   )
 }
 
-function templateVar(varName: string): string {
-  return `{{${varName}}}`
-}
-
 async function parseSuite(
   /* eslint-disable  @typescript-eslint/no-explicit-any */
   suite: any,
@@ -318,14 +314,25 @@ async function parseSuite(
         .toString()
         .trim()
 
-      const errorOutput = `Stack Trace:\n${stackTrace}\n\n\nSystem Output:\n${systemOut}\n\n\nSystem Error:\n${systemErr}`
+      const errorOutput = `**********************************************************************\n
+***************************** STACK TRACE ****************************\n
+**********************************************************************\n${stackTrace}\n\n\n
+**********************************************************************\n
+***************************** SYSTEM OUTPUT **************************\n
+**********************************************************************\n${systemOut}\n\n\n
+**********************************************************************\n
+***************************** SYSTEM ERROR ***************************\n
+**********************************************************************\n${systemErr}`
 
-      const message: string = (
+      let message: string = (
         (failure && failure._attributes && failure._attributes.message) ||
         (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
         stackTrace.split('\n').slice(0, 2).join('\n') ||
         testcase._attributes.name
       ).trim()
+      if (message.length > 200) {
+        message = `${message.slice(0, 200)}\nand more...`
+      }
 
       const pos = await resolveFileAndLine(
         testcase._attributes.file ||
@@ -355,21 +362,7 @@ async function parseSuite(
         resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, '') // strip workspace prefix, make the path relative
       }
 
-      let title = ''
-      if (checkTitleTemplate) {
-        // ensure to not duplicate the test_name if file_name is equal
-        const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : ''
-        title = checkTitleTemplate
-          .replace(templateVar('FILE_NAME'), fileName)
-          .replace(templateVar('SUITE_NAME'), suiteName ?? '')
-          .replace(templateVar('TEST_NAME'), testcase._attributes.name)
-      } else if (pos.fileName !== testcase._attributes.name) {
-        title = suiteName
-          ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
-          : `${pos.fileName}.${testcase._attributes.name}`
-      } else {
-        title = suiteName ? `${suiteName}/${testcase._attributes.name}` : `${testcase._attributes.name}`
-      }
+      const title: string = testcase ? testcase._attributes.classname : testsuite._attributes.name
 
       // optionally attach the prefix to the path
       resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath

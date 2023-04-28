@@ -485,9 +485,6 @@ function parseFile(file, suiteRegex = '', annotatePassed = false, checkRetries =
     });
 }
 exports.parseFile = parseFile;
-function templateVar(varName) {
-    return `{{${varName}}}`;
-}
 function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
 suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, annotationsLimit) {
@@ -597,11 +594,22 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     '')
                     .toString()
                     .trim();
-                const errorOutput = `Stack Trace:\n${stackTrace}\n\n\nSystem Output:\n${systemOut}\n\n\nSystem Error:\n${systemErr}`;
-                const message = ((failure && failure._attributes && failure._attributes.message) ||
+                const errorOutput = `**********************************************************************\n
+***************************** STACK TRACE ****************************\n
+**********************************************************************\n${stackTrace}\n\n\n
+**********************************************************************\n
+***************************** SYSTEM OUTPUT **************************\n
+**********************************************************************\n${systemOut}\n\n\n
+**********************************************************************\n
+***************************** SYSTEM ERROR ***************************\n
+**********************************************************************\n${systemErr}`;
+                let message = ((failure && failure._attributes && failure._attributes.message) ||
                     (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
                     stackTrace.split('\n').slice(0, 2).join('\n') ||
                     testcase._attributes.name).trim();
+                if (message.length > 200) {
+                    message = `${message.slice(0, 200)}\nand more...`;
+                }
                 const pos = yield resolveFileAndLine(testcase._attributes.file ||
                     ((_a = failure === null || failure === void 0 ? void 0 : failure._attributes) === null || _a === void 0 ? void 0 : _a.file) ||
                     (testsuite._attributes !== undefined ? testsuite._attributes.file : null), testcase._attributes.line ||
@@ -619,23 +627,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 if (githubWorkspacePath) {
                     resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, ''); // strip workspace prefix, make the path relative
                 }
-                let title = '';
-                if (checkTitleTemplate) {
-                    // ensure to not duplicate the test_name if file_name is equal
-                    const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : '';
-                    title = checkTitleTemplate
-                        .replace(templateVar('FILE_NAME'), fileName)
-                        .replace(templateVar('SUITE_NAME'), suiteName !== null && suiteName !== void 0 ? suiteName : '')
-                        .replace(templateVar('TEST_NAME'), testcase._attributes.name);
-                }
-                else if (pos.fileName !== testcase._attributes.name) {
-                    title = suiteName
-                        ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
-                        : `${pos.fileName}.${testcase._attributes.name}`;
-                }
-                else {
-                    title = suiteName ? `${suiteName}/${testcase._attributes.name}` : `${testcase._attributes.name}`;
-                }
+                const title = testcase ? testcase._attributes.classname : testsuite._attributes.name;
                 // optionally attach the prefix to the path
                 resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath;
                 core.info(`${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`);
