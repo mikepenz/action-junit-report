@@ -357,19 +357,8 @@ async function parseSuite(
 
       let title = ''
       if (checkTitleTemplate) {
-        // ensure to not duplicate the test_name if file_name is equal
-        const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : ''
-        title = checkTitleTemplate
-          .replace(templateVar('FILE_NAME'), fileName)
-          .replace(templateVar('SUITE_NAME'), suiteName ?? '')
-          .replace(templateVar('TEST_NAME'), testcase._attributes.name)
-      } else if (pos.fileName !== testcase._attributes.name) {
-        title = suiteName
-          ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
-          : `${pos.fileName}.${testcase._attributes.name}`
-      } else {
         title = suiteName ? `${suiteName}/${testcase._attributes.name}` : `${testcase._attributes.name}`
-      }
+
 
       // optionally attach the prefix to the path
       resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath
