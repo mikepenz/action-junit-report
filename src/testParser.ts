@@ -167,10 +167,6 @@ export async function parseFile(
   )
 }
 
-function templateVar(varName: string): string {
-  return `{{${varName}}}`
-}
-
 async function parseSuite(
   /* eslint-disable  @typescript-eslint/no-explicit-any */
   suite: any,
@@ -357,8 +353,9 @@ async function parseSuite(
 
       let title = ''
       if (checkTitleTemplate) {
-        title = suiteName ? `${suiteName}/${testcase._attributes.name}` : `${testcase._attributes.name}`
-
+        // ensure to not duplicate the test_name if file_name is equal
+        title = suiteName ? `${suiteName}/${testcase._attributes.className}` : `${testcase._attributes.className}`
+      }
 
       // optionally attach the prefix to the path
       resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath

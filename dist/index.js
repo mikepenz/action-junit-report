@@ -485,9 +485,6 @@ function parseFile(file, suiteRegex = '', annotatePassed = false, checkRetries =
     });
 }
 exports.parseFile = parseFile;
-function templateVar(varName) {
-    return `{{${varName}}}`;
-}
 function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
 suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, annotationsLimit) {
@@ -622,19 +619,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 let title = '';
                 if (checkTitleTemplate) {
                     // ensure to not duplicate the test_name if file_name is equal
-                    const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : '';
-                    title = checkTitleTemplate
-                        .replace(templateVar('FILE_NAME'), fileName)
-                        .replace(templateVar('SUITE_NAME'), suiteName !== null && suiteName !== void 0 ? suiteName : '')
-                        .replace(templateVar('TEST_NAME'), testcase._attributes.name);
-                }
-                else if (pos.fileName !== testcase._attributes.name) {
-                    title = suiteName
-                        ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
-                        : `${pos.fileName}.${testcase._attributes.name}`;
-                }
-                else {
-                    title = suiteName ? `${suiteName}/${testcase._attributes.name}` : `${testcase._attributes.name}`;
+                    title = suiteName ? `${suiteName}/${testcase._attributes.className}` : `${testcase._attributes.className}`;
                 }
                 // optionally attach the prefix to the path
                 resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath;
