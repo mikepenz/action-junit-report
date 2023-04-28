@@ -619,7 +619,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 let title = '';
                 if (checkTitleTemplate) {
                     // ensure to not duplicate the test_name if file_name is equal
-                    title = suiteName ? `${suiteName}/${testcase._attributes.className}` : `${testcase._attributes.className}`;
+                    title = testcase._attributes.className || testsuite._attributes.name;
                 }
                 // optionally attach the prefix to the path
                 resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath;
