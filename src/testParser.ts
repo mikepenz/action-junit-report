@@ -330,8 +330,8 @@ async function parseSuite(
         stackTrace.split('\n').slice(0, 2).join('\n') ||
         testcase._attributes.name
       ).trim()
-      if (message.length > 100) {
-        message = message.slice(0, 100)
+      if (message.length > 200) {
+        message = `${message.slice(0, 200)}\nand more...`
       }
 
       const pos = await resolveFileAndLine(
