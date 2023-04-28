@@ -607,8 +607,8 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
                     stackTrace.split('\n').slice(0, 2).join('\n') ||
                     testcase._attributes.name).trim();
-                if (message.length > 100) {
-                    message = message.slice(0, 100);
+                if (message.length > 200) {
+                    message = `${message.slice(0, 200)}\nand more...`;
                 }
                 const pos = yield resolveFileAndLine(testcase._attributes.file ||
                     ((_a = failure === null || failure === void 0 ? void 0 : failure._attributes) === null || _a === void 0 ? void 0 : _a.file) ||
