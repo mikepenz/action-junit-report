@@ -594,7 +594,15 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     '')
                     .toString()
                     .trim();
-                const errorOutput = `Stack Trace:\n${stackTrace}\n\n\nSystem Output:\n${systemOut}\n\n\nSystem Error:\n${systemErr}`;
+                const errorOutput = `**********************************************************************\n
+                           ***************************** STACK TRACE*****************************\n
+                           **********************************************************************\n${stackTrace}\n\n\n
+                           **********************************************************************\n
+                           ***************************** SYSTEM OUTPUT **************************\n
+                           **********************************************************************\n${systemOut}\n\n\n
+                           **********************************************************************\n
+                           ***************************** SYSTEM ERROR ***************************\n
+                           **********************************************************************\n${systemErr}`;
                 const message = ((failure && failure._attributes && failure._attributes.message) ||
                     (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
                     stackTrace.split('\n').slice(0, 2).join('\n') ||
@@ -632,7 +640,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     end_column: 0,
                     annotation_level: success ? 'notice' : 'failure',
                     title: escapeEmoji(title),
-                    message: escapeEmoji(message),
+                    message: '',
                     raw_details: escapeEmoji(errorOutput)
                 });
                 if (annotationsLimit > 0) {
