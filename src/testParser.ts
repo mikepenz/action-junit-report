@@ -354,7 +354,7 @@ async function parseSuite(
       let title = ''
       if (checkTitleTemplate) {
         // ensure to not duplicate the test_name if file_name is equal
-        title = testcase._attributes.className || testsuite._attributes.name
+        title = suiteName ? `${suiteName}` : `${testcase._attributes.className}`
       }
 
       // optionally attach the prefix to the path
