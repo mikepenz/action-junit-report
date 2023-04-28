@@ -324,12 +324,15 @@ async function parseSuite(
                            ***************************** SYSTEM ERROR ***************************\n
                            **********************************************************************\n${systemErr}`
 
-      const message: string = (
+      let message: string = (
         (failure && failure._attributes && failure._attributes.message) ||
         (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
         stackTrace.split('\n').slice(0, 2).join('\n') ||
         testcase._attributes.name
       ).trim()
+      if (message.length > 100) {
+        message = message.slice(0, 100)
+      }
 
       const pos = await resolveFileAndLine(
         testcase._attributes.file ||
