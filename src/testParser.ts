@@ -314,7 +314,15 @@ async function parseSuite(
         .toString()
         .trim()
 
-      const errorOutput = `Stack Trace:\n${stackTrace}\n\n\nSystem Output:\n${systemOut}\n\n\nSystem Error:\n${systemErr}`
+      const errorOutput = `**********************************************************************\n
+                           ***************************** STACK TRACE*****************************\n
+                           **********************************************************************\n${stackTrace}\n\n\n
+                           **********************************************************************\n
+                           ***************************** SYSTEM OUTPUT **************************\n
+                           **********************************************************************\n${systemOut}\n\n\n
+                           **********************************************************************\n
+                           ***************************** SYSTEM ERROR ***************************\n
+                           **********************************************************************\n${systemErr}`
 
       const message: string = (
         (failure && failure._attributes && failure._attributes.message) ||
@@ -370,7 +378,7 @@ async function parseSuite(
         end_column: 0,
         annotation_level: success ? 'notice' : 'failure',
         title: escapeEmoji(title),
-        message: escapeEmoji(message),
+        message: '',
         raw_details: escapeEmoji(errorOutput)
       })
 
