@@ -643,7 +643,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     end_column: 0,
                     annotation_level: success ? 'notice' : 'failure',
                     title: escapeEmoji(title),
-                    message: 'error',
+                    message: escapeEmoji(message),
                     raw_details: escapeEmoji(errorOutput)
                 });
                 if (annotationsLimit > 0) {
