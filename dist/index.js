@@ -595,7 +595,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     .toString()
                     .trim();
                 const errorOutput = `**********************************************************************\n
-***************************** STACK TRACE*****************************\n
+***************************** STACK TRACE ****************************\n
 **********************************************************************\n${stackTrace}\n\n\n
 **********************************************************************\n
 ***************************** SYSTEM OUTPUT **************************\n
@@ -627,7 +627,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 if (githubWorkspacePath) {
                     resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, ''); // strip workspace prefix, make the path relative
                 }
-                const title = suiteName ? `${suiteName}` : `${testcase._attributes.className}`;
+                const title = testcase ? testcase._attributes.classname : testsuite._attributes.name;
                 // optionally attach the prefix to the path
                 resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath;
                 core.info(`${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`);

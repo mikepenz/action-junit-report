@@ -315,7 +315,7 @@ async function parseSuite(
         .trim()
 
       const errorOutput = `**********************************************************************\n
-***************************** STACK TRACE*****************************\n
+***************************** STACK TRACE ****************************\n
 **********************************************************************\n${stackTrace}\n\n\n
 **********************************************************************\n
 ***************************** SYSTEM OUTPUT **************************\n
@@ -362,7 +362,7 @@ async function parseSuite(
         resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, '') // strip workspace prefix, make the path relative
       }
 
-      const title: string = suiteName ? `${suiteName}` : `${testcase._attributes.className}`
+      const title: string = testcase ? testcase._attributes.classname : testsuite._attributes.name
 
       // optionally attach the prefix to the path
       resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath
