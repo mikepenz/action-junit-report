@@ -49,6 +49,10 @@ inputs:
     description: 'Fail if no test are found.'
     required: false
     default: 'false'
+  require_passed_tests:
+    description: 'Fail if no passed test are found.'
+    required: false
+    default: 'false'
   include_passed:
     description: 'Include passed tests in the report'
     required: false
