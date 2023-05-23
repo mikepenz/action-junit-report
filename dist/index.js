@@ -222,6 +222,7 @@ function run() {
             const commit = core.getInput('commit');
             const failOnFailure = core.getInput('fail_on_failure') === 'true';
             const requireTests = core.getInput('require_tests') === 'true';
+            const requirePassedTests = core.getInput('require_passed_tests') === 'true';
             const includePassed = core.getInput('include_passed') === 'true';
             const checkRetries = core.getInput('check_retries') === 'true';
             const annotateNotice = core.getInput('annotate_notice') === 'true';
@@ -267,10 +268,13 @@ function run() {
             core.setOutput('passed', mergedResult.passed);
             core.setOutput('skipped', mergedResult.skipped);
             core.setOutput('failed', mergedResult.failed);
-            const foundResults = mergedResult.totalCount > 0 || mergedResult.skipped > 0;
-            if (!foundResults && requireTests) {
+            if (!(mergedResult.totalCount > 0 || mergedResult.skipped > 0) && requireTests) {
                 core.setFailed(`❌ No test results found for ${checkName}`);
                 return; // end if we failed due to no tests, but configured to require tests
+            }
+            else if (!(mergedResult.passed > 0) && requirePassedTests) {
+                core.setFailed(`❌ No passed test results found for ${checkName}`);
+                return; // end if we failed due to no passed tests, but configured to require passed tests
             }
             const pullRequest = github.context.payload.pull_request;
             const link = (pullRequest && pullRequest.html_url) || github.context.ref;
