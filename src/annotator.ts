@@ -98,7 +98,8 @@ export async function annotateTestResult(
       core.debug(JSON.stringify(createCheckRequest, null, 2))
 
       core.info(`ℹ️ - ${testResult.checkName} - Creating check for`)
-      await octokit.rest.checks.create(createCheckRequest)
+      const result = await octokit.rest.checks.create(createCheckRequest)
+      core.setOutput('link', result.data.html_url)
     }
   }
 }

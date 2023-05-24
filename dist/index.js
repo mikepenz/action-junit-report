@@ -102,7 +102,8 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
                     } });
                 core.debug(JSON.stringify(createCheckRequest, null, 2));
                 core.info(`ℹ️ - ${testResult.checkName} - Creating check for`);
-                yield octokit.rest.checks.create(createCheckRequest);
+                const result = yield octokit.rest.checks.create(createCheckRequest);
+                core.setOutput('link', result.data.html_url);
             }
         }
     });
