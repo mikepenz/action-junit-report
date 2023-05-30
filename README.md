@@ -139,8 +139,58 @@ which has a read/write token, or use a PAT with elevated permissions.
 [security reasons]: https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
 [marked as read-only]: https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
 
-<details><summary><b>Example</b></summary>
+<details><summary><b>Examples</b></summary>
 <p>
+
+Single workflow:
+
+```yml
+name: "Continuous Integration"
+
+on:
+  push:
+    paths:
+      - "gradle/**"
+      - "gradle.properties"
+      - "**.gradle.kts"
+      - "**.java"
+
+jobs:
+  ci:
+    name: "Build and Test"
+    runs-on: "ubuntu-22.04"
+    steps:
+      - name: "Clone The Repository"
+        uses: "actions/checkout@v3"
+      - name: "Build and Run Tests"
+        run: # execute your tests generating test results
+      - name: "Upload Test Report"
+        uses: "actions/upload-artifact@v3"
+        if: always() # always run even if the previous step fails
+        with:
+          name: "junit-test-results"
+          path: "**/build/test-results/test/TEST-*.xml"
+          retention-days: 1 # 1 day is a minimum
+
+  test-reports:
+    needs: "ci"
+    if: always()
+    name: "Publish JUnit Test Results"
+    runs-on: "ubuntu-22.04"
+    permissions:
+      checks: "write"
+    steps:
+      - name: "Download Test Reports"
+        uses: "actions/download-artifact@v3"
+        with:
+          name: "junit-test-results"
+      - name: "Publish JUnit Test Results"
+        uses: "mikepenz/action-junit-report@v3"
+        with:
+          report_paths: "**/build/test-results/**/TEST-*.xml"
+```
+
+Separate workflows:
 
 ```yml
 name: build
@@ -170,7 +220,7 @@ on:
   workflow_run:
     workflows: [build]
     types: [completed]
-    
+
 permissions:
   checks: write
 
@@ -191,7 +241,7 @@ jobs:
           report_paths: '**/build/test-results/test/TEST-*.xml'
 ```
 
-This will securely post the check results from the privileged workflow onto the PR's checks report. 
+This will securely post the check results from the privileged workflow onto the PR's checks report.
 
 </p>
 </details>
