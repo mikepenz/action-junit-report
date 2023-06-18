@@ -444,21 +444,16 @@ function resolvePath(fileName, excludeSources, followSymlink = false) {
         });
         const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : '';
         try {
-            for (var _d = true, _e = __asyncValues(globber.globGenerator()), _f; _f = yield _e.next(), _a = _f.done, !_a;) {
+            for (var _d = true, _e = __asyncValues(globber.globGenerator()), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
                 _c = _f.value;
                 _d = false;
-                try {
-                    const result = _c;
-                    core.debug(`Matched file: ${result}`);
-                    const found = excludeSources.find(v => result.includes(v));
-                    if (!found) {
-                        const path = result.slice(searchPath.length + 1);
-                        core.debug(`Resolved path: ${path}`);
-                        return path;
-                    }
-                }
-                finally {
-                    _d = true;
+                const result = _c;
+                core.debug(`Matched file: ${result}`);
+                const found = excludeSources.find(v => result.includes(v));
+                if (!found) {
+                    const path = result.slice(searchPath.length + 1);
+                    core.debug(`Resolved path: ${path}`);
+                    return path;
                 }
             }
         }
@@ -670,27 +665,22 @@ function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotateP
         let totalCount = 0;
         let skipped = 0;
         try {
-            for (var _d = true, _e = __asyncValues(globber.globGenerator()), _f; _f = yield _e.next(), _a = _f.done, !_a;) {
+            for (var _d = true, _e = __asyncValues(globber.globGenerator()), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
                 _c = _f.value;
                 _d = false;
-                try {
-                    const file = _c;
-                    core.debug(`Parsing report file: ${file}`);
-                    const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit);
-                    if (c === 0)
-                        continue;
-                    totalCount += c;
-                    skipped += s;
-                    annotations = annotations.concat(a);
-                    if (annotationsLimit > 0) {
-                        const count = annotations.filter(an => an.annotation_level === 'failure' || annotatePassed).length;
-                        if (count >= annotationsLimit) {
-                            break;
-                        }
+                const file = _c;
+                core.debug(`Parsing report file: ${file}`);
+                const { totalCount: c, skipped: s, annotations: a } = yield parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit);
+                if (c === 0)
+                    continue;
+                totalCount += c;
+                skipped += s;
+                annotations = annotations.concat(a);
+                if (annotationsLimit > 0) {
+                    const count = annotations.filter(an => an.annotation_level === 'failure' || annotatePassed).length;
+                    if (count >= annotationsLimit) {
+                        break;
                     }
-                }
-                finally {
-                    _d = true;
                 }
             }
         }
