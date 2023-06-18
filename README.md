@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Build and Run Tests
         run: # execute your tests generating test results
       - name: Publish Test Report
