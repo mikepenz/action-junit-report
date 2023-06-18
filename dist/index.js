@@ -635,8 +635,8 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     end_column: 0,
                     annotation_level: success ? 'notice' : 'failure',
                     title: escapeEmoji(title),
-                    message: escapeEmoji(message),
-                    raw_details: escapeEmoji(stackTrace)
+                    message: !success ? escapeEmoji(message) : "",
+                    raw_details: !success ? escapeEmoji(stackTrace) : ""
                 });
                 if (annotationsLimit > 0) {
                     const count = annotations.filter(a => a.annotation_level === 'failure' || annotatePassed).length;
