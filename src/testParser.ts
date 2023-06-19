@@ -152,6 +152,8 @@ export async function parseFile(
   const data: string = fs.readFileSync(file, 'utf8')
   const report = JSON.parse(parser.xml2json(data, {compact: true}))
 
+  core.debug(`Completed parsing file ${file}`)
+
   return parseSuite(
     report,
     '',
@@ -309,14 +311,19 @@ async function parseSuite(
         testcase._attributes.name
       ).trim()
 
+      const file = testcase._attributes.file ||
+      failure?._attributes?.file ||
+      (testsuite._attributes !== undefined ? testsuite._attributes.file : null)
+        const className = testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name
+
+      core.debug(`Prior resolving resolveFileAndLine for ${file} -- ${className}`)
+
       const pos = await resolveFileAndLine(
-        testcase._attributes.file ||
-          failure?._attributes?.file ||
-          (testsuite._attributes !== undefined ? testsuite._attributes.file : null),
+        file,
         testcase._attributes.line ||
           failure?._attributes?.line ||
           (testsuite._attributes !== undefined ? testsuite._attributes.line : null),
-        testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name,
+        className,
         stackTrace
       )
 
@@ -324,6 +331,8 @@ async function parseSuite(
       for (const r of transformer) {
         transformedFileName = applyTransformer(r, transformedFileName)
       }
+
+      core.debug(`Prior resolving path for ${transformedFileName}`)
 
       let resolvedPath =
         failed || (annotatePassed && success)

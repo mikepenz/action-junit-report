@@ -480,6 +480,7 @@ function parseFile(file, suiteRegex = '', annotatePassed = false, checkRetries =
         core.debug(`Parsing file ${file}`);
         const data = fs.readFileSync(file, 'utf8');
         const report = JSON.parse(parser.xml2json(data, { compact: true }));
+        core.debug(`Completed parsing file ${file}`);
         return parseSuite(report, '', suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit);
     });
 }
@@ -590,15 +591,19 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
                     stackTrace.split('\n').slice(0, 2).join('\n') ||
                     testcase._attributes.name).trim();
-                const pos = yield resolveFileAndLine(testcase._attributes.file ||
+                const file = testcase._attributes.file ||
                     ((_a = failure === null || failure === void 0 ? void 0 : failure._attributes) === null || _a === void 0 ? void 0 : _a.file) ||
-                    (testsuite._attributes !== undefined ? testsuite._attributes.file : null), testcase._attributes.line ||
+                    (testsuite._attributes !== undefined ? testsuite._attributes.file : null);
+                const className = testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name;
+                core.debug(`Prior resolving resolveFileAndLine for ${file} -- ${className}`);
+                const pos = yield resolveFileAndLine(file, testcase._attributes.line ||
                     ((_b = failure === null || failure === void 0 ? void 0 : failure._attributes) === null || _b === void 0 ? void 0 : _b.line) ||
-                    (testsuite._attributes !== undefined ? testsuite._attributes.line : null), testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
+                    (testsuite._attributes !== undefined ? testsuite._attributes.line : null), className, stackTrace);
                 let transformedFileName = pos.fileName;
                 for (const r of transformer) {
                     transformedFileName = (0, utils_1.applyTransformer)(r, transformedFileName);
                 }
+                core.debug(`Prior resolving path for ${transformedFileName}`);
                 let resolvedPath = failed || (annotatePassed && success)
                     ? yield resolvePath(transformedFileName, excludeSources, followSymlink)
                     : transformedFileName;
