@@ -106,6 +106,24 @@ jobs:
 </p>
 </details>
 
+If you encounter an out-of-memory from Node, such as
+
+```
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+```
+
+you can increase the memory allocation by setting an environment variable
+
+```
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v3
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
+        if: success() || failure() # always run even if the previous step fails
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+```
+
 ### Action outputs
 
 After action execution it will return the test counts as output.
