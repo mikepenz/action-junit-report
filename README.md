@@ -73,7 +73,7 @@ jobs:
 
 | **Input**      | **Description**                                                                                                                                                       |
 |----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `report_paths`    | **Required**. [Glob](https://github.com/actions/toolkit/tree/master/packages/glob) expression to junit report paths. Defaults to: `**/junit-reports/TEST-*.xml`.   |
+| `report_paths`    | Optional. [Glob](https://github.com/actions/toolkit/tree/master/packages/glob) expression to junit report paths. Defaults to: `**/junit-reports/TEST-*.xml`.   |
 | `token`           | Optional. GitHub token for creating a check run. Set to `${{ github.token }}` by default.                                                                          |
 | `test_files_prefix` | Optional. Prepends the provided prefix to test file paths within the report when annotating on GitHub.                                                           |
 | `exclude_sources` | Optional. Provide `,` seperated array of folders to ignore for source lookup. Defaults to: `/build/,/__pycache__/`                                                 |
@@ -97,11 +97,13 @@ jobs:
 | `job_name`        | Optional. Specify the name of a check to update                                                                                                                    |
 | `annotations_limit` | Optional. Specify the limit for annotations. This will also interrupt parsing all test-suites if the limit is reached. Defaults to: `No Limit`.                                              |
 
-<details><summary><b>Common `report_paths`</b></summary>
+<details><summary><b>Common report_paths</b></summary>
 <p>
 
 - Surefire: 
 `**/target/surefire-reports/TEST-*.xml`
+- sbt:
+`**/target/test-reports/*.xml`
 
 </p>
 </details>
