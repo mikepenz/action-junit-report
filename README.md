@@ -106,6 +106,9 @@ jobs:
 </p>
 </details>
 
+<details><summary><b>Increase Node Heap Memory</b></summary>
+<p>
+
 If you encounter an out-of-memory from Node, such as
 
 ```
@@ -114,15 +117,18 @@ FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaS
 
 you can increase the memory allocation by setting an environment variable
 
+```yaml
+- name: Publish Test Report
+  uses: mikepenz/action-junit-report@v3
+  env:
+    NODE_OPTIONS: "--max_old_space_size=4096"
+  if: success() || failure() # always run even if the previous step fails
+  with:
+    report_paths: '**/build/test-results/test/TEST-*.xml'
 ```
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v3
-        env:
-          NODE_OPTIONS: "--max_old_space_size=4096"
-        if: success() || failure() # always run even if the previous step fails
-        with:
-          report_paths: '**/build/test-results/test/TEST-*.xml'
-```
+
+</p>
+</details>
 
 ### Action outputs
 
