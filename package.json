@@ -34,7 +34,7 @@
     "@actions/glob": "^0.4.0",
     "@octokit/rest": "^19.0.13",
     "nock": "^13.3.1",
-    "webpack": "^5.87.0",
+    "webpack": "^5.88.0",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
