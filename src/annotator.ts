@@ -122,6 +122,7 @@ export async function attachSummary(
     [
       {data: '', header: true},
       {data: 'Test', header: true},
+      {data: 'Error & Link', header: true},
       {data: 'Result', header: true}
     ]
   ]
@@ -152,6 +153,7 @@ export async function attachSummary(
           detailsTable.push([
             `${testResult.checkName}`,
             `${annotation.title}`,
+            `${annotation.message}`,
             `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`
           ])
         }
