@@ -28,6 +28,7 @@ export interface Annotation {
   start_column: number
   end_column: number
   annotation_level: 'failure' | 'notice' | 'warning'
+  status: 'success' | 'failure' | 'skipped'
   title: string
   message: string
   raw_details: string
@@ -279,6 +280,7 @@ async function parseSuite(
 
       const failed = testcase.failure || testcase.error
       const success = !failed
+      const skip = testcase.skipped || testcase._attributes.status === 'disabled'
 
       // in some definitions `failure` may be an array
       const failures = testcase.failure
@@ -289,7 +291,7 @@ async function parseSuite(
       // the action only supports 1 failure per testcase
       const failure = failures ? failures[0] : undefined
 
-      if (testcase.skipped || testcase._attributes.status === 'disabled') {
+      if (skip) {
         skipped++
       }
       const stackTrace: string = (
@@ -365,6 +367,7 @@ async function parseSuite(
         start_column: 0,
         end_column: 0,
         annotation_level: success ? 'notice' : 'failure',
+        status: skip ? 'skipped' : success ? 'success' : 'failure',
         title: escapeEmoji(title),
         message: escapeEmoji(message),
         raw_details: escapeEmoji(stackTrace)
