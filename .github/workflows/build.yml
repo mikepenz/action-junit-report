@@ -21,6 +21,7 @@ jobs:
         with:
           check_name: Example JUnit Test Report
           report_paths: '**/surefire-reports/TEST-*.xml'
+          include_passed: true
           detailed_summary: true
           summary: '<table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> test </td></tr></tbody></table>'
           check_title_template: '{{SUITE_NAME}} | {{TEST_NAME}}'
