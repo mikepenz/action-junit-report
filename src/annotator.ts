@@ -152,7 +152,13 @@ export async function attachSummary(
           detailsTable.push([
             `${testResult.checkName}`,
             `${annotation.title}`,
-            `${annotation.status === 'success' ? '✅ pass' : annotation.status === 'skipped' ? `⏭️ skipped` : `❌ ${annotation.annotation_level}`}`
+            `${
+              annotation.status === 'success'
+                ? '✅ pass'
+                : annotation.status === 'skipped'
+                ? `⏭️ skipped`
+                : `❌ ${annotation.annotation_level}`
+            }`
           ])
         }
       }

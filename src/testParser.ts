@@ -278,9 +278,11 @@ async function parseSuite(
     for (const testcase of testcases) {
       totalCount++
 
-      const failed = testcase.failure || testcase.error
-      const success = !failed
-      const skip = testcase.skipped || testcase._attributes.status === 'disabled'
+      const testFailure = testcase.failure || testcase.error // test failed
+      const skip =
+        testcase.skipped || testcase._attributes.status === 'disabled' || testcase._attributes.status === 'ignored'
+      const failed = testFailure && !skip // test faiure, but was skipped -> don't fail if a ignored test failed
+      const success = !testFailure // not a failure -> thus a success
 
       // in some definitions `failure` may be an array
       const failures = testcase.failure
@@ -366,7 +368,7 @@ async function parseSuite(
         end_line: pos.line,
         start_column: 0,
         end_column: 0,
-        annotation_level: success ? 'notice' : 'failure',
+        annotation_level: success || skip ? 'notice' : 'failure', // a skipped test shall not fail the run
         status: skip ? 'skipped' : success ? 'success' : 'failure',
         title: escapeEmoji(title),
         message: escapeEmoji(message),
@@ -401,9 +403,9 @@ export async function parseTestReports(
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
   testFilesPrefix = '',
-  transformer: Transformer[],
+  transformer: Transformer[] = [],
   followSymlink = false,
-  annotationsLimit: number
+  annotationsLimit: number = -1
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const globber = await glob.create(reportPaths, {followSymbolicLinks: followSymlink})
