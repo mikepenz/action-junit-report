@@ -18,7 +18,6 @@ jobs:
           node-version: '16'
       - name: Test JUnit test import
         uses: ./
-        if: endsWith(github.ref, 'main') == false
         with:
           check_name: Example JUnit Test Report
           report_paths: '**/surefire-reports/TEST-*.xml'
@@ -27,7 +26,6 @@ jobs:
 
       - name: Test PyTest test import
         uses: ./
-        if: endsWith(github.ref, 'main') == false
         with:
           check_name: Example Pytest Report
           report_paths: test_results/python/report.xml
@@ -36,7 +34,6 @@ jobs:
 
       - name: Test Multi test import
         uses: ./
-        if: endsWith(github.ref, 'main') == false
         with:
           check_name: |-
             Example Multi JUnit Test Report
