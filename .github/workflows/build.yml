@@ -23,6 +23,7 @@ jobs:
           report_paths: '**/surefire-reports/TEST-*.xml'
           summary: '<table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> test </td></tr></tbody></table>'
           check_title_template: '{{SUITE_NAME}} | {{TEST_NAME}}'
+          annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
 
       - name: Test PyTest test import
         uses: ./
@@ -31,6 +32,7 @@ jobs:
           report_paths: test_results/python/report.xml
           include_passed: true
           detailed_summary: true
+          annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
 
       - name: Test Multi test import
         uses: ./
@@ -49,6 +51,7 @@ jobs:
             \n
           transformers: |
             [{"searchValue":"::","replaceValue":"/"}]
+          annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
         
       - name: Install NPM
         run: |
