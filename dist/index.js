@@ -147,7 +147,7 @@ function attachSummary(testResults, detailedSummary, includePassed) {
                         detailsTable.push([
                             `${testResult.checkName}`,
                             `${annotation.title}`,
-                            `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`
+                            `${annotation.status === 'success' ? '✅ pass' : annotation.status === 'skipped' ? `⏭️ skipped` : `❌ ${annotation.annotation_level}`}`
                         ]);
                     }
                 }
@@ -568,6 +568,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 totalCount++;
                 const failed = testcase.failure || testcase.error;
                 const success = !failed;
+                const skip = testcase.skipped || testcase._attributes.status === 'disabled';
                 // in some definitions `failure` may be an array
                 const failures = testcase.failure
                     ? Array.isArray(testcase.failure)
@@ -576,7 +577,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     : undefined;
                 // the action only supports 1 failure per testcase
                 const failure = failures ? failures[0] : undefined;
-                if (testcase.skipped || testcase._attributes.status === 'disabled') {
+                if (skip) {
                     skipped++;
                 }
                 const stackTrace = ((failure && failure._cdata) ||
@@ -634,6 +635,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     start_column: 0,
                     end_column: 0,
                     annotation_level: success ? 'notice' : 'failure',
+                    status: skip ? 'skipped' : success ? 'success' : 'failure',
                     title: escapeEmoji(title),
                     message: escapeEmoji(message),
                     raw_details: escapeEmoji(stackTrace)
