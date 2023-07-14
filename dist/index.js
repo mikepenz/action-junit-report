@@ -115,7 +115,7 @@ function attachSummary(testResults, detailedSummary, includePassed) {
                 { data: '', header: true },
                 { data: 'Tests', header: true },
                 { data: 'Passed ✅', header: true },
-                { data: 'Skipped ↪️', header: true },
+                { data: 'Skipped ⏭️', header: true },
                 { data: 'Failed ❌', header: true }
             ]
         ];
@@ -147,7 +147,11 @@ function attachSummary(testResults, detailedSummary, includePassed) {
                         detailsTable.push([
                             `${testResult.checkName}`,
                             `${annotation.title}`,
-                            `${annotation.status === 'success' ? '✅ pass' : annotation.status === 'skipped' ? `⏭️ skipped` : `❌ ${annotation.annotation_level}`}`
+                            `${annotation.status === 'success'
+                                ? '✅ pass'
+                                : annotation.status === 'skipped'
+                                    ? `⏭️ skipped`
+                                    : `❌ ${annotation.annotation_level}`}`
                         ]);
                     }
                 }
@@ -566,9 +570,10 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
             }
             for (const testcase of testcases) {
                 totalCount++;
-                const failed = testcase.failure || testcase.error;
-                const success = !failed;
-                const skip = testcase.skipped || testcase._attributes.status === 'disabled';
+                const testFailure = testcase.failure || testcase.error; // test failed
+                const skip = testcase.skipped || testcase._attributes.status === 'disabled' || testcase._attributes.status === 'ignored';
+                const failed = testFailure && !skip; // test faiure, but was skipped -> don't fail if a ignored test failed
+                const success = !testFailure; // not a failure -> thus a success
                 // in some definitions `failure` may be an array
                 const failures = testcase.failure
                     ? Array.isArray(testcase.failure)
@@ -634,7 +639,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     end_line: pos.line,
                     start_column: 0,
                     end_column: 0,
-                    annotation_level: success ? 'notice' : 'failure',
+                    annotation_level: success || skip ? 'notice' : 'failure',
                     status: skip ? 'skipped' : success ? 'success' : 'failure',
                     title: escapeEmoji(title),
                     message: escapeEmoji(message),
@@ -658,7 +663,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink = false, annotationsLimit) {
+function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1) {
     var _a, e_2, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Process test report for: ${reportPaths} (${checkName})`);

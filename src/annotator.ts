@@ -113,7 +113,7 @@ export async function attachSummary(
       {data: '', header: true},
       {data: 'Tests', header: true},
       {data: 'Passed ✅', header: true},
-      {data: 'Skipped ↪️', header: true},
+      {data: 'Skipped ⏭️', header: true},
       {data: 'Failed ❌', header: true}
     ]
   ]
@@ -152,7 +152,13 @@ export async function attachSummary(
           detailsTable.push([
             `${testResult.checkName}`,
             `${annotation.title}`,
-            `${annotation.status === 'success' ? '✅ pass' : annotation.status === 'skipped' ? `⏭️ skipped` : `❌ ${annotation.annotation_level}`}`
+            `${
+              annotation.status === 'success'
+                ? '✅ pass'
+                : annotation.status === 'skipped'
+                ? `⏭️ skipped`
+                : `❌ ${annotation.annotation_level}`
+            }`
           ])
         }
       }
