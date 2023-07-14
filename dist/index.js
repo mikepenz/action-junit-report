@@ -115,7 +115,7 @@ function attachSummary(testResults, detailedSummary, includePassed) {
                 { data: '', header: true },
                 { data: 'Tests', header: true },
                 { data: 'Passed ✅', header: true },
-                { data: 'Skipped ↪️', header: true },
+                { data: 'Skipped ⏭️', header: true },
                 { data: 'Failed ❌', header: true }
             ]
         ];
