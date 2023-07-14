@@ -405,7 +405,7 @@ export async function parseTestReports(
   testFilesPrefix = '',
   transformer: Transformer[] = [],
   followSymlink = false,
-  annotationsLimit: number = -1
+  annotationsLimit = -1
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const globber = await glob.create(reportPaths, {followSymbolicLinks: followSymlink})
