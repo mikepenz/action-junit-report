@@ -97,5 +97,5 @@ inputs:
     description: 'Specify the limit for annotations. This will also interrupt parsing all test-suites if the limit is reached.'
     required: false
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
