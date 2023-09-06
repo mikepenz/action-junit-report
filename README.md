@@ -59,11 +59,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
       - name: Build and Run Tests
         run: # execute your tests generating test results
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v3
+        uses: mikepenz/action-junit-report@v4
         if: success() || failure() # always run even if the previous step fails
         with:
           report_paths: '**/build/test-results/test/TEST-*.xml'
@@ -121,7 +121,7 @@ you can increase the memory allocation by setting an environment variable
 
 ```yaml
 - name: Publish Test Report
-  uses: mikepenz/action-junit-report@v3
+  uses: mikepenz/action-junit-report@v4
   env:
     NODE_OPTIONS: "--max_old_space_size=4096"
   if: success() || failure() # always run even if the previous step fails
