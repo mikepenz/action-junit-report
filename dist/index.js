@@ -632,7 +632,9 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 }
                 // optionally attach the prefix to the path
                 resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath;
-                core.info(`${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}`);
+                // fish the time-taken out of the test case attributes, if present
+                const testTime = testcase._attributes.time === undefined ? '' : ` (${testcase._attributes.time}s)`;
+                core.info(`${resolvedPath}:${pos.line} | ${message.replace(/\n/g, ' ')}${testTime}`);
                 annotations.push({
                     path: resolvedPath,
                     start_line: pos.line,
