@@ -82,11 +82,13 @@ export async function annotateTestResult(
         await octokit.rest.checks.update(updateCheckRequest)
       }
     } else {
+      const status: 'completed' | 'in_progress' | 'queued' | undefined = 'completed'
+
       const createCheckRequest = {
         ...github.context.repo,
         name: testResult.checkName,
         head_sha: headSha,
-        status: 'completed',
+        status,
         conclusion,
         output: {
           title,
