@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="corrupt.CorruptTest" time="11.288" tests="1" errors="0" skipped="0" failures="1">
+  <properties>
+    <property name="idea.io.use.nio2" value="true"/>
+    <property name="java.ext.dirs" value="/opt/hostedtoolcache/jdk/8.0.382/x64/jre/lib/ext:/usr/java/packages/lib/ext"/>
+    <property name="java.class.version" value="52.0"/>
+    <property name="ast.loading.filter" value="false"/>
+  </properties>
+  <testcase name="testEM" classname="corrupt.CorruptTest" time="10.131">
+    <failure type="java.lang.AssertionError"><![CDATA[java.lang.AssertionError: WRONG COVERAGE: 41 > 26
+	at corrupt.core.Main$Companion.initAndRun(Main.kt:244)
+	at corrupt.core.Main.initAndRun(Main.kt)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:750)
+]]></failure>
+    <system-out><![CDATA[

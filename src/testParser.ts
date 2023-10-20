@@ -151,7 +151,19 @@ export async function parseFile(
   core.debug(`Parsing file ${file}`)
 
   const data: string = fs.readFileSync(file, 'utf8')
-  const report = JSON.parse(parser.xml2json(data, {compact: true}))
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let report: any
+  try {
+    report = JSON.parse(parser.xml2json(data, {compact: true}))
+  } catch (error) {
+    core.error(`⚠️ Failed to parse file (${file}) with error ${error}`)
+    return {
+      totalCount: 0,
+      skipped: 0,
+      annotations: []
+    }
+  }
 
   return parseSuite(
     report,
