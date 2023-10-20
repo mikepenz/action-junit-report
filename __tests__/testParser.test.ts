@@ -1085,4 +1085,32 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       }
     ])
   })
+
+  it('parse corrupt test output', async () => {
+    const result = await parseTestReports(
+      '',
+      '',
+      'test_results/corrupt-junit/**/target/surefire-reports/TEST-*.xml',
+      '',
+      false,
+      false,
+      [],
+      '',
+      '',
+      undefined,
+      false,
+      undefined
+    )
+
+    expect(result).toStrictEqual({
+      checkName: "",
+      summary: "",
+      totalCount: 0,
+      skipped: 0,
+      failed: 0,
+      passed: 0,
+      annotations: [
+      ],
+    })
+  })
 })
