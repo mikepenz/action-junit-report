@@ -1090,7 +1090,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const result = await parseTestReports(
       '',
       '',
-      'test_results/corrupt-junit/**/target/surefire-reports/TEST-*.xml',
+      'test_results/corrupt-junit/**/target/sf-reports/TEST-*.xml',
       '',
       false,
       false,
