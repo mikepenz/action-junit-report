@@ -37,6 +37,7 @@ export async function run(): Promise<void> {
     const transformers = readTransformers(core.getInput('transformers', {trimWhitespace: true}))
     const followSymlink = core.getBooleanInput('follow_symlink')
     const annotationsLimit = Number(core.getInput('annotations_limit') || -1)
+    const truncateStackTraces = core.getBooleanInput('truncate_stack_traces')
 
     if (excludeSources.length === 0) {
       excludeSources = ['/build/', '/__pycache__/']
@@ -73,7 +74,8 @@ export async function run(): Promise<void> {
         retrieve('testFilesPrefix', testFilesPrefix, i, reportsCount),
         transformers,
         followSymlink,
-        annotationsLimit
+        annotationsLimit,
+        truncateStackTraces
       )
 
       mergedResult.totalCount += testResult.totalCount
