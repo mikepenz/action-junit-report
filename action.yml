@@ -96,6 +96,10 @@ inputs:
   annotations_limit:
     description: 'Specify the limit for annotations. This will also interrupt parsing all test-suites if the limit is reached.'
     required: false
+  truncate_stack_traces:
+    descrption: 'Truncate stack traces from test output to 2 lines in annotations'
+    required: false
+    default: true
 runs:
   using: 'node20'
   main: 'dist/index.js'
