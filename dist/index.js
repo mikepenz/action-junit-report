@@ -657,7 +657,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                     end_line: pos.line,
                     start_column: 0,
                     end_column: 0,
-                    annotation_level: success || skip ? 'notice' : 'failure',
+                    annotation_level: success || skip ? 'notice' : 'failure', // a skipped test shall not fail the run
                     status: skip ? 'skipped' : success ? 'success' : 'failure',
                     title: escapeEmoji(title),
                     message: escapeEmoji(message),
