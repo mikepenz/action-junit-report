@@ -30,6 +30,10 @@ inputs:
     description: 'Enable to only annotate the results on the files, will not create a check run.'
     required: false
     default: 'false'
+  summary_only:
+    description: 'Enable to only generate a summary for the report.'
+    required: false
+    default: 'false'
   update_check:
     description: 'Defines if the active check should be updated instead'
     required: false
