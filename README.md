@@ -89,6 +89,7 @@ jobs:
 | `summary`         | Optional. Additional text to summary output                                                                                                                        |
 | `update_check`    | Optional. Uses an alternative API to update checks, use for cases with more than 50 annotations. Default: `false`.                                                                  |
 | `annotate_only`   | Optional. Will only annotate the results on the files, won't create a check run. Defaults to `false`.                                                                                  |
+| `summary_only`   | Optional. Will only create a summary for the test report (No annotations, or check). Defaults to `false`.                                                                                  |
 | `transformers`    | Optional. Array of `Transformer`s offering the ability to adjust the fileName. Defaults to: `[{"searchValue":"::","replaceValue":"/"}]`                            |
 | `job_summary`     | Optional. Enables the publishing of the job summary for the results. Defaults to `true`. May be required to disable [Enterprise Server](https://github.com/mikepenz/action-junit-report/issues/637)                           |
 | `detailed_summary`    | Optional. Include table with all test results in the summary. Defaults to `false`.                            |

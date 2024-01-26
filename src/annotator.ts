@@ -158,8 +158,8 @@ export async function attachSummary(
               annotation.status === 'success'
                 ? '✅ pass'
                 : annotation.status === 'skipped'
-                ? `⏭️ skipped`
-                : `❌ ${annotation.annotation_level}`
+                  ? `⏭️ skipped`
+                  : `❌ ${annotation.annotation_level}`
             }`
           ])
         }

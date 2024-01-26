@@ -224,6 +224,7 @@ function run() {
                 return;
             }
             const annotateOnly = core.getInput('annotate_only') === 'true';
+            const summaryOnly = core.getInput('summary_only') === 'true';
             const updateCheck = core.getInput('update_check') === 'true';
             const commit = core.getInput('commit');
             const failOnFailure = core.getInput('fail_on_failure') === 'true';
@@ -290,17 +291,19 @@ function run() {
             core.info(`ℹ️ Posting with conclusion '${conclusion}' to ${link} (sha: ${headSha})`);
             core.endGroup();
             core.startGroup(`🚀 Publish results`);
-            try {
-                for (const testResult of testResults) {
-                    yield (0, annotator_1.annotateTestResult)(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice, jobName);
+            if (!summaryOnly) {
+                try {
+                    for (const testResult of testResults) {
+                        yield (0, annotator_1.annotateTestResult)(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice, jobName);
+                    }
+                }
+                catch (error) {
+                    core.error(`❌ Failed to create checks using the provided token. (${error})`);
+                    core.warning(`⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/23`);
                 }
             }
-            catch (error) {
-                core.error(`❌ Failed to create checks using the provided token. (${error})`);
-                core.warning(`⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/23`);
-            }
             const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
-            if (jobSummary && supportsJobSummary) {
+            if ((jobSummary || summaryOnly) && supportsJobSummary) {
                 try {
                     yield (0, annotator_1.attachSummary)(testResults, detailedSummary, includePassed);
                 }
@@ -308,7 +311,7 @@ function run() {
                     core.error(`❌ Failed to set the summary using the provided token. (${error})`);
                 }
             }
-            else if (jobSummary && !supportsJobSummary) {
+            else if ((jobSummary || summaryOnly) && !supportsJobSummary) {
                 core.warning(`⚠️ Your environment seems to not support job summaries.`);
             }
             else {
