@@ -42,7 +42,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.attachSummary = exports.annotateTestResult = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-function annotateTestResult(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice, jobName) {
+function annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName) {
     return __awaiter(this, void 0, void 0, function* () {
         const annotations = testResult.annotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
         const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
@@ -57,6 +57,7 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
         }
         const octokit = github.getOctokit(token);
         if (annotateOnly) {
+            // only create annotaitons, no check
             for (const annotation of annotations) {
                 const properties = {
                     title: annotation.title,
@@ -78,38 +79,52 @@ function annotateTestResult(testResult, token, headSha, annotateOnly, updateChec
             }
         }
         else {
+            // check status is being created, annotations are included in this (if not diasbled by "checkAnnotations")
             if (updateCheck) {
                 const checks = yield octokit.rest.checks.listForRef(Object.assign(Object.assign({}, github.context.repo), { ref: headSha, check_name: jobName, status: 'in_progress', filter: 'latest' }));
                 core.debug(JSON.stringify(checks, null, 2));
                 const check_run_id = checks.data.check_runs[0].id;
-                core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${annotations.length}`);
-                for (let i = 0; i < annotations.length; i = i + 50) {
-                    const sliced = annotations.slice(i, i + 50);
-                    const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
-                            title,
-                            summary: testResult.summary,
-                            annotations: sliced
-                        } });
-                    core.debug(JSON.stringify(updateCheckRequest, null, 2));
-                    yield octokit.rest.checks.update(updateCheckRequest);
+                if (checkAnnotations) {
+                    core.info(`ℹ️ - ${testResult.checkName} - Updating checks (Annotations: ${annotations.length})`);
+                    for (let i = 0; i < annotations.length; i = i + 50) {
+                        const sliced = annotations.slice(i, i + 50);
+                        updateChecks(octokit, check_run_id, title, testResult.summary, sliced);
+                    }
+                }
+                else {
+                    core.info(`ℹ️ - ${testResult.checkName} - Updating checks (disabled annotations)`);
+                    updateChecks(octokit, check_run_id, title, testResult.summary, []);
                 }
             }
             else {
                 const status = 'completed';
+                // don't send annotations if disabled
+                const adjsutedAnnotations = checkAnnotations ? annotations : [];
                 const createCheckRequest = Object.assign(Object.assign({}, github.context.repo), { name: testResult.checkName, head_sha: headSha, status,
                     conclusion, output: {
                         title,
                         summary: testResult.summary,
-                        annotations: annotations.slice(0, 50)
+                        annotations: adjsutedAnnotations.slice(0, 50)
                     } });
                 core.debug(JSON.stringify(createCheckRequest, null, 2));
-                core.info(`ℹ️ - ${testResult.checkName} - Creating check for`);
+                core.info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjsutedAnnotations.length})`);
                 yield octokit.rest.checks.create(createCheckRequest);
             }
         }
     });
 }
 exports.annotateTestResult = annotateTestResult;
+function updateChecks(octokit, check_run_id, title, summary, annotations) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const updateCheckRequest = Object.assign(Object.assign({}, github.context.repo), { check_run_id, output: {
+                title,
+                summary,
+                annotations
+            } });
+        core.debug(JSON.stringify(updateCheckRequest, null, 2));
+        yield octokit.rest.checks.update(updateCheckRequest);
+    });
+}
 function attachSummary(testResults, detailedSummary, includePassed) {
     return __awaiter(this, void 0, void 0, function* () {
         const table = [
@@ -225,6 +240,7 @@ function run() {
             }
             const annotateOnly = core.getInput('annotate_only') === 'true';
             const updateCheck = core.getInput('update_check') === 'true';
+            const checkAnnotations = core.getInput('check_annotations') === 'true';
             const commit = core.getInput('commit');
             const failOnFailure = core.getInput('fail_on_failure') === 'true';
             const requireTests = core.getInput('require_tests') === 'true';
@@ -292,7 +308,7 @@ function run() {
             core.startGroup(`🚀 Publish results`);
             try {
                 for (const testResult of testResults) {
-                    yield (0, annotator_1.annotateTestResult)(testResult, token, headSha, annotateOnly, updateCheck, annotateNotice, jobName);
+                    yield (0, annotator_1.annotateTestResult)(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName);
                 }
             }
             catch (error) {
