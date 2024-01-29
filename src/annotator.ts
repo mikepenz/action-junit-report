@@ -1,12 +1,14 @@
 import * as core from '@actions/core'
-import {TestResult} from './testParser'
+import {Annotation, TestResult} from './testParser'
 import * as github from '@actions/github'
 import {SummaryTableRow} from '@actions/core/lib/summary'
+import {GitHub} from '@actions/github/lib/utils'
 
 export async function annotateTestResult(
   testResult: TestResult,
   token: string,
   headSha: string,
+  checkAnnotations: boolean,
   annotateOnly: boolean,
   updateCheck: boolean,
   annotateNotice: boolean,
@@ -32,6 +34,7 @@ export async function annotateTestResult(
 
   const octokit = github.getOctokit(token)
   if (annotateOnly) {
+    // only create annotaitons, no check
     for (const annotation of annotations) {
       const properties: core.AnnotationProperties = {
         title: annotation.title,
@@ -50,6 +53,7 @@ export async function annotateTestResult(
       }
     }
   } else {
+    // check status is being created, annotations are included in this (if not diasbled by "checkAnnotations")
     if (updateCheck) {
       const checks = await octokit.rest.checks.listForRef({
         ...github.context.repo,
@@ -63,27 +67,20 @@ export async function annotateTestResult(
 
       const check_run_id = checks.data.check_runs[0].id
 
-      core.info(`ℹ️ - ${testResult.checkName} - Updating checks ${annotations.length}`)
-      for (let i = 0; i < annotations.length; i = i + 50) {
-        const sliced = annotations.slice(i, i + 50)
-
-        const updateCheckRequest = {
-          ...github.context.repo,
-          check_run_id,
-          output: {
-            title,
-            summary: testResult.summary,
-            annotations: sliced
-          }
+      if (checkAnnotations) {
+        core.info(`ℹ️ - ${testResult.checkName} - Updating checks (Annotations: ${annotations.length})`)
+        for (let i = 0; i < annotations.length; i = i + 50) {
+          const sliced = annotations.slice(i, i + 50)
+          updateChecks(octokit, check_run_id, title, testResult.summary, sliced)
         }
-
-        core.debug(JSON.stringify(updateCheckRequest, null, 2))
-
-        await octokit.rest.checks.update(updateCheckRequest)
+      } else {
+        core.info(`ℹ️ - ${testResult.checkName} - Updating checks (disabled annotations)`)
+        updateChecks(octokit, check_run_id, title, testResult.summary, [])
       }
     } else {
       const status: 'completed' | 'in_progress' | 'queued' | undefined = 'completed'
-
+      // don't send annotations if disabled
+      const adjsutedAnnotations = checkAnnotations ? annotations : []
       const createCheckRequest = {
         ...github.context.repo,
         name: testResult.checkName,
@@ -93,16 +90,37 @@ export async function annotateTestResult(
         output: {
           title,
           summary: testResult.summary,
-          annotations: annotations.slice(0, 50)
+          annotations: adjsutedAnnotations.slice(0, 50)
         }
       }
 
       core.debug(JSON.stringify(createCheckRequest, null, 2))
 
-      core.info(`ℹ️ - ${testResult.checkName} - Creating check for`)
+      core.info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjsutedAnnotations.length})`)
       await octokit.rest.checks.create(createCheckRequest)
     }
   }
+}
+
+async function updateChecks(
+  octokit: InstanceType<typeof GitHub>,
+  check_run_id: number,
+  title: string,
+  summary: string,
+  annotations: Annotation[]
+): Promise<void> {
+  const updateCheckRequest = {
+    ...github.context.repo,
+    check_run_id,
+    output: {
+      title,
+      summary,
+      annotations
+    }
+  }
+
+  core.debug(JSON.stringify(updateCheckRequest, null, 2))
+  await octokit.rest.checks.update(updateCheckRequest)
 }
 
 export async function attachSummary(
@@ -158,8 +176,8 @@ export async function attachSummary(
               annotation.status === 'success'
                 ? '✅ pass'
                 : annotation.status === 'skipped'
-                ? `⏭️ skipped`
-                : `❌ ${annotation.annotation_level}`
+                  ? `⏭️ skipped`
+                  : `❌ ${annotation.annotation_level}`
             }`
           ])
         }

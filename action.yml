@@ -30,6 +30,10 @@ inputs:
     description: 'Enable to only annotate the results on the files, will not create a check run.'
     required: false
     default: 'false'
+  check_annotations:
+    description: 'Defines if the checks will include annotations (This is different than `annotate_only`).'
+    required: false
+    default: 'true'
   update_check:
     description: 'Defines if the active check should be updated instead'
     required: false

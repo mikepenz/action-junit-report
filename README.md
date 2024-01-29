@@ -87,6 +87,7 @@ jobs:
 | `check_retries`         | Optional. If a testcase is retried, ignore the original failure.                                                                                             |
 | `check_title_template`  | Optional. Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}.                                                |
 | `summary`         | Optional. Additional text to summary output                                                                                                                        |
+| `check_annotations`         | Optional. Defines if the checks will include annotations. If disabled skips all annotations for the check. (This does not affect `annotate_only`, which uses no checks).      |
 | `update_check`    | Optional. Uses an alternative API to update checks, use for cases with more than 50 annotations. Default: `false`.                                                                  |
 | `annotate_only`   | Optional. Will only annotate the results on the files, won't create a check run. Defaults to `false`.                                                                                  |
 | `transformers`    | Optional. Array of `Transformer`s offering the ability to adjust the fileName. Defaults to: `[{"searchValue":"::","replaceValue":"/"}]`                            |
