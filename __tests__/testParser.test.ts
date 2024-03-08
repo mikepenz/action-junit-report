@@ -1103,14 +1103,13 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     )
 
     expect(result).toStrictEqual({
-      checkName: "",
-      summary: "",
+      checkName: '',
+      summary: '',
       totalCount: 0,
       skipped: 0,
       failed: 0,
       passed: 0,
-      annotations: [
-      ],
+      annotations: []
     })
   })
 })

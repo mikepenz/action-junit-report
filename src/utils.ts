@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import {Transformer} from './testParser'
+import {SummaryTableRow} from '@actions/core/lib/summary'
 
 export function retrieve(name: string, items: string[], index: number, total: number): string {
   if (total > 1) {
@@ -49,4 +50,57 @@ export function applyTransformer(transformer: Transformer, string: string): stri
     core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue}`)
     return string.replace(transformer.searchValue, transformer.replaceValue)
   }
+}
+
+/**
+ * Function extracted from: https://github.com/actions/toolkit/blob/main/packages/core/src/summary.ts#L229
+ */
+export function buildTable(rows: SummaryTableRow[]): string {
+  const tableBody = rows
+    .map(row => {
+      const cells = row
+        // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+        .map((cell: any) => {
+          if (typeof cell === 'string') {
+            return wrap('td', cell)
+          }
+
+          const {header, data, colspan, rowspan} = cell
+          const tag = header ? 'th' : 'td'
+          const attrs = {
+            ...(colspan && {colspan}),
+            ...(rowspan && {rowspan})
+          }
+
+          return wrap(tag, data, attrs)
+        })
+        .join('')
+
+      return wrap('tr', cells)
+    })
+    .join('')
+
+  const element = wrap('table', tableBody)
+  return element
+}
+
+/**
+ * Wraps content in an HTML tag, adding any HTML attributes
+ *
+ * @param {string} tag HTML tag to wrap
+ * @param {string | null} content content within the tag
+ * @param {[attribute: string]: string} attrs key-value list of HTML attributes to add
+ *
+ * @returns {string} content wrapped in HTML element
+ */
+function wrap(tag: string, content: string | null, attrs: {[attribute: string]: string} = {}): string {
+  const htmlAttrs = Object.entries(attrs)
+    .map(([key, value]) => ` ${key}="${value}"`)
+    .join('')
+
+  if (!content) {
+    return `<${tag}${htmlAttrs}>`
+  }
+
+  return `<${tag}${htmlAttrs}>${content}</${tag}>`
 }

@@ -80,19 +80,19 @@ inputs:
   job_summary:
     description: 'Enables the publishing of a JOB_SUMMARY with the report.'
     required: false
-    default: true
+    default: 'true'
   detailed_summary:
     description: 'Include table with all test results in summary'
     required: false
-    default: false
+    default: 'false'
   annotate_notice:
     description: 'Annotate passed tests along with warning and failed ones'
     required: false
-    default: false
+    default: 'false'
   follow_symlink:
     description: 'Enables the file globber to follow symlinks. Default: false'
     required: false
-    default: false
+    default: 'false'
   job_name:
     description: 'Specify the name of a check to update'
     required: false
@@ -101,9 +101,22 @@ inputs:
     description: 'Specify the limit for annotations. This will also interrupt parsing all test-suites if the limit is reached.'
     required: false
   truncate_stack_traces:
-    descrption: 'Truncate stack traces from test output to 2 lines in annotations'
+    description: 'Truncate stack traces from test output to 2 lines in annotations'
     required: false
-    default: true
+    default: 'true'
+outputs:
+  total:
+    description: 'The total count of all checks'
+  passed:
+    description: 'The count of all passed tests'
+  skipped:
+    description: 'The count of all skipped tests'
+  failed:
+    description: 'The count of all failed tests'
+  summary:
+    description: 'The short summary of the junit report. In html format (as also constructed by GitHub for the summary).'
+  detailed_summary:
+    description: 'The full table with all test results in a summary. In html format (as also constructed by GitHub for the summary).'
 runs:
   using: 'node20'
   main: 'dist/index.js'
