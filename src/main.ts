@@ -1,8 +1,8 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {annotateTestResult, attachSummary} from './annotator'
+import {annotateTestResult, attachSummary, buildSummaryTables} from './annotator'
 import {parseTestReports, TestResult} from './testParser'
-import {readTransformers, retrieve} from './utils'
+import {buildTable, readTransformers, retrieve} from './utils'
 
 export async function run(): Promise<void> {
   try {
@@ -129,9 +129,10 @@ export async function run(): Promise<void> {
     }
 
     const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY']
+    const [table, detailTable] = buildSummaryTables(testResults, includePassed)
     if (jobSummary && supportsJobSummary) {
       try {
-        await attachSummary(testResults, detailedSummary, includePassed)
+        await attachSummary(table, detailedSummary, detailTable)
       } catch (error) {
         core.error(`❌ Failed to set the summary using the provided token. (${error})`)
       }
@@ -140,6 +141,9 @@ export async function run(): Promise<void> {
     } else {
       core.info('⏩ Skipped creation of job summary')
     }
+
+    core.setOutput('summary', buildTable(table))
+    core.setOutput('detailed_summary', buildTable(detailTable))
 
     if (failOnFailure && conclusion === 'failure') {
       core.setFailed(`❌ Tests reported ${mergedResult.failed} failures`)

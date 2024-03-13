@@ -214,8 +214,8 @@ async function parseSuite(
       ? suite.testsuite
       : [suite.testsuite]
     : Array.isArray(suite.testsuites.testsuite)
-    ? suite.testsuites.testsuite
-    : [suite.testsuites.testsuite]
+      ? suite.testsuites.testsuite
+      : [suite.testsuites.testsuite]
 
   for (const testsuite of testsuites) {
     if (!testsuite) {
@@ -264,8 +264,8 @@ async function parseSuite(
     let testcases = Array.isArray(testsuite.testcase)
       ? testsuite.testcase
       : testsuite.testcase
-      ? [testsuite.testcase]
-      : []
+        ? [testsuite.testcase]
+        : []
 
     if (checkRetries) {
       // identify duplicates, in case of flaky tests, and remove them

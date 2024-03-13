@@ -123,11 +123,10 @@ async function updateChecks(
   await octokit.rest.checks.update(updateCheckRequest)
 }
 
-export async function attachSummary(
+export function buildSummaryTables(
   testResults: TestResult[],
-  detailedSummary: boolean,
   includePassed: boolean
-): Promise<void> {
+): [SummaryTableRow[], SummaryTableRow[]] {
   const table: SummaryTableRow[] = [
     [
       {data: '', header: true},
@@ -155,36 +154,41 @@ export async function attachSummary(
       `${testResult.failed} failed`
     ])
 
-    if (detailedSummary) {
-      const annotations = testResult.annotations.filter(
-        annotation => includePassed || annotation.annotation_level !== 'notice'
-      )
+    const annotations = testResult.annotations.filter(
+      annotation => includePassed || annotation.annotation_level !== 'notice'
+    )
 
-      if (annotations.length === 0) {
-        if (!includePassed) {
-          core.info(
-            `⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`
-          )
-        }
-        detailsTable.push([`-`, `No test annotations available`, `-`])
-      } else {
-        for (const annotation of annotations) {
-          detailsTable.push([
-            `${testResult.checkName}`,
-            `${annotation.title}`,
-            `${
-              annotation.status === 'success'
-                ? '✅ pass'
-                : annotation.status === 'skipped'
-                  ? `⏭️ skipped`
-                  : `❌ ${annotation.annotation_level}`
-            }`
-          ])
-        }
+    if (annotations.length === 0) {
+      if (!includePassed) {
+        core.info(
+          `⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`
+        )
+      }
+      detailsTable.push([`-`, `No test annotations available`, `-`])
+    } else {
+      for (const annotation of annotations) {
+        detailsTable.push([
+          `${testResult.checkName}`,
+          `${annotation.title}`,
+          `${
+            annotation.status === 'success'
+              ? '✅ pass'
+              : annotation.status === 'skipped'
+                ? `⏭️ skipped`
+                : `❌ ${annotation.annotation_level}`
+          }`
+        ])
       }
     }
   }
+  return [table, detailsTable]
+}
 
+export async function attachSummary(
+  table: SummaryTableRow[],
+  detailedSummary: boolean,
+  detailsTable: SummaryTableRow[]
+): Promise<void> {
   await core.summary.addTable(table).write()
   if (detailedSummary) {
     await core.summary.addTable(detailsTable).write()
