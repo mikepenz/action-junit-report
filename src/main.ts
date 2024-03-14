@@ -57,10 +57,11 @@ export async function run(): Promise<void> {
       skipped: 0,
       failed: 0,
       passed: 0,
+      foundFiles: 0,
       annotations: []
     }
 
-    core.info(`Retrieved ${reportsCount} reports to process.`)
+    core.info(`Preparing ${reportsCount} to process as configured.`)
 
     for (let i = 0; i < reportsCount; i++) {
       const testResult = await parseTestReports(
@@ -79,11 +80,14 @@ export async function run(): Promise<void> {
         truncateStackTraces
       )
 
+      core.info(`Found and parsed ${testResult.foundFiles} test reports.`)
+
       mergedResult.totalCount += testResult.totalCount
       mergedResult.skipped += testResult.skipped
       mergedResult.failed += testResult.failed
       mergedResult.passed += testResult.passed
       testResults.push(testResult)
+
     }
 
     core.setOutput('total', mergedResult.totalCount)

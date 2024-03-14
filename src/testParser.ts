@@ -18,6 +18,7 @@ export interface TestResult {
   skipped: number
   failed: number
   passed: number
+  foundFiles: number
   annotations: Annotation[]
 }
 
@@ -434,7 +435,9 @@ export async function parseTestReports(
   let annotations: Annotation[] = []
   let totalCount = 0
   let skipped = 0
+  let foundFiles = 0
   for await (const file of globber.globGenerator()) {
+    foundFiles++
     core.debug(`Parsing report file: ${file}`)
 
     const {
@@ -478,6 +481,7 @@ export async function parseTestReports(
     skipped,
     failed,
     passed,
+    foundFiles,
     annotations
   }
 }

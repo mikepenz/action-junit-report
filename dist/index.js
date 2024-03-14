@@ -269,11 +269,13 @@ async function run() {
             skipped: 0,
             failed: 0,
             passed: 0,
+            foundFiles: 0,
             annotations: []
         };
-        core.info(`Retrieved ${reportsCount} reports to process.`);
+        core.info(`Preparing ${reportsCount} to process as configured.`);
         for (let i = 0; i < reportsCount; i++) {
             const testResult = await (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed && annotateNotice, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink, annotationsLimit, truncateStackTraces);
+            core.info(`Found and parsed ${testResult.foundFiles} test reports.`);
             mergedResult.totalCount += testResult.totalCount;
             mergedResult.skipped += testResult.skipped;
             mergedResult.failed += testResult.failed;
@@ -661,7 +663,9 @@ async function parseTestReports(checkName, summary, reportPaths, suiteRegex, ann
     let annotations = [];
     let totalCount = 0;
     let skipped = 0;
+    let foundFiles = 0;
     for await (const file of globber.globGenerator()) {
+        foundFiles++;
         core.debug(`Parsing report file: ${file}`);
         const { totalCount: c, skipped: s, annotations: a } = await parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces);
         if (c === 0)
@@ -686,6 +690,7 @@ async function parseTestReports(checkName, summary, reportPaths, suiteRegex, ann
         skipped,
         failed,
         passed,
+        foundFiles,
         annotations
     };
 }
