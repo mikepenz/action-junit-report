@@ -1108,6 +1108,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       totalCount: 0,
       skipped: 0,
       failed: 0,
+      foundFiles: 1,
       passed: 0,
       annotations: []
     })
