@@ -364,10 +364,12 @@ async function parseSuite(
       if (checkTitleTemplate) {
         // ensure to not duplicate the test_name if file_name is equal
         const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : ''
+        const className = testcase._attributes.classname.split('.').slice(-1)[0]
         title = checkTitleTemplate
           .replace(templateVar('FILE_NAME'), fileName)
           .replace(templateVar('SUITE_NAME'), suiteName ?? '')
           .replace(templateVar('TEST_NAME'), testcase._attributes.name)
+          .replace(templateVar('CLASS_NAME'), className)
       } else if (pos.fileName !== testcase._attributes.name) {
         title = suiteName
           ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`

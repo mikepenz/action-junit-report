@@ -20,7 +20,7 @@
 </div>
 <br />
 
--------
+---
 
 <p align="center">
     <a href="#whats-included-">What's included 🚀</a> &bull;
@@ -30,7 +30,7 @@
     <a href="#license">License 📓</a>
 </p>
 
--------
+---
 
 ### What's included 🚀
 
@@ -71,40 +71,40 @@ jobs:
 
 ### Inputs
 
-| **Input**      | **Description**                                                                                                                                                       |
-|----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `report_paths`    | Optional. [Glob](https://github.com/actions/toolkit/tree/master/packages/glob) expression to junit report paths. Defaults to: `**/junit-reports/TEST-*.xml`.   |
-| `token`           | Optional. GitHub token for creating a check run. Set to `${{ github.token }}` by default.                                                                          |
-| `test_files_prefix` | Optional. Prepends the provided prefix to test file paths within the report when annotating on GitHub.                                                           |
-| `exclude_sources` | Optional. Provide `,` seperated array of folders to ignore for source lookup. Defaults to: `/build/,/__pycache__/`                                                 |
-| `check_name`      | Optional. Check name to use when creating a check run. The default is `JUnit Test Report`.                                                                         |
-| `suite_regex`     | Optional. Regular expression for the named test suites. E.g. `Test*`                                                                                               |
-| `commit`          | Optional. The commit SHA to update the status. This is useful when you run it with `workflow_run`.                                                                 |
-| `fail_on_failure` | Optional. Fail the build in case of a test failure.                                                                                                                |
-| `require_tests`   | Optional. Fail if no test are found.                                                                                                                               |
-| `require_passed_tests`   | Optional. Fail if no passed test are found. (This is stricter than `require_tests`, which accepts skipped tests).                                           |
-| `include_passed`   | Optional. By default the action will skip passed items for the annotations. Enable this flag to include them.                                                                                                                               |
-| `check_retries`         | Optional. If a testcase is retried, ignore the original failure.                                                                                             |
-| `check_title_template`  | Optional. Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}.                                                |
-| `summary`         | Optional. Additional text to summary output                                                                                                                        |
-| `check_annotations`         | Optional. Defines if the checks will include annotations. If disabled skips all annotations for the check. (This does not affect `annotate_only`, which uses no checks).      |
-| `update_check`    | Optional. Uses an alternative API to update checks, use for cases with more than 50 annotations. Default: `false`.                                                                  |
-| `annotate_only`   | Optional. Will only annotate the results on the files, won't create a check run. Defaults to `false`.                                                                                  |
-| `transformers`    | Optional. Array of `Transformer`s offering the ability to adjust the fileName. Defaults to: `[{"searchValue":"::","replaceValue":"/"}]`                            |
-| `job_summary`     | Optional. Enables the publishing of the job summary for the results. Defaults to `true`. May be required to disable [Enterprise Server](https://github.com/mikepenz/action-junit-report/issues/637)                           |
-| `detailed_summary`    | Optional. Include table with all test results in the summary. Defaults to `false`.                            |
-| `annotate_notice`    | Optional. Annotate passed test results along with warning/failed ones. Defaults to `false`. (Changed in v3.5.0)                           |
-| `follow_symlink`    | Optional. Enables to follow symlinks when searching test files via the globber. Defaults to `false`.                           |
-| `job_name`        | Optional. Specify the name of a check to update                                                                                                                    |
-| `annotations_limit` | Optional. Specify the limit for annotations. This will also interrupt parsing all test-suites if the limit is reached. Defaults to: `No Limit`.                                              |
+| **Input**              | **Description**                                                                                                                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `report_paths`         | Optional. [Glob](https://github.com/actions/toolkit/tree/master/packages/glob) expression to junit report paths. Defaults to: `**/junit-reports/TEST-*.xml`.                                        |
+| `token`                | Optional. GitHub token for creating a check run. Set to `${{ github.token }}` by default.                                                                                                           |
+| `test_files_prefix`    | Optional. Prepends the provided prefix to test file paths within the report when annotating on GitHub.                                                                                              |
+| `exclude_sources`      | Optional. Provide `,` seperated array of folders to ignore for source lookup. Defaults to: `/build/,/__pycache__/`                                                                                  |
+| `check_name`           | Optional. Check name to use when creating a check run. The default is `JUnit Test Report`.                                                                                                          |
+| `suite_regex`          | Optional. Regular expression for the named test suites. E.g. `Test*`                                                                                                                                |
+| `commit`               | Optional. The commit SHA to update the status. This is useful when you run it with `workflow_run`.                                                                                                  |
+| `fail_on_failure`      | Optional. Fail the build in case of a test failure.                                                                                                                                                 |
+| `require_tests`        | Optional. Fail if no test are found.                                                                                                                                                                |
+| `require_passed_tests` | Optional. Fail if no passed test are found. (This is stricter than `require_tests`, which accepts skipped tests).                                                                                   |
+| `include_passed`       | Optional. By default the action will skip passed items for the annotations. Enable this flag to include them.                                                                                       |
+| `check_retries`        | Optional. If a testcase is retried, ignore the original failure.                                                                                                                                    |
+| `check_title_template` | Optional. Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}, {{CLASS_NAME}}.                                                                       |
+| `summary`              | Optional. Additional text to summary output                                                                                                                                                         |
+| `check_annotations`    | Optional. Defines if the checks will include annotations. If disabled skips all annotations for the check. (This does not affect `annotate_only`, which uses no checks).                            |
+| `update_check`         | Optional. Uses an alternative API to update checks, use for cases with more than 50 annotations. Default: `false`.                                                                                  |
+| `annotate_only`        | Optional. Will only annotate the results on the files, won't create a check run. Defaults to `false`.                                                                                               |
+| `transformers`         | Optional. Array of `Transformer`s offering the ability to adjust the fileName. Defaults to: `[{"searchValue":"::","replaceValue":"/"}]`                                                             |
+| `job_summary`          | Optional. Enables the publishing of the job summary for the results. Defaults to `true`. May be required to disable [Enterprise Server](https://github.com/mikepenz/action-junit-report/issues/637) |
+| `detailed_summary`     | Optional. Include table with all test results in the summary. Defaults to `false`.                                                                                                                  |
+| `annotate_notice`      | Optional. Annotate passed test results along with warning/failed ones. Defaults to `false`. (Changed in v3.5.0)                                                                                     |
+| `follow_symlink`       | Optional. Enables to follow symlinks when searching test files via the globber. Defaults to `false`.                                                                                                |
+| `job_name`             | Optional. Specify the name of a check to update                                                                                                                                                     |
+| `annotations_limit`    | Optional. Specify the limit for annotations. This will also interrupt parsing all test-suites if the limit is reached. Defaults to: `No Limit`.                                                     |
 
 <details><summary><b>Common report_paths</b></summary>
 <p>
 
-- Surefire: 
-`**/target/surefire-reports/TEST-*.xml`
+- Surefire:
+  `**/target/surefire-reports/TEST-*.xml`
 - sbt:
-`**/target/test-reports/*.xml`
+  `**/target/test-reports/*.xml`
 
 </p>
 </details>
@@ -124,7 +124,7 @@ you can increase the memory allocation by setting an environment variable
 - name: Publish Test Report
   uses: mikepenz/action-junit-report@v4
   env:
-    NODE_OPTIONS: "--max_old_space_size=4096"
+    NODE_OPTIONS: '--max_old_space_size=4096'
   if: success() || failure() # always run even if the previous step fails
   with:
     report_paths: '**/build/test-results/test/TEST-*.xml'
@@ -143,12 +143,12 @@ After action execution it will return the test counts as output.
 
 A full set list of possible output values for this action.
 
-| **Output**            | **Description**                                                                        |
-|-----------------------|----------------------------------------------------------------------------------------|
-| `outputs.total`       | The total number of test cases covered by this test-step.                              |
-| `outputs.passed`      | The number of passed test cases.                                                       |
-| `outputs.skipped`     | The number of skipped test cases.                                                      |
-| `outputs.failed`      | The number of failed test cases.                                                       |
+| **Output**        | **Description**                                           |
+| ----------------- | --------------------------------------------------------- |
+| `outputs.total`   | The total number of test cases covered by this test-step. |
+| `outputs.passed`  | The number of passed test cases.                          |
+| `outputs.skipped` | The number of skipped test cases.                         |
+| `outputs.failed`  | The number of failed test cases.                          |
 
 ### PR run permissions
 
@@ -161,7 +161,7 @@ permissions:
 
 Additionally for [security reasons], the github token used for `pull_request` workflows is [marked as read-only].
 If you want to post checks to a PR from an external repository, you will need to use a separate workflow
-which has a read/write token, or use a PAT with elevated permissions. 
+which has a read/write token, or use a PAT with elevated permissions.
 
 [security reasons]: https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
 [marked as read-only]: https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
@@ -197,7 +197,7 @@ on:
   workflow_run:
     workflows: [build]
     types: [completed]
-    
+
 permissions:
   checks: write
 
@@ -218,7 +218,7 @@ jobs:
           report_paths: '**/build/test-results/test/TEST-*.xml'
 ```
 
-This will securely post the check results from the privileged workflow onto the PR's checks report. 
+This will securely post the check results from the privileged workflow onto the PR's checks report.
 
 </p>
 </details>
@@ -236,7 +236,7 @@ This will securely post the check results from the privileged workflow onto the 
 ## Contribute 🧬
 
 ```bash
-# Install the dependencies  
+# Install the dependencies
 $ npm install
 
 # Verify lint is happy
