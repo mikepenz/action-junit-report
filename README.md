@@ -85,7 +85,7 @@ jobs:
 | `require_passed_tests`   | Optional. Fail if no passed test are found. (This is stricter than `require_tests`, which accepts skipped tests).                                           |
 | `include_passed`   | Optional. By default the action will skip passed items for the annotations. Enable this flag to include them.                                                                                                                               |
 | `check_retries`         | Optional. If a testcase is retried, ignore the original failure.                                                                                             |
-| `check_title_template`  | Optional. Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}.                                                |
+| `check_title_template`  | Optional. Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}, {{CLASS_NAME}}.                                                |
 | `summary`         | Optional. Additional text to summary output                                                                                                                        |
 | `check_annotations`         | Optional. Defines if the checks will include annotations. If disabled skips all annotations for the check. (This does not affect `annotate_only`, which uses no checks).      |
 | `update_check`    | Optional. Uses an alternative API to update checks, use for cases with more than 50 annotations. Default: `false`.                                                                  |

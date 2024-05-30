@@ -63,7 +63,7 @@ inputs:
     default: 'false'
   check_title_template:
     description: |-
-      Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}.
+      Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}, {{CLASS_NAME}}.
     required: false
   summary:
     description: 'Additional text to summary output'
