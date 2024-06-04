@@ -436,7 +436,11 @@ function safeParseInt(line) {
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
+const resolvePathCache = {};
 async function resolvePath(fileName, excludeSources, followSymlink = false) {
+    if (resolvePathCache[fileName]) {
+        return resolvePathCache[fileName];
+    }
     core.debug(`Resolving path for ${fileName}`);
     const normalizedFilename = fileName.replace(/^\.\//, ''); // strip relative prefix (./)
     const globber = await glob.create(`**/${normalizedFilename}.*`, {
@@ -449,10 +453,12 @@ async function resolvePath(fileName, excludeSources, followSymlink = false) {
         if (!found) {
             const path = result.slice(searchPath.length + 1);
             core.debug(`Resolved path: ${path}`);
-            return path;
+            resolvePathCache[fileName] = path;
+            return resolvePathCache[fileName];
         }
     }
-    return normalizedFilename;
+    resolvePathCache[fileName] = normalizedFilename;
+    return resolvePathCache[fileName];
 }
 exports.resolvePath = resolvePath;
 /**
