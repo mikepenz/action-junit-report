@@ -95,7 +95,7 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
         else {
             const status = 'completed';
             // don't send annotations if disabled
-            const adjsutedAnnotations = checkAnnotations ? annotations : [];
+            const adjustedAnnotations = checkAnnotations ? annotations : [];
             const createCheckRequest = {
                 ...github.context.repo,
                 name: testResult.checkName,
@@ -105,11 +105,11 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
                 output: {
                     title,
                     summary: testResult.summary,
-                    annotations: adjsutedAnnotations.slice(0, 50)
+                    annotations: adjustedAnnotations.slice(0, 50)
                 }
             };
             core.debug(JSON.stringify(createCheckRequest, null, 2));
-            core.info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjsutedAnnotations.length})`);
+            core.info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjustedAnnotations.length})`);
             await octokit.rest.checks.create(createCheckRequest);
         }
     }
@@ -436,7 +436,11 @@ function safeParseInt(line) {
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
+const resolvePathCache = {};
 async function resolvePath(fileName, excludeSources, followSymlink = false) {
+    if (resolvePathCache[fileName]) {
+        return resolvePathCache[fileName];
+    }
     core.debug(`Resolving path for ${fileName}`);
     const normalizedFilename = fileName.replace(/^\.\//, ''); // strip relative prefix (./)
     const globber = await glob.create(`**/${normalizedFilename}.*`, {
@@ -449,9 +453,11 @@ async function resolvePath(fileName, excludeSources, followSymlink = false) {
         if (!found) {
             const path = result.slice(searchPath.length + 1);
             core.debug(`Resolved path: ${path}`);
+            resolvePathCache[fileName] = path;
             return path;
         }
     }
+    resolvePathCache[fileName] = normalizedFilename;
     return normalizedFilename;
 }
 exports.resolvePath = resolvePath;
@@ -566,6 +572,15 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
             const skip = testcase.skipped || testcase._attributes.status === 'disabled' || testcase._attributes.status === 'ignored';
             const failed = testFailure && !skip; // test faiure, but was skipped -> don't fail if a ignored test failed
             const success = !testFailure; // not a failure -> thus a success
+            const annotationLevel = success || skip ? 'notice' : 'failure'; // a skipped test shall not fail the run
+            if (skip) {
+                skipped++;
+            }
+            // If this won't be reported as a failure and processing all passed tests
+            // isn't enabled, then skip the rest of the processing.
+            if (annotationLevel !== 'failure' && !annotatePassed) {
+                continue;
+            }
             // in some definitions `failure` may be an array
             const failures = testcase.failure
                 ? Array.isArray(testcase.failure)
@@ -574,9 +589,6 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 : undefined;
             // the action only supports 1 failure per testcase
             const failure = failures ? failures[0] : undefined;
-            if (skip) {
-                skipped++;
-            }
             const stackTrace = ((failure && failure._cdata) ||
                 (failure && failure._text) ||
                 (testcase.error && testcase.error._cdata) ||
@@ -639,7 +651,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 end_line: pos.line,
                 start_column: 0,
                 end_column: 0,
-                annotation_level: success || skip ? 'notice' : 'failure', // a skipped test shall not fail the run
+                annotation_level: annotationLevel,
                 status: skip ? 'skipped' : success ? 'success' : 'failure',
                 title: escapeEmoji(title),
                 message: escapeEmoji(message),

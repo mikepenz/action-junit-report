@@ -87,7 +87,6 @@ export async function run(): Promise<void> {
       mergedResult.failed += testResult.failed
       mergedResult.passed += testResult.passed
       testResults.push(testResult)
-
     }
 
     core.setOutput('total', mergedResult.totalCount)

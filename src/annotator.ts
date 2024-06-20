@@ -80,7 +80,7 @@ export async function annotateTestResult(
     } else {
       const status: 'completed' | 'in_progress' | 'queued' | undefined = 'completed'
       // don't send annotations if disabled
-      const adjsutedAnnotations = checkAnnotations ? annotations : []
+      const adjustedAnnotations = checkAnnotations ? annotations : []
       const createCheckRequest = {
         ...github.context.repo,
         name: testResult.checkName,
@@ -90,13 +90,13 @@ export async function annotateTestResult(
         output: {
           title,
           summary: testResult.summary,
-          annotations: adjsutedAnnotations.slice(0, 50)
+          annotations: adjustedAnnotations.slice(0, 50)
         }
       }
 
       core.debug(JSON.stringify(createCheckRequest, null, 2))
 
-      core.info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjsutedAnnotations.length})`)
+      core.info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjustedAnnotations.length})`)
       await octokit.rest.checks.create(createCheckRequest)
     }
   }
