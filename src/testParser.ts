@@ -130,11 +130,11 @@ export async function resolvePath(fileName: string, excludeSources: string[], fo
       const path = result.slice(searchPath.length + 1)
       core.debug(`Resolved path: ${path}`)
       resolvePathCache[fileName] = path
-      return resolvePathCache[fileName]
+      return path
     }
   }
   resolvePathCache[fileName] = normalizedFilename
-  return resolvePathCache[fileName]
+  return normalizedFilename
 }
 
 /**

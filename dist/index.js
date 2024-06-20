@@ -95,7 +95,7 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
         else {
             const status = 'completed';
             // don't send annotations if disabled
-            const adjsutedAnnotations = checkAnnotations ? annotations : [];
+            const adjustedAnnotations = checkAnnotations ? annotations : [];
             const createCheckRequest = {
                 ...github.context.repo,
                 name: testResult.checkName,
@@ -105,11 +105,11 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
                 output: {
                     title,
                     summary: testResult.summary,
-                    annotations: adjsutedAnnotations.slice(0, 50)
+                    annotations: adjustedAnnotations.slice(0, 50)
                 }
             };
             core.debug(JSON.stringify(createCheckRequest, null, 2));
-            core.info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjsutedAnnotations.length})`);
+            core.info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjustedAnnotations.length})`);
             await octokit.rest.checks.create(createCheckRequest);
         }
     }
@@ -454,11 +454,11 @@ async function resolvePath(fileName, excludeSources, followSymlink = false) {
             const path = result.slice(searchPath.length + 1);
             core.debug(`Resolved path: ${path}`);
             resolvePathCache[fileName] = path;
-            return resolvePathCache[fileName];
+            return path;
         }
     }
     resolvePathCache[fileName] = normalizedFilename;
-    return resolvePathCache[fileName];
+    return normalizedFilename;
 }
 exports.resolvePath = resolvePath;
 /**
