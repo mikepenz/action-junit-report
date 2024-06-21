@@ -30,7 +30,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.attachSummary = exports.buildSummaryTables = exports.annotateTestResult = void 0;
+exports.annotateTestResult = annotateTestResult;
+exports.buildSummaryTables = buildSummaryTables;
+exports.attachSummary = attachSummary;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 async function annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName) {
@@ -114,7 +116,6 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
         }
     }
 }
-exports.annotateTestResult = annotateTestResult;
 async function updateChecks(octokit, check_run_id, title, summary, annotations) {
     const updateCheckRequest = {
         ...github.context.repo,
@@ -192,7 +193,6 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
     }
     return [table, detailsTable, flakyTable];
 }
-exports.buildSummaryTables = buildSummaryTables;
 async function attachSummary(table, detailsTable, flakySummary) {
     await core.summary.addTable(table).write();
     if (detailsTable.length > 0) {
@@ -202,7 +202,6 @@ async function attachSummary(table, detailsTable, flakySummary) {
         await core.summary.addTable(flakySummary).write();
     }
 }
-exports.attachSummary = attachSummary;
 
 
 /***/ }),
@@ -236,7 +235,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = void 0;
+exports.run = run;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const annotator_1 = __nccwpck_require__(1365);
@@ -357,7 +356,6 @@ async function run() {
         core.setFailed(error.message);
     }
 }
-exports.run = run;
 run();
 
 
@@ -392,7 +390,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.escapeEmoji = exports.parseTestReports = exports.parseFile = exports.resolvePath = exports.resolveFileAndLine = void 0;
+exports.resolveFileAndLine = resolveFileAndLine;
+exports.resolvePath = resolvePath;
+exports.parseFile = parseFile;
+exports.parseTestReports = parseTestReports;
+exports.escapeEmoji = escapeEmoji;
 const core = __importStar(__nccwpck_require__(2186));
 const glob = __importStar(__nccwpck_require__(8090));
 const fs = __importStar(__nccwpck_require__(7147));
@@ -437,7 +439,6 @@ async function resolveFileAndLine(file, line, className, output) {
         return { fileName, line: safeParseInt(line) || -1 };
     }
 }
-exports.resolveFileAndLine = resolveFileAndLine;
 /**
  * Parse the provided string line number, and return its value, or null if it is not available or NaN.
  */
@@ -480,7 +481,6 @@ async function resolvePath(fileName, excludeSources, followSymlink = false) {
     resolvePathCache[fileName] = normalizedFilename;
     return normalizedFilename;
 }
-exports.resolvePath = resolvePath;
 /**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L43
@@ -506,7 +506,6 @@ async function parseFile(file, suiteRegex = '', annotatePassed = false, checkRet
     }
     return parseSuite(report, '', suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces);
 }
-exports.parseFile = parseFile;
 function templateVar(varName) {
     return `{{${varName}}}`;
 }
@@ -735,7 +734,6 @@ async function parseTestReports(checkName, summary, reportPaths, suiteRegex, ann
         annotations
     };
 }
-exports.parseTestReports = parseTestReports;
 /**
  * Escape emoji sequences.
  */
@@ -743,7 +741,6 @@ function escapeEmoji(input) {
     const regex = /[\u{1f300}-\u{1f5ff}\u{1f900}-\u{1f9ff}\u{1f600}-\u{1f64f}\u{1f680}-\u{1f6ff}\u{2600}-\u{26ff}\u{2700}-\u{27bf}\u{1f1e6}-\u{1f1ff}\u{1f191}-\u{1f251}\u{1f004}\u{1f0cf}\u{1f170}-\u{1f171}\u{1f17e}-\u{1f17f}\u{1f18e}\u{3030}\u{2b50}\u{2b55}\u{2934}-\u{2935}\u{2b05}-\u{2b07}\u{2b1b}-\u{2b1c}\u{3297}\u{3299}\u{303d}\u{00a9}\u{00ae}\u{2122}\u{23f3}\u{24c2}\u{23e9}-\u{23ef}\u{25b6}\u{23f8}-\u{23fa}]/gu;
     return input.replace(regex, ``); // replace emoji with empty string (\\u${(match.codePointAt(0) || "").toString(16)})
 }
-exports.escapeEmoji = escapeEmoji;
 
 
 /***/ }),
@@ -777,7 +774,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.buildTable = exports.applyTransformer = exports.readTransformers = exports.retrieve = void 0;
+exports.retrieve = retrieve;
+exports.readTransformers = readTransformers;
+exports.applyTransformer = applyTransformer;
+exports.buildTable = buildTable;
 const core = __importStar(__nccwpck_require__(2186));
 function retrieve(name, items, index, total) {
     if (total > 1) {
@@ -805,7 +805,6 @@ function retrieve(name, items, index, total) {
         return '';
     }
 }
-exports.retrieve = retrieve;
 /**
  * Reads in the configuration from the JSON file
  */
@@ -823,7 +822,6 @@ function readTransformers(raw) {
         return [];
     }
 }
-exports.readTransformers = readTransformers;
 function applyTransformer(transformer, string) {
     try {
         const regExp = new RegExp(transformer.searchValue.replace('\\\\', '\\'), 'gu');
@@ -834,7 +832,6 @@ function applyTransformer(transformer, string) {
         return string.replace(transformer.searchValue, transformer.replaceValue);
     }
 }
-exports.applyTransformer = applyTransformer;
 /**
  * Function extracted from: https://github.com/actions/toolkit/blob/main/packages/core/src/summary.ts#L229
  */
@@ -861,7 +858,6 @@ function buildTable(rows) {
         .join('');
     return wrap('table', tableBody);
 }
-exports.buildTable = buildTable;
 /**
  * Wraps content in an HTML tag, adding any HTML attributes
  *
