@@ -36,6 +36,7 @@ export async function run(): Promise<void> {
     const suiteRegex = core.getMultilineInput('suite_regex')
     let excludeSources = core.getMultilineInput('exclude_sources') ? core.getMultilineInput('exclude_sources') : []
     const checkTitleTemplate = core.getMultilineInput('check_title_template')
+    const breadCrumbDelimiter = core.getInput('bread_crumb_delimiter')
     const transformers = readTransformers(core.getInput('transformers', {trimWhitespace: true}))
     const followSymlink = core.getBooleanInput('follow_symlink')
     const annotationsLimit = Number(core.getInput('annotations_limit') || -1)
@@ -74,6 +75,7 @@ export async function run(): Promise<void> {
         checkRetries,
         excludeSources,
         retrieve('checkTitleTemplate', checkTitleTemplate, i, reportsCount),
+        breadCrumbDelimiter,
         retrieve('testFilesPrefix', testFilesPrefix, i, reportsCount),
         transformers,
         followSymlink,
