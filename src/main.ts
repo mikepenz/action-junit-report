@@ -26,6 +26,7 @@ export async function run(): Promise<void> {
     const annotateNotice = core.getInput('annotate_notice') === 'true'
     const jobSummary = core.getInput('job_summary') === 'true'
     const detailedSummary = core.getInput('detailed_summary') === 'true'
+    const flakySummary = core.getInput('flaky_summary') === 'true'
     const jobName = core.getInput('job_name')
 
     const reportPaths = core.getMultilineInput('report_paths')
@@ -132,10 +133,15 @@ export async function run(): Promise<void> {
     }
 
     const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY']
-    const [table, detailTable] = buildSummaryTables(testResults, includePassed)
+    const [table, detailTable, flakyTable] = buildSummaryTables(
+      testResults,
+      includePassed,
+      detailedSummary,
+      flakySummary
+    )
     if (jobSummary && supportsJobSummary) {
       try {
-        await attachSummary(table, detailedSummary, detailTable)
+        await attachSummary(table, detailTable, flakyTable)
       } catch (error) {
         core.error(`❌ Failed to set the summary using the provided token. (${error})`)
       }
@@ -147,6 +153,7 @@ export async function run(): Promise<void> {
 
     core.setOutput('summary', buildTable(table))
     core.setOutput('detailed_summary', buildTable(detailTable))
+    core.setOutput('flaky_summary', buildTable(flakyTable))
 
     if (failOnFailure && conclusion === 'failure') {
       core.setFailed(`❌ Tests reported ${mergedResult.failed} failures`)

@@ -28,6 +28,7 @@ export interface Annotation {
   end_line: number
   start_column: number
   end_column: number
+  retries: number
   annotation_level: 'failure' | 'notice' | 'warning'
   status: 'success' | 'failure' | 'skipped'
   title: string
@@ -283,12 +284,15 @@ async function parseSuite(
         if (testcaseMap.get(key) !== undefined) {
           // testcase with matching name exists
           const failed = testcase.failure || testcase.error
-          const previousFailed = testcaseMap.get(key).failure || testcaseMap.get(key).error
+          const previous = testcaseMap.get(key)
+          const previousFailed = previous.failure || previous.error
           if (failed && !previousFailed) {
             // previous is a success, drop failure
+            previous.retries = (previous.retries || 0) + 1
             core.debug(`Drop flaky test failure for (1): ${key}`)
           } else if (!failed && previousFailed) {
             // previous failed, new one not, replace
+            testcase.retries = (previous.retries || 0) + 1
             testcaseMap.set(key, testcase)
             core.debug(`Drop flaky test failure for (2): ${key}`)
           }
@@ -411,6 +415,7 @@ async function parseSuite(
         end_line: pos.line,
         start_column: 0,
         end_column: 0,
+        retries: testcase.retries || 0,
         annotation_level: annotationLevel,
         status: skip ? 'skipped' : success ? 'success' : 'failure',
         title: escapeEmoji(title),
