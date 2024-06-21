@@ -1025,34 +1025,60 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     ])
   })
 
-  describe('resolveFileAndLine', () => {
-    it('merge flaky tests, and include retry count', async () => {
-      const {totalCount, skipped, annotations} = await parseFile(
-        'test_results/junit-web-test/expectedRetries.xml',
-        '',
-        true,
-        true
-      )
-      const filtered = annotations.filter(annotation => annotation.retries > 0)
+  it('merge flaky tests, and include retry count', async () => {
+    const {totalCount, skipped, annotations} = await parseFile(
+      'test_results/junit-web-test/expectedRetries.xml',
+      '',
+      true,
+      true
+    )
+    const filtered = annotations.filter(annotation => annotation.retries > 0)
 
-      expect(totalCount).toBe(7)
-      expect(skipped).toBe(1)
-      expect(filtered).toStrictEqual([
-        {
-          path: 'packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js',
-          start_line: 15,
-          end_line: 15,
-          retries: 1,
-          start_column: 0,
-          end_column: 0,
-          annotation_level: 'notice',
-          status: 'success',
-          title: 'packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.retried flaky test',
-          message: 'retried flaky test',
-          raw_details: ''
-        }
-      ])
-    })
+    expect(totalCount).toBe(7)
+    expect(skipped).toBe(1)
+    expect(filtered).toStrictEqual([
+      {
+        path: 'packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js',
+        start_line: 15,
+        end_line: 15,
+        retries: 1,
+        start_column: 0,
+        end_column: 0,
+        annotation_level: 'notice',
+        status: 'success',
+        title: 'packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.retried flaky test',
+        message: 'retried flaky test',
+        raw_details: ''
+      }
+    ])
+  })
+
+  it('flaky tests, and include retry count', async () => {
+    const {totalCount, skipped, annotations} = await parseFile(
+      'test_results/junit_flaky_failure/marathon_junit_report.xml',
+      '',
+      true,
+      true
+    )
+    const filtered = annotations.filter(annotation => annotation.retries > 0)
+
+    expect(totalCount).toBe(1)
+    expect(skipped).toBe(0)
+    expect(filtered).toStrictEqual([
+      {
+        "annotation_level": "notice",
+        "end_column": 0,
+        "end_line": 1,
+        "message": "testFlakyFailure",
+        "path": "Class",
+        "raw_details": "",
+        "retries": 1,
+        "start_column": 0,
+        "start_line": 1,
+        "status": "success",
+        "title": "Class.testFlakyFailure"
+      }
+    ])
   })
 
   it('should parse and transform perl results', async () => {

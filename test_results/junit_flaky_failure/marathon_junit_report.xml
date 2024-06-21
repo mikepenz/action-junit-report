@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/jenkinsci/xunit-plugin/ae25da5089d4f94ac6c4669bf736e4d416cc4665/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="omni" tests="1" failures="0" errors="0" time="9.56"
+        skipped="0" timestamp="2024-01-21T08:17:32">
+    <testcase name="testFlakyFailure" time="1.86"
+              classname="com.mikepenz.Class">
+        <flakyFailure type="rerun exception">
+            <stackTrace><![CDATA[junit.framework.AssertionFailedError]]></stackTrace>
+        </flakyFailure>
+    </testcase>
+</testsuite>

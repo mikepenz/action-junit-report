@@ -611,6 +611,12 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 : undefined;
             // the action only supports 1 failure per testcase
             const failure = failures ? failures[0] : undefined;
+            // identify amount of flaky failures
+            const flakyFailuresCount = testcase.flakyFailure
+                ? Array.isArray(testcase.flakyFailure)
+                    ? testcase.flakyFailure.length
+                    : 1
+                : 0;
             const stackTrace = ((failure && failure._cdata) ||
                 (failure && failure._text) ||
                 (testcase.error && testcase.error._cdata) ||
@@ -673,7 +679,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 end_line: pos.line,
                 start_column: 0,
                 end_column: 0,
-                retries: testcase.retries || 0,
+                retries: (testcase.retries || 0) + flakyFailuresCount,
                 annotation_level: annotationLevel,
                 status: skip ? 'skipped' : success ? 'success' : 'failure',
                 title: escapeEmoji(title),
