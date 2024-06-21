@@ -488,7 +488,8 @@ async function resolvePath(fileName, excludeSources, followSymlink = false) {
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-async function parseFile(file, suiteRegex = '', annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true) {
+async function parseFile(file, suiteRegex = '', // no-op
+annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true) {
     core.debug(`Parsing file ${file}`);
     const data = fs.readFileSync(file, 'utf8');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -499,202 +500,235 @@ async function parseFile(file, suiteRegex = '', annotatePassed = false, checkRet
     catch (error) {
         core.error(`⚠️ Failed to parse file (${file}) with error ${error}`);
         return {
+            name: '',
             totalCount: 0,
-            skipped: 0,
-            annotations: []
+            skippedCount: 0,
+            annotations: [],
+            testResults: []
         };
     }
-    return parseSuite(report, '', suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces);
+    // parse child test suites
+    const testsuite = report.testsuites ? report.testsuites : report.testsuite;
+    if (!testsuite) {
+        core.error(`⚠️ Failed to retrieve root test suite`);
+        return {
+            name: '',
+            totalCount: 0,
+            skippedCount: 0,
+            annotations: [],
+            testResults: []
+        };
+    }
+    return parseSuite(testsuite, suiteRegex, // no-op
+    '', '/', annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, []);
 }
 function templateVar(varName) {
     return `{{${varName}}}`;
 }
 async function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, annotationsLimit, truncateStackTraces) {
-    var _a, _b;
-    let totalCount = 0;
-    let skipped = 0;
-    const annotations = [];
-    if (!suite.testsuite && !suite.testsuites) {
-        return { totalCount, skipped, annotations };
+suite, suiteRegex, // no-op
+breadCrumb, breadCrumbDelimiter, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations) {
+    if (!suite) {
+        // not a valid suite, return fast
+        return { name: '', totalCount: 0, skippedCount: 0, annotations: [], testResults: [] };
     }
-    const testsuites = suite.testsuite
+    let suiteName = '';
+    if (suite._attributes && suite._attributes.name) {
+        suiteName = suite._attributes.name;
+    }
+    let totalCount = 0;
+    let skippedCount = 0;
+    const annotations = [];
+    // parse testCases
+    if (suite.testcase) {
+        const testcases = Array.isArray(suite.testcase) ? suite.testcase : suite.testcase ? [suite.testcase] : [];
+        const suiteFile = suite._attributes !== undefined ? suite._attributes.file : null;
+        const suiteLine = suite._attributes !== undefined ? suite._attributes.line : null;
+        const limit = annotationsLimit >= 0 ? annotationsLimit - globalAnnotations.length : annotationsLimit;
+        const parsedTestCases = await parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testcases, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, limit);
+        // expand global annotations array
+        totalCount += parsedTestCases.totalCount;
+        skippedCount += parsedTestCases.skippedCount;
+        annotations.push(...parsedTestCases.annotations);
+        globalAnnotations.push(...parsedTestCases.annotations);
+    }
+    // if we have a limit, and we are above the limit, return fast
+    if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
+        return {
+            name: suiteName,
+            totalCount,
+            skippedCount,
+            annotations: globalAnnotations,
+            testResults: []
+        };
+    }
+    // parse child test suites
+    const childTestSuites = suite.testsuite
         ? Array.isArray(suite.testsuite)
             ? suite.testsuite
             : [suite.testsuite]
-        : Array.isArray(suite.testsuites.testsuite)
-            ? suite.testsuites.testsuite
-            : [suite.testsuites.testsuite];
-    for (const testsuite of testsuites) {
-        if (!testsuite) {
-            return { totalCount, skipped, annotations };
-        }
-        let suiteName = '';
-        if (suiteRegex) {
-            if (parentName) {
-                suiteName = `${parentName}/${testsuite._attributes.name}`;
-            }
-            else if (suiteRegex !== '*') {
-                suiteName = testsuite._attributes.name.match(suiteRegex);
-            }
-            if (!suiteName) {
-                suiteName = testsuite._attributes.name;
-            }
-        }
-        const res = await parseSuite(testsuite, suiteName, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces);
-        totalCount += res.totalCount;
-        skipped += res.skipped;
-        annotations.push(...res.annotations);
-        if (!testsuite.testcase) {
-            continue;
-        }
-        else if (annotationsLimit > 0) {
-            const count = annotations.filter(a => a.annotation_level === 'failure' || annotatePassed).length;
-            if (count >= annotationsLimit) {
-                return { totalCount, skipped, annotations };
-            }
-        }
-        let testcases = Array.isArray(testsuite.testcase)
-            ? testsuite.testcase
-            : testsuite.testcase
-                ? [testsuite.testcase]
-                : [];
-        if (checkRetries) {
-            // identify duplicates, in case of flaky tests, and remove them
-            const testcaseMap = new Map();
-            for (const testcase of testcases) {
-                const key = testcase._attributes.name;
-                if (testcaseMap.get(key) !== undefined) {
-                    // testcase with matching name exists
-                    const failed = testcase.failure || testcase.error;
-                    const previous = testcaseMap.get(key);
-                    const previousFailed = previous.failure || previous.error;
-                    if (failed && !previousFailed) {
-                        // previous is a success, drop failure
-                        previous.retries = (previous.retries || 0) + 1;
-                        core.debug(`Drop flaky test failure for (1): ${key}`);
-                    }
-                    else if (!failed && previousFailed) {
-                        // previous failed, new one not, replace
-                        testcase.retries = (previous.retries || 0) + 1;
-                        testcaseMap.set(key, testcase);
-                        core.debug(`Drop flaky test failure for (2): ${key}`);
-                    }
-                }
-                else {
-                    testcaseMap.set(key, testcase);
-                }
-            }
-            testcases = Array.from(testcaseMap.values());
-        }
-        for (const testcase of testcases) {
-            totalCount++;
-            const testFailure = testcase.failure || testcase.error; // test failed
-            const skip = testcase.skipped || testcase._attributes.status === 'disabled' || testcase._attributes.status === 'ignored';
-            const failed = testFailure && !skip; // test faiure, but was skipped -> don't fail if a ignored test failed
-            const success = !testFailure; // not a failure -> thus a success
-            const annotationLevel = success || skip ? 'notice' : 'failure'; // a skipped test shall not fail the run
-            if (skip) {
-                skipped++;
-            }
-            // If this won't be reported as a failure and processing all passed tests
-            // isn't enabled, then skip the rest of the processing.
-            if (annotationLevel !== 'failure' && !annotatePassed) {
-                continue;
-            }
-            // in some definitions `failure` may be an array
-            const failures = testcase.failure
-                ? Array.isArray(testcase.failure)
-                    ? testcase.failure
-                    : [testcase.failure]
-                : undefined;
-            // the action only supports 1 failure per testcase
-            const failure = failures ? failures[0] : undefined;
-            // identify amount of flaky failures
-            const flakyFailuresCount = testcase.flakyFailure
-                ? Array.isArray(testcase.flakyFailure)
-                    ? testcase.flakyFailure.length
-                    : 1
-                : 0;
-            const stackTrace = ((failure && failure._cdata) ||
-                (failure && failure._text) ||
-                (testcase.error && testcase.error._cdata) ||
-                (testcase.error && testcase.error._text) ||
-                '')
-                .toString()
-                .trim();
-            const stackTraceMessage = truncateStackTraces ? stackTrace.split('\n').slice(0, 2).join('\n') : stackTrace;
-            const message = ((failure && failure._attributes && failure._attributes.message) ||
-                (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
-                stackTraceMessage ||
-                testcase._attributes.name).trim();
-            const pos = await resolveFileAndLine(testcase._attributes.file ||
-                ((_a = failure === null || failure === void 0 ? void 0 : failure._attributes) === null || _a === void 0 ? void 0 : _a.file) ||
-                (testsuite._attributes !== undefined ? testsuite._attributes.file : null), testcase._attributes.line ||
-                ((_b = failure === null || failure === void 0 ? void 0 : failure._attributes) === null || _b === void 0 ? void 0 : _b.line) ||
-                (testsuite._attributes !== undefined ? testsuite._attributes.line : null), testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
-            let transformedFileName = pos.fileName;
-            for (const r of transformer) {
-                transformedFileName = (0, utils_1.applyTransformer)(r, transformedFileName);
-            }
-            let resolvedPath = failed || (annotatePassed && success)
-                ? await resolvePath(transformedFileName, excludeSources, followSymlink)
-                : transformedFileName;
-            core.debug(`Path prior to stripping: ${resolvedPath}`);
-            const githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
-            if (githubWorkspacePath) {
-                resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, ''); // strip workspace prefix, make the path relative
-            }
-            let title = '';
-            if (checkTitleTemplate) {
-                // ensure to not duplicate the test_name if file_name is equal
-                const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : '';
-                const baseClassName = testcase._attributes.classname
-                    ? testcase._attributes.classname
-                    : testcase._attributes.name;
-                const className = baseClassName.split('.').slice(-1)[0];
-                title = checkTitleTemplate
-                    .replace(templateVar('FILE_NAME'), fileName)
-                    .replace(templateVar('SUITE_NAME'), suiteName !== null && suiteName !== void 0 ? suiteName : '')
-                    .replace(templateVar('TEST_NAME'), testcase._attributes.name)
-                    .replace(templateVar('CLASS_NAME'), className);
-            }
-            else if (pos.fileName !== testcase._attributes.name) {
-                title = suiteName
-                    ? `${pos.fileName}.${suiteName}/${testcase._attributes.name}`
-                    : `${pos.fileName}.${testcase._attributes.name}`;
-            }
-            else {
-                title = suiteName ? `${suiteName}/${testcase._attributes.name}` : `${testcase._attributes.name}`;
-            }
-            // optionally attach the prefix to the path
-            resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath;
-            // fish the time-taken out of the test case attributes, if present
-            const testTime = testcase._attributes.time === undefined ? '' : ` (${testcase._attributes.time}s)`;
-            core.info(`${resolvedPath}:${pos.line} | ${message.split('\n', 1)[0]}${testTime}`);
-            annotations.push({
-                path: resolvedPath,
-                start_line: pos.line,
-                end_line: pos.line,
-                start_column: 0,
-                end_column: 0,
-                retries: (testcase.retries || 0) + flakyFailuresCount,
-                annotation_level: annotationLevel,
-                status: skip ? 'skipped' : success ? 'success' : 'failure',
-                title: escapeEmoji(title),
-                message: escapeEmoji(message),
-                raw_details: escapeEmoji(stackTrace)
-            });
-            if (annotationsLimit > 0) {
-                const count = annotations.filter(a => a.annotation_level === 'failure' || annotatePassed).length;
-                if (count >= annotationsLimit) {
-                    return { totalCount, skipped, annotations };
-                }
-            }
+        : Array.isArray(suite.testsuites)
+            ? suite.testsuites
+            : [suite.testsuites];
+    const childSuiteResults = [];
+    const childBreadCrumb = suiteName ? `${breadCrumb}${suiteName}${breadCrumbDelimiter}` : breadCrumb;
+    for (const childSuite of childTestSuites) {
+        const childSuiteResult = await parseSuite(childSuite, suiteRegex, childBreadCrumb, breadCrumbDelimiter, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations);
+        childSuiteResults.push(childSuiteResult);
+        totalCount += childSuiteResult.totalCount;
+        skippedCount += childSuiteResult.skippedCount;
+        // skip out if we reached our annotations limit
+        if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
+            return {
+                name: suiteName,
+                totalCount,
+                skippedCount,
+                annotations: globalAnnotations,
+                testResults: []
+            };
         }
     }
-    return { totalCount, skipped, annotations };
+    return {
+        name: suiteName,
+        totalCount,
+        skippedCount,
+        annotations: globalAnnotations,
+        testResults: childSuiteResults
+    };
+}
+async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testcases, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, truncateStackTraces, limit = -1) {
+    var _a, _b;
+    const annotations = [];
+    let totalCount = 0;
+    let skippedCount = 0;
+    if (checkRetries) {
+        // identify duplicates, in case of flaky tests, and remove them
+        const testcaseMap = new Map();
+        for (const testcase of testcases) {
+            const key = testcase._attributes.name;
+            if (testcaseMap.get(key) !== undefined) {
+                // testcase with matching name exists
+                const failed = testcase.failure || testcase.error;
+                const previous = testcaseMap.get(key);
+                const previousFailed = previous.failure || previous.error;
+                if (failed && !previousFailed) {
+                    // previous is a success, drop failure
+                    previous.retries = (previous.retries || 0) + 1;
+                    core.debug(`Drop flaky test failure for (1): ${key}`);
+                }
+                else if (!failed && previousFailed) {
+                    // previous failed, new one not, replace
+                    testcase.retries = (previous.retries || 0) + 1;
+                    testcaseMap.set(key, testcase);
+                    core.debug(`Drop flaky test failure for (2): ${key}`);
+                }
+            }
+            else {
+                testcaseMap.set(key, testcase);
+            }
+        }
+        testcases = Array.from(testcaseMap.values());
+    }
+    for (const testcase of testcases) {
+        totalCount++;
+        const testFailure = testcase.failure || testcase.error; // test failed
+        const skip = testcase.skipped || testcase._attributes.status === 'disabled' || testcase._attributes.status === 'ignored';
+        const failed = testFailure && !skip; // test faiure, but was skipped -> don't fail if a ignored test failed
+        const success = !testFailure; // not a failure -> thus a success
+        const annotationLevel = success || skip ? 'notice' : 'failure'; // a skipped test shall not fail the run
+        if (skip) {
+            skippedCount++;
+        }
+        // If this won't be reported as a failure and processing all passed tests
+        // isn't enabled, then skip the rest of the processing.
+        if (annotationLevel !== 'failure' && !annotatePassed) {
+            continue;
+        }
+        // in some definitions `failure` may be an array
+        const failures = testcase.failure
+            ? Array.isArray(testcase.failure)
+                ? testcase.failure
+                : [testcase.failure]
+            : undefined;
+        // the action only supports 1 failure per testcase
+        const failure = failures ? failures[0] : undefined;
+        // identify amount of flaky failures
+        const flakyFailuresCount = testcase.flakyFailure
+            ? Array.isArray(testcase.flakyFailure)
+                ? testcase.flakyFailure.length
+                : 1
+            : 0;
+        const stackTrace = ((failure && failure._cdata) ||
+            (failure && failure._text) ||
+            (testcase.error && testcase.error._cdata) ||
+            (testcase.error && testcase.error._text) ||
+            '')
+            .toString()
+            .trim();
+        const stackTraceMessage = truncateStackTraces ? stackTrace.split('\n').slice(0, 2).join('\n') : stackTrace;
+        const message = ((failure && failure._attributes && failure._attributes.message) ||
+            (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
+            stackTraceMessage ||
+            testcase._attributes.name).trim();
+        const pos = await resolveFileAndLine(testcase._attributes.file || ((_a = failure === null || failure === void 0 ? void 0 : failure._attributes) === null || _a === void 0 ? void 0 : _a.file) || suiteFile, testcase._attributes.line || ((_b = failure === null || failure === void 0 ? void 0 : failure._attributes) === null || _b === void 0 ? void 0 : _b.line) || suiteLine, testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name, stackTrace);
+        let transformedFileName = pos.fileName;
+        for (const r of transformer) {
+            transformedFileName = (0, utils_1.applyTransformer)(r, transformedFileName);
+        }
+        let resolvedPath = failed || (annotatePassed && success)
+            ? await resolvePath(transformedFileName, excludeSources, followSymlink)
+            : transformedFileName;
+        core.debug(`Path prior to stripping: ${resolvedPath}`);
+        const githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
+        if (githubWorkspacePath) {
+            resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, ''); // strip workspace prefix, make the path relative
+        }
+        let title = '';
+        if (checkTitleTemplate) {
+            // ensure to not duplicate the test_name if file_name is equal
+            const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : '';
+            const baseClassName = testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name;
+            const className = baseClassName.split('.').slice(-1)[0];
+            title = checkTitleTemplate
+                .replace(templateVar('FILE_NAME'), fileName)
+                .replace(templateVar('BREAD_CRUMB'), breadCrumb !== null && breadCrumb !== void 0 ? breadCrumb : '')
+                .replace(templateVar('SUITE_NAME'), suiteName !== null && suiteName !== void 0 ? suiteName : '')
+                .replace(templateVar('TEST_NAME'), testcase._attributes.name)
+                .replace(templateVar('CLASS_NAME'), className);
+        }
+        else if (pos.fileName !== testcase._attributes.name) {
+            title = `${pos.fileName}.${testcase._attributes.name}`;
+        }
+        else {
+            title = `${testcase._attributes.name}`;
+        }
+        // optionally attach the prefix to the path
+        resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath;
+        // fish the time-taken out of the test case attributes, if present
+        const testTime = testcase._attributes.time === undefined ? '' : ` (${testcase._attributes.time}s)`;
+        core.info(`${resolvedPath}:${pos.line} | ${message.split('\n', 1)[0]}${testTime}`);
+        annotations.push({
+            path: resolvedPath,
+            start_line: pos.line,
+            end_line: pos.line,
+            start_column: 0,
+            end_column: 0,
+            retries: (testcase.retries || 0) + flakyFailuresCount,
+            annotation_level: annotationLevel,
+            status: skip ? 'skipped' : success ? 'success' : 'failure',
+            title: escapeEmoji(title),
+            message: escapeEmoji(message),
+            raw_details: escapeEmoji(stackTrace)
+        });
+        if (limit >= 0 && annotations.length >= limit)
+            break;
+    }
+    return {
+        totalCount,
+        skippedCount,
+        annotations
+    };
 }
 /**
  * Copyright 2020 ScaCap
@@ -703,7 +737,8 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
  * Modification Copyright 2022 Mike Penz
  * https://github.com/mikepenz/action-junit-report/
  */
-async function parseTestReports(checkName, summary, reportPaths, suiteRegex, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true) {
+async function parseTestReports(checkName, summary, reportPaths, suiteRegex, // no-op
+annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true) {
     core.debug(`Process test report for: ${reportPaths} (${checkName})`);
     const globber = await glob.create(reportPaths, { followSymbolicLinks: followSymlink });
     let annotations = [];
@@ -713,17 +748,14 @@ async function parseTestReports(checkName, summary, reportPaths, suiteRegex, ann
     for await (const file of globber.globGenerator()) {
         foundFiles++;
         core.debug(`Parsing report file: ${file}`);
-        const { totalCount: c, skipped: s, annotations: a } = await parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces);
+        const { totalCount: c, skippedCount: s, annotations: a } = await parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces);
         if (c === 0)
             continue;
         totalCount += c;
         skipped += s;
         annotations = annotations.concat(a);
-        if (annotationsLimit > 0) {
-            const count = annotations.filter(an => an.annotation_level === 'failure' || annotatePassed).length;
-            if (count >= annotationsLimit) {
-                break;
-            }
+        if (annotationsLimit > 0 && annotations.length >= annotationsLimit) {
+            break;
         }
     }
     // get the count of passed and failed tests.

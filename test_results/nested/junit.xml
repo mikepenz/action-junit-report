@@ -3,9 +3,9 @@
         <properties></properties>
         <testsuite tests="4" failures="0" time="150.0" name="tests">
             <properties></properties>
-            <testsuite tests="4" failures="0" time="150.0" name="packet">
+            <testsuite tests="5" failures="3" time="150.0" name="packet">
                 <properties></properties>
-                <testsuite tests="2" failures="0" time="30.0" name="TestA">
+                <testsuite tests="2" failures="1" time="30.0" name="TestA">
                     <properties></properties>
                     <testcase classname="" name="A" time="10.0" cluster_instance="packet-1">
                         <failure message="failure"></failure>
