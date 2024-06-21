@@ -189,6 +189,7 @@ describe('parseFile', () => {
       undefined,
       undefined,
       undefined,
+      '/',
       undefined,
       undefined,
       undefined,
@@ -261,7 +262,8 @@ describe('parseFile', () => {
       false,
       false,
       ['/build/', '/__pycache__/'],
-      undefined,
+      '{{BREAD_CRUMB}}{{SUITE_NAME}}/{{TEST_NAME}}',
+      '/',
       'subproject/'
     )
     const filtered = annotations.filter(annotation => annotation.annotation_level !== 'notice')
@@ -278,7 +280,7 @@ describe('parseFile', () => {
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
-        title: 'test_sample.test_which_fails',
+        title: 'pytest/test_which_fails',
         message: "AssertionError: assert 'test' == 'xyz'\n  - xyz\n  + test",
         raw_details:
           "def test_which_fails():\n        event = { 'attr': 'test'}\n>       assert event['attr'] == 'xyz'\nE       AssertionError: assert 'test' == 'xyz'\nE         - xyz\nE         + test\n\npython/test_sample.py:10: AssertionError"
@@ -292,7 +294,7 @@ describe('parseFile', () => {
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
-        title: 'test_sample.test_with_error',
+        title: 'pytest/test_with_error',
         message: "AttributeError: 'dict' object has no attribute 'attr'",
         raw_details:
           "def test_with_error():\n        event = { 'attr': 'test'}\n>       assert event.attr == 'test'\nE       AttributeError: 'dict' object has no attribute 'attr'\n\npython/test_sample.py:14: AttributeError"
@@ -847,6 +849,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       false,
       ['/build/', '/__pycache__/'],
       '{{TEST_NAME}}',
+      '',
       'subproject'
     )
 
@@ -1085,6 +1088,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       undefined,
       undefined,
       undefined,
+      '/',
       undefined,
       transformer
     )
@@ -1200,7 +1204,8 @@ describe('parseTestReports', () => {
       true,
       true,
       [],
-      '{{SUITE_NAME}}/{{TEST_NAME}}'
+      '{{SUITE_NAME}}/{{TEST_NAME}}',
+      '/'
     )
 
     expect(checkName).toBe('checkName')
@@ -1236,6 +1241,7 @@ describe('parseTestReports', () => {
       false,
       [],
       '',
+      '/',
       '',
       undefined,
       false,

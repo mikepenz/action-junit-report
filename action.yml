@@ -59,8 +59,13 @@ inputs:
     default: 'false'
   check_title_template:
     description: |-
-      Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}, {{CLASS_NAME}}.
+      Template to configure the title format. Placeholders: {{FILE_NAME}}, {{SUITE_NAME}}, {{TEST_NAME}}, {{CLASS_NAME}}, {{BREAD_CRUMB}}.
     required: false
+  bread_crumb_delimiter:
+    description: |-
+      Defines the delimiter characters between the breadcrumb elements. Defaults to: `/`.
+    required: false
+    default: '/'
   summary:
     description: 'Additional text to summary output'
     required: false

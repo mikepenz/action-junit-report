@@ -270,6 +270,7 @@ async function run() {
         const suiteRegex = core.getMultilineInput('suite_regex');
         let excludeSources = core.getMultilineInput('exclude_sources') ? core.getMultilineInput('exclude_sources') : [];
         const checkTitleTemplate = core.getMultilineInput('check_title_template');
+        const breadCrumbDelimiter = core.getInput('bread_crumb_delimiter');
         const transformers = (0, utils_1.readTransformers)(core.getInput('transformers', { trimWhitespace: true }));
         const followSymlink = core.getBooleanInput('follow_symlink');
         const annotationsLimit = Number(core.getInput('annotations_limit') || -1);
@@ -293,7 +294,7 @@ async function run() {
         };
         core.info(`Preparing ${reportsCount} report as configured.`);
         for (let i = 0; i < reportsCount; i++) {
-            const testResult = await (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink, annotationsLimit, truncateStackTraces);
+            const testResult = await (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), breadCrumbDelimiter, (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink, annotationsLimit, truncateStackTraces);
             mergedResult.totalCount += testResult.totalCount;
             mergedResult.skipped += testResult.skipped;
             mergedResult.failed += testResult.failed;
@@ -489,7 +490,7 @@ async function resolvePath(fileName, excludeSources, followSymlink = false) {
  * https://github.com/mikepenz/action-junit-report/
  */
 async function parseFile(file, suiteRegex = '', // no-op
-annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true) {
+annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, breadCrumbDelimiter = '/', testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true) {
     core.debug(`Parsing file ${file}`);
     const data = fs.readFileSync(file, 'utf8');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -520,7 +521,7 @@ annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__p
         };
     }
     return parseSuite(testsuite, suiteRegex, // no-op
-    '', '/', annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, []);
+    '', breadCrumbDelimiter, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, []);
 }
 function templateVar(varName) {
     return `{{${varName}}}`;
@@ -528,7 +529,7 @@ function templateVar(varName) {
 async function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
 suite, suiteRegex, // no-op
-breadCrumb, breadCrumbDelimiter, annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations) {
+breadCrumb, breadCrumbDelimiter = '/', annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations) {
     if (!suite) {
         // not a valid suite, return fast
         return { name: '', totalCount: 0, skippedCount: 0, annotations: [], testResults: [] };
@@ -738,7 +739,7 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
  * https://github.com/mikepenz/action-junit-report/
  */
 async function parseTestReports(checkName, summary, reportPaths, suiteRegex, // no-op
-annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true) {
+annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, breadCrumbDelimiter, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true) {
     core.debug(`Process test report for: ${reportPaths} (${checkName})`);
     const globber = await glob.create(reportPaths, { followSymbolicLinks: followSymlink });
     let annotations = [];
@@ -748,7 +749,7 @@ annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate
     for await (const file of globber.globGenerator()) {
         foundFiles++;
         core.debug(`Parsing report file: ${file}`);
-        const { totalCount: c, skippedCount: s, annotations: a } = await parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces);
+        const { totalCount: c, skippedCount: s, annotations: a } = await parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces);
         if (c === 0)
             continue;
         totalCount += c;
