@@ -16,6 +16,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Install NPM
+        run: |
+          npm install
+      - name: Run NPM
+        run: |
+          npm run all
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test:
+    if: github.event_name  == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Test JUnit test import
         uses: ./
         with:
@@ -66,15 +86,6 @@ jobs:
           transformers: |
             [{"searchValue":"::","replaceValue":"/"}]
           annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
-        
-      - name: Install NPM
-        run: |
-          npm install
-      - name: Run NPM
-        run: |
-          npm run all
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
     if: startsWith(github.ref, 'refs/tags/')
