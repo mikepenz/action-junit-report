@@ -125,8 +125,10 @@ async function updateChecks(
 
 export function buildSummaryTables(
   testResults: TestResult[],
-  includePassed: boolean
-): [SummaryTableRow[], SummaryTableRow[]] {
+  includePassed: boolean,
+  detailedSummary: boolean,
+  flakySummary: boolean
+): [SummaryTableRow[], SummaryTableRow[], SummaryTableRow[]] {
   const table: SummaryTableRow[] = [
     [
       {data: '', header: true},
@@ -137,13 +139,25 @@ export function buildSummaryTables(
     ]
   ]
 
-  const detailsTable: SummaryTableRow[] = [
-    [
-      {data: '', header: true},
-      {data: 'Test', header: true},
-      {data: 'Result', header: true}
-    ]
-  ]
+  const detailsTable: SummaryTableRow[] = !detailedSummary
+    ? []
+    : [
+        [
+          {data: '', header: true},
+          {data: 'Test', header: true},
+          {data: 'Result', header: true}
+        ]
+      ]
+
+  const flakyTable: SummaryTableRow[] = !flakySummary
+    ? []
+    : [
+        [
+          {data: '', header: true},
+          {data: 'Test', header: true},
+          {data: 'Retries', header: true}
+        ]
+      ]
 
   for (const testResult of testResults) {
     table.push([
@@ -154,43 +168,51 @@ export function buildSummaryTables(
       `${testResult.failed} failed`
     ])
 
-    const annotations = testResult.annotations.filter(
-      annotation => includePassed || annotation.annotation_level !== 'notice'
-    )
+    if (detailedSummary) {
+      const annotations = testResult.annotations.filter(
+        annotation => includePassed || annotation.annotation_level !== 'notice'
+      )
+      if (annotations.length === 0) {
+        if (!includePassed) {
+          core.info(
+            `⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`
+          )
+        }
+        detailsTable.push([`-`, `No test annotations available`, `-`])
+      } else {
+        for (const annotation of annotations) {
+          detailsTable.push([
+            `${testResult.checkName}`,
+            `${annotation.title}`,
+            `${
+              annotation.status === 'success'
+                ? '✅ pass'
+                : annotation.status === 'skipped'
+                  ? `⏭️ skipped`
+                  : `❌ ${annotation.annotation_level}`
+            }`
+          ])
 
-    if (annotations.length === 0) {
-      if (!includePassed) {
-        core.info(
-          `⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`
-        )
-      }
-      detailsTable.push([`-`, `No test annotations available`, `-`])
-    } else {
-      for (const annotation of annotations) {
-        detailsTable.push([
-          `${testResult.checkName}`,
-          `${annotation.title}`,
-          `${
-            annotation.status === 'success'
-              ? '✅ pass'
-              : annotation.status === 'skipped'
-                ? `⏭️ skipped`
-                : `❌ ${annotation.annotation_level}`
-          }`
-        ])
+          if (annotation.retries > 0) {
+            flakyTable.push([`${testResult.checkName}`, `${annotation.title}`, `${annotation.retries}`])
+          }
+        }
       }
     }
   }
-  return [table, detailsTable]
+  return [table, detailsTable, flakyTable]
 }
 
 export async function attachSummary(
   table: SummaryTableRow[],
-  detailedSummary: boolean,
-  detailsTable: SummaryTableRow[]
+  detailsTable: SummaryTableRow[],
+  flakySummary: SummaryTableRow[]
 ): Promise<void> {
   await core.summary.addTable(table).write()
-  if (detailedSummary) {
+  if (detailsTable.length > 0) {
     await core.summary.addTable(detailsTable).write()
+  }
+  if (flakySummary.length > 1) {
+    await core.summary.addTable(flakySummary).write()
   }
 }

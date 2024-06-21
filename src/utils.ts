@@ -80,8 +80,7 @@ export function buildTable(rows: SummaryTableRow[]): string {
     })
     .join('')
 
-  const element = wrap('table', tableBody)
-  return element
+  return wrap('table', tableBody)
 }
 
 /**

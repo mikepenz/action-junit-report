@@ -85,6 +85,10 @@ inputs:
     description: 'Include table with all test results in summary'
     required: false
     default: 'false'
+  flaky_summary:
+    description: 'Include table with all flaky results in summary'
+    required: false
+    default: 'false'
   annotate_notice:
     description: 'Annotate passed tests along with warning and failed ones'
     required: false
@@ -117,6 +121,8 @@ outputs:
     description: 'The short summary of the junit report. In html format (as also constructed by GitHub for the summary).'
   detailed_summary:
     description: 'The full table with all test results in a summary. In html format (as also constructed by GitHub for the summary).'
+  flaky_summary:
+    description: 'The full table with all flaky results in a summary. In html format (as also constructed by GitHub for the summary).'
 runs:
   using: 'node20'
   main: 'dist/index.js'

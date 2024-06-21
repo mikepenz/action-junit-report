@@ -128,7 +128,7 @@ async function updateChecks(octokit, check_run_id, title, summary, annotations) 
     core.debug(JSON.stringify(updateCheckRequest, null, 2));
     await octokit.rest.checks.update(updateCheckRequest);
 }
-function buildSummaryTables(testResults, includePassed) {
+function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary) {
     const table = [
         [
             { data: '', header: true },
@@ -138,13 +138,24 @@ function buildSummaryTables(testResults, includePassed) {
             { data: 'Failed ❌', header: true }
         ]
     ];
-    const detailsTable = [
-        [
-            { data: '', header: true },
-            { data: 'Test', header: true },
-            { data: 'Result', header: true }
-        ]
-    ];
+    const detailsTable = !detailedSummary
+        ? []
+        : [
+            [
+                { data: '', header: true },
+                { data: 'Test', header: true },
+                { data: 'Result', header: true }
+            ]
+        ];
+    const flakyTable = !flakySummary
+        ? []
+        : [
+            [
+                { data: '', header: true },
+                { data: 'Test', header: true },
+                { data: 'Retries', header: true }
+            ]
+        ];
     for (const testResult of testResults) {
         table.push([
             `${testResult.checkName}`,
@@ -153,34 +164,42 @@ function buildSummaryTables(testResults, includePassed) {
             `${testResult.skipped} skipped`,
             `${testResult.failed} failed`
         ]);
-        const annotations = testResult.annotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
-        if (annotations.length === 0) {
-            if (!includePassed) {
-                core.info(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
+        if (detailedSummary) {
+            const annotations = testResult.annotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
+            if (annotations.length === 0) {
+                if (!includePassed) {
+                    core.info(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
+                }
+                detailsTable.push([`-`, `No test annotations available`, `-`]);
             }
-            detailsTable.push([`-`, `No test annotations available`, `-`]);
-        }
-        else {
-            for (const annotation of annotations) {
-                detailsTable.push([
-                    `${testResult.checkName}`,
-                    `${annotation.title}`,
-                    `${annotation.status === 'success'
-                        ? '✅ pass'
-                        : annotation.status === 'skipped'
-                            ? `⏭️ skipped`
-                            : `❌ ${annotation.annotation_level}`}`
-                ]);
+            else {
+                for (const annotation of annotations) {
+                    detailsTable.push([
+                        `${testResult.checkName}`,
+                        `${annotation.title}`,
+                        `${annotation.status === 'success'
+                            ? '✅ pass'
+                            : annotation.status === 'skipped'
+                                ? `⏭️ skipped`
+                                : `❌ ${annotation.annotation_level}`}`
+                    ]);
+                    if (annotation.retries > 0) {
+                        flakyTable.push([`${testResult.checkName}`, `${annotation.title}`, `${annotation.retries}`]);
+                    }
+                }
             }
         }
     }
-    return [table, detailsTable];
+    return [table, detailsTable, flakyTable];
 }
 exports.buildSummaryTables = buildSummaryTables;
-async function attachSummary(table, detailedSummary, detailsTable) {
+async function attachSummary(table, detailsTable, flakySummary) {
     await core.summary.addTable(table).write();
-    if (detailedSummary) {
+    if (detailsTable.length > 0) {
         await core.summary.addTable(detailsTable).write();
+    }
+    if (flakySummary.length > 1) {
+        await core.summary.addTable(flakySummary).write();
     }
 }
 exports.attachSummary = attachSummary;
@@ -243,6 +262,7 @@ async function run() {
         const annotateNotice = core.getInput('annotate_notice') === 'true';
         const jobSummary = core.getInput('job_summary') === 'true';
         const detailedSummary = core.getInput('detailed_summary') === 'true';
+        const flakySummary = core.getInput('flaky_summary') === 'true';
         const jobName = core.getInput('job_name');
         const reportPaths = core.getMultilineInput('report_paths');
         const summary = core.getMultilineInput('summary');
@@ -274,8 +294,7 @@ async function run() {
         };
         core.info(`Preparing ${reportsCount} report as configured.`);
         for (let i = 0; i < reportsCount; i++) {
-            const testResult = await (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed && annotateNotice, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink, annotationsLimit, truncateStackTraces);
-            core.info(`Found and parsed ${testResult.foundFiles} test report files.`);
+            const testResult = await (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink, annotationsLimit, truncateStackTraces);
             mergedResult.totalCount += testResult.totalCount;
             mergedResult.skipped += testResult.skipped;
             mergedResult.failed += testResult.failed;
@@ -311,10 +330,10 @@ async function run() {
             core.warning(`⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/23`);
         }
         const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
-        const [table, detailTable] = (0, annotator_1.buildSummaryTables)(testResults, includePassed);
+        const [table, detailTable, flakyTable] = (0, annotator_1.buildSummaryTables)(testResults, includePassed, detailedSummary, flakySummary);
         if (jobSummary && supportsJobSummary) {
             try {
-                await (0, annotator_1.attachSummary)(table, detailedSummary, detailTable);
+                await (0, annotator_1.attachSummary)(table, detailTable, flakyTable);
             }
             catch (error) {
                 core.error(`❌ Failed to set the summary using the provided token. (${error})`);
@@ -328,6 +347,7 @@ async function run() {
         }
         core.setOutput('summary', (0, utils_1.buildTable)(table));
         core.setOutput('detailed_summary', (0, utils_1.buildTable)(detailTable));
+        core.setOutput('flaky_summary', (0, utils_1.buildTable)(flakyTable));
         if (failOnFailure && conclusion === 'failure') {
             core.setFailed(`❌ Tests reported ${mergedResult.failed} failures`);
         }
@@ -549,13 +569,16 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 if (testcaseMap.get(key) !== undefined) {
                     // testcase with matching name exists
                     const failed = testcase.failure || testcase.error;
-                    const previousFailed = testcaseMap.get(key).failure || testcaseMap.get(key).error;
+                    const previous = testcaseMap.get(key);
+                    const previousFailed = previous.failure || previous.error;
                     if (failed && !previousFailed) {
                         // previous is a success, drop failure
+                        previous.retries = (previous.retries || 0) + 1;
                         core.debug(`Drop flaky test failure for (1): ${key}`);
                     }
                     else if (!failed && previousFailed) {
                         // previous failed, new one not, replace
+                        testcase.retries = (previous.retries || 0) + 1;
                         testcaseMap.set(key, testcase);
                         core.debug(`Drop flaky test failure for (2): ${key}`);
                     }
@@ -651,6 +674,7 @@ suite, parentName, suiteRegex, annotatePassed = false, checkRetries = false, exc
                 end_line: pos.line,
                 start_column: 0,
                 end_column: 0,
+                retries: testcase.retries || 0,
                 annotation_level: annotationLevel,
                 status: skip ? 'skipped' : success ? 'success' : 'failure',
                 title: escapeEmoji(title),
@@ -835,8 +859,7 @@ function buildTable(rows) {
         return wrap('tr', cells);
     })
         .join('');
-    const element = wrap('table', tableBody);
-    return element;
+    return wrap('table', tableBody);
 }
 exports.buildTable = buildTable;
 /**
