@@ -70,7 +70,7 @@ export async function run(): Promise<void> {
         retrieve('summary', summary, i, reportsCount),
         retrieve('reportPaths', reportPaths, i, reportsCount),
         retrieve('suiteRegex', suiteRegex, i, reportsCount),
-        includePassed && annotateNotice,
+        includePassed,
         checkRetries,
         excludeSources,
         retrieve('checkTitleTemplate', checkTitleTemplate, i, reportsCount),
@@ -80,9 +80,6 @@ export async function run(): Promise<void> {
         annotationsLimit,
         truncateStackTraces
       )
-
-      core.info(`Found and parsed ${testResult.foundFiles} test report files.`)
-
       mergedResult.totalCount += testResult.totalCount
       mergedResult.skipped += testResult.skipped
       mergedResult.failed += testResult.failed
