@@ -31,9 +31,11 @@ jobs:
         uses: ./
         with:
           check_name: Example Pytest Report
-          report_paths: test_results/python/report.xml
+          report_paths: test_results/python/report_flaky.xml
           include_passed: true
+          check_retries: true,
           detailed_summary: true
+          flaky_summary: true
           annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
 
       - name: Test Multi test import
