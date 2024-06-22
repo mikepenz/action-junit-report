@@ -313,12 +313,6 @@ async function parseSuite(
         skipped++
       }
 
-      // If this won't be reported as a failure and processing all passed tests
-      // isn't enabled, then skip the rest of the processing.
-      if (annotationLevel !== 'failure' && !annotatePassed) {
-        continue
-      }
-
       // in some definitions `failure` may be an array
       const failures = testcase.failure
         ? Array.isArray(testcase.failure)
