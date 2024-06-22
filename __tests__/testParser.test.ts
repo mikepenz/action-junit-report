@@ -443,19 +443,8 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     ])
   })
 
-  it('should skip disabled tests when annotatePassed=false', async () => {
+  it('should parse disabled tests', async () => {
     const {totalCount, skipped, annotations} = await parseFile('test_results/issues/testDisabled.xml', '*')
-    const filtered = annotations.filter(annotation => annotation.annotation_level !== 'notice')
-    const notice = annotations.filter(annotation => annotation.annotation_level === 'notice')
-
-    expect(totalCount).toBe(22)
-    expect(skipped).toBe(10)
-    expect(filtered.length).toBe(6)
-    expect(notice.length).toBe(0)
-  })
-
-  it('should parse disabled tests as notices when annotatePassed=true', async () => {
-    const {totalCount, skipped, annotations} = await parseFile('test_results/issues/testDisabled.xml', '*', true)
     const filtered = annotations.filter(annotation => annotation.annotation_level !== 'notice')
     const notice = annotations.filter(annotation => annotation.annotation_level === 'notice')
 
