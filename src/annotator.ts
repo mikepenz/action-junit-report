@@ -225,6 +225,7 @@ export function buildCommentIdentifier(checkName: string[]): string {
 export async function attachComment(
   octokit: InstanceType<typeof GitHub>,
   checkName: string[],
+  updateComment: boolean,
   table: SummaryTableRow[],
   detailsTable: SummaryTableRow[],
   flakySummary: SummaryTableRow[]
@@ -242,7 +243,7 @@ export async function attachComment(
   }
   comment += `\n\n${identifier}`
 
-  const priorComment = await findPriorComment(octokit, identifier)
+  const priorComment = updateComment ? await findPriorComment(octokit, identifier) : undefined
   if (priorComment) {
     await octokit.rest.issues.updateComment({
       owner: context.repo.owner,

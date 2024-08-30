@@ -209,7 +209,7 @@ async function attachSummary(table, detailsTable, flakySummary) {
 function buildCommentIdentifier(checkName) {
     return `<!-- Summary comment for ${JSON.stringify(checkName)} by mikepenz/action-junit-report -->`;
 }
-async function attachComment(octokit, checkName, table, detailsTable, flakySummary) {
+async function attachComment(octokit, checkName, updateComment, table, detailsTable, flakySummary) {
     const identifier = buildCommentIdentifier(checkName);
     let comment = (0, utils_2.buildTable)(table);
     if (detailsTable.length > 0) {
@@ -221,7 +221,7 @@ async function attachComment(octokit, checkName, table, detailsTable, flakySumma
         comment += (0, utils_2.buildTable)(flakySummary);
     }
     comment += `\n\n${identifier}`;
-    const priorComment = await findPriorComment(octokit, identifier);
+    const priorComment = updateComment ? await findPriorComment(octokit, identifier) : undefined;
     if (priorComment) {
         await octokit.rest.issues.updateComment({
             owner: utils_1.context.repo.owner,
@@ -309,6 +309,7 @@ async function run() {
         const detailedSummary = core.getInput('detailed_summary') === 'true';
         const flakySummary = core.getInput('flaky_summary') === 'true';
         const comment = core.getInput('comment') === 'true';
+        const updateComment = core.getInput('updateComment') === 'true';
         const jobName = core.getInput('job_name');
         const reportPaths = core.getMultilineInput('report_paths');
         const summary = core.getMultilineInput('summary');
@@ -394,7 +395,7 @@ async function run() {
         }
         if (comment) {
             const octokit = github.getOctokit(token);
-            (0, annotator_1.attachComment)(octokit, checkName, table, detailTable, flakyTable);
+            (0, annotator_1.attachComment)(octokit, checkName, updateComment, table, detailTable, flakyTable);
         }
         core.setOutput('summary', (0, utils_1.buildTable)(table));
         core.setOutput('detailed_summary', (0, utils_1.buildTable)(detailTable));

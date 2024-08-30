@@ -29,6 +29,7 @@ export async function run(): Promise<void> {
     const detailedSummary = core.getInput('detailed_summary') === 'true'
     const flakySummary = core.getInput('flaky_summary') === 'true'
     const comment = core.getInput('comment') === 'true'
+    const updateComment = core.getInput('updateComment') === 'true'
     const jobName = core.getInput('job_name')
 
     const reportPaths = core.getMultilineInput('report_paths')
@@ -154,7 +155,7 @@ export async function run(): Promise<void> {
 
     if (comment) {
       const octokit: InstanceType<typeof GitHub> = github.getOctokit(token)
-      attachComment(octokit, checkName, table, detailTable, flakyTable)
+      attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable)
     }
 
     core.setOutput('summary', buildTable(table))
