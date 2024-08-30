@@ -218,13 +218,18 @@ export async function attachSummary(
   }
 }
 
-export function attachComment(
-  token: string,
+export function buildCommentIdentifier(checkName: string[]): string {
+  return `<!-- Summary comment for ${JSON.stringify(checkName)} by mikepenz/action-junit-report -->`
+}
+
+export async function attachComment(
+  octokit: InstanceType<typeof GitHub>,
+  checkName: string[],
   table: SummaryTableRow[],
   detailsTable: SummaryTableRow[],
   flakySummary: SummaryTableRow[]
-): void {
-  const octokit = github.getOctokit(token)
+): Promise<void> {
+  const identifier = buildCommentIdentifier(checkName)
 
   let comment = buildTable(table)
   if (detailsTable.length > 0) {
@@ -235,11 +240,33 @@ export function attachComment(
     comment += '\n\n'
     comment += buildTable(flakySummary)
   }
+  comment += `\n\n${identifier}`
 
-  octokit.rest.issues.createComment({
+  const priorComment = await findPriorComment(octokit, identifier)
+  if (priorComment) {
+    await octokit.rest.issues.updateComment({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      comment_id: priorComment,
+      body: comment
+    })
+  } else {
+    await octokit.rest.issues.createComment({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      issue_number: context.issue.number,
+      body: comment
+    })
+  }
+}
+
+async function findPriorComment(octokit: InstanceType<typeof GitHub>, identifier: string): Promise<number | undefined> {
+  const comments = await octokit.paginate(octokit.rest.issues.listComments, {
     owner: context.repo.owner,
     repo: context.repo.repo,
-    issue_number: context.issue.number,
-    body: comment
+    issue_number: context.issue.number
   })
+
+  const foundComment = comments.find(comment => comment.body?.endsWith(identifier))
+  return foundComment?.id
 }

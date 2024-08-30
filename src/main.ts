@@ -3,6 +3,7 @@ import * as github from '@actions/github'
 import {annotateTestResult, attachComment, attachSummary, buildSummaryTables} from './annotator'
 import {parseTestReports, TestResult} from './testParser'
 import {buildTable, readTransformers, retrieve} from './utils'
+import {GitHub} from '@actions/github/lib/utils'
 
 export async function run(): Promise<void> {
   try {
@@ -152,7 +153,8 @@ export async function run(): Promise<void> {
     }
 
     if (comment) {
-      attachComment(token, table, detailTable, flakyTable)
+      const octokit: InstanceType<typeof GitHub> = github.getOctokit(token)
+      attachComment(octokit, checkName, table, detailTable, flakyTable)
     }
 
     core.setOutput('summary', buildTable(table))

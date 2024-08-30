@@ -33,6 +33,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.annotateTestResult = annotateTestResult;
 exports.buildSummaryTables = buildSummaryTables;
 exports.attachSummary = attachSummary;
+exports.buildCommentIdentifier = buildCommentIdentifier;
 exports.attachComment = attachComment;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
@@ -205,8 +206,11 @@ async function attachSummary(table, detailsTable, flakySummary) {
         await core.summary.addTable(flakySummary).write();
     }
 }
-function attachComment(token, table, detailsTable, flakySummary) {
-    const octokit = github.getOctokit(token);
+function buildCommentIdentifier(checkName) {
+    return `<!-- Summary comment for ${JSON.stringify(checkName)} by mikepenz/action-junit-report -->`;
+}
+async function attachComment(octokit, checkName, table, detailsTable, flakySummary) {
+    const identifier = buildCommentIdentifier(checkName);
     let comment = (0, utils_2.buildTable)(table);
     if (detailsTable.length > 0) {
         comment += '\n\n';
@@ -216,12 +220,33 @@ function attachComment(token, table, detailsTable, flakySummary) {
         comment += '\n\n';
         comment += (0, utils_2.buildTable)(flakySummary);
     }
-    octokit.rest.issues.createComment({
+    comment += `\n\n${identifier}`;
+    const priorComment = await findPriorComment(octokit, identifier);
+    if (priorComment) {
+        await octokit.rest.issues.updateComment({
+            owner: utils_1.context.repo.owner,
+            repo: utils_1.context.repo.repo,
+            comment_id: priorComment,
+            body: comment
+        });
+    }
+    else {
+        await octokit.rest.issues.createComment({
+            owner: utils_1.context.repo.owner,
+            repo: utils_1.context.repo.repo,
+            issue_number: utils_1.context.issue.number,
+            body: comment
+        });
+    }
+}
+async function findPriorComment(octokit, identifier) {
+    const comments = await octokit.paginate(octokit.rest.issues.listComments, {
         owner: utils_1.context.repo.owner,
         repo: utils_1.context.repo.repo,
-        issue_number: utils_1.context.issue.number,
-        body: comment
+        issue_number: utils_1.context.issue.number
     });
+    const foundComment = comments.find(comment => { var _a; return (_a = comment.body) === null || _a === void 0 ? void 0 : _a.endsWith(identifier); });
+    return foundComment === null || foundComment === void 0 ? void 0 : foundComment.id;
 }
 
 
@@ -368,7 +393,8 @@ async function run() {
             core.info('⏩ Skipped creation of job summary');
         }
         if (comment) {
-            (0, annotator_1.attachComment)(token, table, detailTable, flakyTable);
+            const octokit = github.getOctokit(token);
+            (0, annotator_1.attachComment)(octokit, checkName, table, detailTable, flakyTable);
         }
         core.setOutput('summary', (0, utils_1.buildTable)(table));
         core.setOutput('detailed_summary', (0, utils_1.buildTable)(detailTable));
