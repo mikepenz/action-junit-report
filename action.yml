@@ -90,6 +90,14 @@ inputs:
     description: 'Include table with all flaky results in summary'
     required: false
     default: 'false'
+  comment:
+    description: 'Enables a comment being added to the PR with the summary tables (summary has to be enabled). Default: false'
+    required: false
+    default: 'false'
+  updateComment:
+    description: 'Enables updating the prior comment if one already exists. Default: true'
+    required: false
+    default: 'true'
   annotate_notice:
     description: 'Annotate passed tests along with warning and failed ones'
     required: false

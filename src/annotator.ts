@@ -2,7 +2,8 @@ import * as core from '@actions/core'
 import {Annotation, TestResult} from './testParser'
 import * as github from '@actions/github'
 import {SummaryTableRow} from '@actions/core/lib/summary'
-import {GitHub} from '@actions/github/lib/utils'
+import {context, GitHub} from '@actions/github/lib/utils'
+import {buildTable} from './utils'
 
 export async function annotateTestResult(
   testResult: TestResult,
@@ -215,4 +216,58 @@ export async function attachSummary(
   if (flakySummary.length > 1) {
     await core.summary.addTable(flakySummary).write()
   }
+}
+
+export function buildCommentIdentifier(checkName: string[]): string {
+  return `<!-- Summary comment for ${JSON.stringify(checkName)} by mikepenz/action-junit-report -->`
+}
+
+export async function attachComment(
+  octokit: InstanceType<typeof GitHub>,
+  checkName: string[],
+  updateComment: boolean,
+  table: SummaryTableRow[],
+  detailsTable: SummaryTableRow[],
+  flakySummary: SummaryTableRow[]
+): Promise<void> {
+  const identifier = buildCommentIdentifier(checkName)
+
+  let comment = buildTable(table)
+  if (detailsTable.length > 0) {
+    comment += '\n\n'
+    comment += buildTable(detailsTable)
+  }
+  if (flakySummary.length > 1) {
+    comment += '\n\n'
+    comment += buildTable(flakySummary)
+  }
+  comment += `\n\n${identifier}`
+
+  const priorComment = updateComment ? await findPriorComment(octokit, identifier) : undefined
+  if (priorComment) {
+    await octokit.rest.issues.updateComment({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      comment_id: priorComment,
+      body: comment
+    })
+  } else {
+    await octokit.rest.issues.createComment({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      issue_number: context.issue.number,
+      body: comment
+    })
+  }
+}
+
+async function findPriorComment(octokit: InstanceType<typeof GitHub>, identifier: string): Promise<number | undefined> {
+  const comments = await octokit.paginate(octokit.rest.issues.listComments, {
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    issue_number: context.issue.number
+  })
+
+  const foundComment = comments.find(comment => comment.body?.endsWith(identifier))
+  return foundComment?.id
 }
