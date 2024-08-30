@@ -2,7 +2,8 @@ import * as core from '@actions/core'
 import {Annotation, TestResult} from './testParser'
 import * as github from '@actions/github'
 import {SummaryTableRow} from '@actions/core/lib/summary'
-import {GitHub} from '@actions/github/lib/utils'
+import {context, GitHub} from '@actions/github/lib/utils'
+import {buildTable} from './utils'
 
 export async function annotateTestResult(
   testResult: TestResult,
@@ -215,4 +216,30 @@ export async function attachSummary(
   if (flakySummary.length > 1) {
     await core.summary.addTable(flakySummary).write()
   }
+}
+
+export function attachComment(
+  token: string,
+  table: SummaryTableRow[],
+  detailsTable: SummaryTableRow[],
+  flakySummary: SummaryTableRow[]
+): void {
+  const octokit = github.getOctokit(token)
+
+  let comment = buildTable(table)
+  if (detailsTable.length > 0) {
+    comment += '\n\n'
+    comment += buildTable(detailsTable)
+  }
+  if (flakySummary.length > 1) {
+    comment += '\n\n'
+    comment += buildTable(flakySummary)
+  }
+
+  octokit.rest.issues.createComment({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    issue_number: context.issue.number,
+    body: comment
+  })
 }

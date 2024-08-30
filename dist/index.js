@@ -33,8 +33,11 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.annotateTestResult = annotateTestResult;
 exports.buildSummaryTables = buildSummaryTables;
 exports.attachSummary = attachSummary;
+exports.attachComment = attachComment;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
+const utils_1 = __nccwpck_require__(3030);
+const utils_2 = __nccwpck_require__(918);
 async function annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName) {
     const annotations = testResult.annotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
     const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
@@ -202,6 +205,24 @@ async function attachSummary(table, detailsTable, flakySummary) {
         await core.summary.addTable(flakySummary).write();
     }
 }
+function attachComment(token, table, detailsTable, flakySummary) {
+    const octokit = github.getOctokit(token);
+    let comment = (0, utils_2.buildTable)(table);
+    if (detailsTable.length > 0) {
+        comment += '\n\n';
+        comment += (0, utils_2.buildTable)(detailsTable);
+    }
+    if (flakySummary.length > 1) {
+        comment += '\n\n';
+        comment += (0, utils_2.buildTable)(flakySummary);
+    }
+    octokit.rest.issues.createComment({
+        owner: utils_1.context.repo.owner,
+        repo: utils_1.context.repo.repo,
+        issue_number: utils_1.context.issue.number,
+        body: comment
+    });
+}
 
 
 /***/ }),
@@ -262,6 +283,7 @@ async function run() {
         const jobSummary = core.getInput('job_summary') === 'true';
         const detailedSummary = core.getInput('detailed_summary') === 'true';
         const flakySummary = core.getInput('flaky_summary') === 'true';
+        const comment = core.getInput('comment') === 'true';
         const jobName = core.getInput('job_name');
         const reportPaths = core.getMultilineInput('report_paths');
         const summary = core.getMultilineInput('summary');
@@ -344,6 +366,9 @@ async function run() {
         }
         else {
             core.info('⏩ Skipped creation of job summary');
+        }
+        if (comment) {
+            (0, annotator_1.attachComment)(token, table, detailTable, flakyTable);
         }
         core.setOutput('summary', (0, utils_1.buildTable)(table));
         core.setOutput('detailed_summary', (0, utils_1.buildTable)(detailTable));

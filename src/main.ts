@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {annotateTestResult, attachSummary, buildSummaryTables} from './annotator'
+import {annotateTestResult, attachComment, attachSummary, buildSummaryTables} from './annotator'
 import {parseTestReports, TestResult} from './testParser'
 import {buildTable, readTransformers, retrieve} from './utils'
 
@@ -27,6 +27,7 @@ export async function run(): Promise<void> {
     const jobSummary = core.getInput('job_summary') === 'true'
     const detailedSummary = core.getInput('detailed_summary') === 'true'
     const flakySummary = core.getInput('flaky_summary') === 'true'
+    const comment = core.getInput('comment') === 'true'
     const jobName = core.getInput('job_name')
 
     const reportPaths = core.getMultilineInput('report_paths')
@@ -148,6 +149,10 @@ export async function run(): Promise<void> {
       core.warning(`⚠️ Your environment seems to not support job summaries.`)
     } else {
       core.info('⏩ Skipped creation of job summary')
+    }
+
+    if (comment) {
+      attachComment(token, table, detailTable, flakyTable)
     }
 
     core.setOutput('summary', buildTable(table))
