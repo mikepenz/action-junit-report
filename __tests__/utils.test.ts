@@ -11,6 +11,7 @@ describe('readTransformers', () => {
     const transformer = readTransformers('[{"searchValue":"::","replaceValue":"/"}]')
     expect(transformer).toStrictEqual([
       {
+        regex: /::/gu,
         searchValue: '::',
         replaceValue: '/'
       }
@@ -23,6 +24,7 @@ describe('readTransformers', () => {
     )
     expect(transformer).toStrictEqual([
       {
+        regex: /\./gu,
         searchValue: '\\.',
         replaceValue: '/'
       },

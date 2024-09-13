@@ -52,6 +52,7 @@ export interface Position {
 export interface Transformer {
   searchValue: string
   replaceValue: string
+  regex?: RegExp
 }
 
 /**

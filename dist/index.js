@@ -909,6 +909,14 @@ function readTransformers(raw) {
     }
     try {
         const transformers = JSON.parse(raw);
+        for (const transformer of transformers) {
+            try {
+                transformer.regex = new RegExp(transformer.searchValue.replace('\\\\', '\\'), 'gu');
+            }
+            catch (error) {
+                core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue}`);
+            }
+        }
         return transformers;
     }
     catch (error) {
@@ -918,12 +926,11 @@ function readTransformers(raw) {
     }
 }
 function applyTransformer(transformer, string) {
-    try {
-        const regExp = new RegExp(transformer.searchValue.replace('\\\\', '\\'), 'gu');
+    const regExp = transformer.regex;
+    if (regExp) {
         return string.replace(regExp, transformer.replaceValue);
     }
-    catch (e) {
-        core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue}`);
+    else {
         return string.replace(transformer.searchValue, transformer.replaceValue);
     }
 }

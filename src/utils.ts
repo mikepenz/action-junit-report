@@ -34,6 +34,13 @@ export function readTransformers(raw: string | undefined): Transformer[] {
   }
   try {
     const transformers: Transformer[] = JSON.parse(raw)
+    for (const transformer of transformers) {
+      try {
+        transformer.regex = new RegExp(transformer.searchValue.replace('\\\\', '\\'), 'gu')
+      } catch (error) {
+        core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue}`)
+      }
+    }
     return transformers
   } catch (error) {
     core.info(`⚠️ Transformers provided, but they couldn't be parsed. Fallback to Defaults.`)
@@ -43,11 +50,10 @@ export function readTransformers(raw: string | undefined): Transformer[] {
 }
 
 export function applyTransformer(transformer: Transformer, string: string): string {
-  try {
-    const regExp = new RegExp(transformer.searchValue.replace('\\\\', '\\'), 'gu')
+  const regExp = transformer.regex
+  if (regExp) {
     return string.replace(regExp, transformer.replaceValue)
-  } catch (e) {
-    core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue}`)
+  } else {
     return string.replace(transformer.searchValue, transformer.replaceValue)
   }
 }
