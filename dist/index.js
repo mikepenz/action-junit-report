@@ -733,11 +733,20 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
         for (const r of transformer) {
             transformedFileName = (0, utils_1.applyTransformer)(r, transformedFileName);
         }
-        let resolvedPath = failed || (annotatePassed && success)
-            ? await resolvePath(transformedFileName, excludeSources, followSymlink)
-            : transformedFileName;
-        core.debug(`Path prior to stripping: ${resolvedPath}`);
         const githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
+        let resolvedPath = transformedFileName;
+        if (failed || (annotatePassed && success)) {
+            if (fs.existsSync(transformedFileName)) {
+                resolvedPath = transformedFileName;
+            }
+            else if (githubWorkspacePath && fs.existsSync(`${githubWorkspacePath}${transformedFileName}`)) {
+                resolvedPath = `${githubWorkspacePath}${transformedFileName}`;
+            }
+            else {
+                resolvedPath = await resolvePath(transformedFileName, excludeSources, followSymlink);
+            }
+        }
+        core.debug(`Path prior to stripping: ${resolvedPath}`);
         if (githubWorkspacePath) {
             resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, ''); // strip workspace prefix, make the path relative
         }
