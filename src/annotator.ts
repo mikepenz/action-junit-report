@@ -230,6 +230,11 @@ export async function attachComment(
   detailsTable: SummaryTableRow[],
   flakySummary: SummaryTableRow[]
 ): Promise<void> {
+  if (!context.issue.number) {
+    core.warning(`⚠️ Action requires a valid issue number (PR reference) to be able to attach a comment..`)
+    return
+  }
+
   const identifier = buildCommentIdentifier(checkName)
 
   let comment = buildTable(table)

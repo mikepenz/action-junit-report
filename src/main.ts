@@ -155,7 +155,7 @@ export async function run(): Promise<void> {
 
     if (comment) {
       const octokit: InstanceType<typeof GitHub> = github.getOctokit(token)
-      attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable)
+      await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable)
     }
 
     core.setOutput('summary', buildTable(table))
