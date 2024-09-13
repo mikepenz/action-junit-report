@@ -210,6 +210,10 @@ function buildCommentIdentifier(checkName) {
     return `<!-- Summary comment for ${JSON.stringify(checkName)} by mikepenz/action-junit-report -->`;
 }
 async function attachComment(octokit, checkName, updateComment, table, detailsTable, flakySummary) {
+    if (!utils_1.context.issue.number) {
+        core.warning(`⚠️ Action requires a valid issue number (PR reference) to be able to attach a comment..`);
+        return;
+    }
     const identifier = buildCommentIdentifier(checkName);
     let comment = (0, utils_2.buildTable)(table);
     if (detailsTable.length > 0) {
@@ -395,7 +399,7 @@ async function run() {
         }
         if (comment) {
             const octokit = github.getOctokit(token);
-            (0, annotator_1.attachComment)(octokit, checkName, updateComment, table, detailTable, flakyTable);
+            await (0, annotator_1.attachComment)(octokit, checkName, updateComment, table, detailTable, flakyTable);
         }
         core.setOutput('summary', (0, utils_1.buildTable)(table));
         core.setOutput('detailed_summary', (0, utils_1.buildTable)(detailTable));
