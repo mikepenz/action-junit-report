@@ -1074,11 +1074,13 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const transformer: Transformer[] = [
       {
         searchValue: '\\.',
-        replaceValue: '/'
+        replaceValue: '/',
+        regex: new RegExp('\\.'.replace('\\\\', '\\'), 'gu')
       },
       {
         searchValue: '(.+?)_t',
-        replaceValue: '$1.t'
+        replaceValue: '$1.t',
+        regex: new RegExp('(.+?)_t'.replace('\\\\', '\\'), 'gu')
       }
     ]
     const {totalCount, skippedCount, annotations} = await parseFile(
