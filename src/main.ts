@@ -20,6 +20,7 @@ export async function run(): Promise<void> {
     const checkAnnotations = core.getInput('check_annotations') === 'true'
     const commit = core.getInput('commit')
     const failOnFailure = core.getInput('fail_on_failure') === 'true'
+    const failOnParseError = core.getInput('fail_on_parse_error') === 'true'
     const requireTests = core.getInput('require_tests') === 'true'
     const requirePassedTests = core.getInput('require_passed_tests') === 'true'
     const includePassed = core.getInput('include_passed') === 'true'
@@ -84,7 +85,8 @@ export async function run(): Promise<void> {
         transformers,
         followSymlink,
         annotationsLimit,
-        truncateStackTraces
+        truncateStackTraces,
+        failOnParseError
       )
       mergedResult.totalCount += testResult.totalCount
       mergedResult.skipped += testResult.skipped
