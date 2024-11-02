@@ -90,12 +90,12 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
                 core.info(`ℹ️ - ${testResult.checkName} - Updating checks (Annotations: ${annotations.length})`);
                 for (let i = 0; i < annotations.length; i = i + 50) {
                     const sliced = annotations.slice(i, i + 50);
-                    updateChecks(octokit, check_run_id, title, testResult.summary, sliced);
+                    await updateChecks(octokit, check_run_id, title, testResult.summary, sliced);
                 }
             }
             else {
                 core.info(`ℹ️ - ${testResult.checkName} - Updating checks (disabled annotations)`);
-                updateChecks(octokit, check_run_id, title, testResult.summary, []);
+                await updateChecks(octokit, check_run_id, title, testResult.summary, []);
             }
         }
         else {
