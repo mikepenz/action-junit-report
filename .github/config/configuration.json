@@ -20,5 +20,6 @@
             "title": "## 📦 Dependencies",
             "labels": ["dependencies"]
         }
-    ]
+    ],
+    "template": "#{{CHANGELOG}}\n\nContributors:\n- #{{CONTRIBUTORS}}"
 }
