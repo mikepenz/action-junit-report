@@ -166,7 +166,8 @@ export async function parseFile(
   transformer: Transformer[] = [],
   followSymlink = false,
   annotationsLimit = -1,
-  truncateStackTraces = true
+  truncateStackTraces = true,
+  failOnParseError = false
 ): Promise<InternalTestResult> {
   core.debug(`Parsing file ${file}`)
 
@@ -178,6 +179,7 @@ export async function parseFile(
     report = JSON.parse(parser.xml2json(data, {compact: true}))
   } catch (error) {
     core.error(`⚠️ Failed to parse file (${file}) with error ${error}`)
+    if (failOnParseError) throw Error(`⚠️ Failed to parse file (${file}) with error ${error}`)
     return {
       name: '',
       totalCount: 0,
@@ -549,7 +551,8 @@ export async function parseTestReports(
   transformer: Transformer[] = [],
   followSymlink = false,
   annotationsLimit = -1,
-  truncateStackTraces = true
+  truncateStackTraces = true,
+  failOnParseError = false
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const globber = await glob.create(reportPaths, {followSymbolicLinks: followSymlink})
@@ -577,7 +580,8 @@ export async function parseTestReports(
       transformer,
       followSymlink,
       annotationsLimit,
-      truncateStackTraces
+      truncateStackTraces,
+      failOnParseError
     )
     if (c === 0) continue
     totalCount += c

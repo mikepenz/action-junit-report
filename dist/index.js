@@ -304,6 +304,7 @@ async function run() {
         const checkAnnotations = core.getInput('check_annotations') === 'true';
         const commit = core.getInput('commit');
         const failOnFailure = core.getInput('fail_on_failure') === 'true';
+        const failOnParseError = core.getInput('fail_on_parse_error') === 'true';
         const requireTests = core.getInput('require_tests') === 'true';
         const requirePassedTests = core.getInput('require_passed_tests') === 'true';
         const includePassed = core.getInput('include_passed') === 'true';
@@ -347,7 +348,7 @@ async function run() {
         };
         core.info(`Preparing ${reportsCount} report as configured.`);
         for (let i = 0; i < reportsCount; i++) {
-            const testResult = await (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), breadCrumbDelimiter, (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink, annotationsLimit, truncateStackTraces);
+            const testResult = await (0, testParser_1.parseTestReports)((0, utils_1.retrieve)('checkName', checkName, i, reportsCount), (0, utils_1.retrieve)('summary', summary, i, reportsCount), (0, utils_1.retrieve)('reportPaths', reportPaths, i, reportsCount), (0, utils_1.retrieve)('suiteRegex', suiteRegex, i, reportsCount), includePassed, checkRetries, excludeSources, (0, utils_1.retrieve)('checkTitleTemplate', checkTitleTemplate, i, reportsCount), breadCrumbDelimiter, (0, utils_1.retrieve)('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError);
             mergedResult.totalCount += testResult.totalCount;
             mergedResult.skipped += testResult.skipped;
             mergedResult.failed += testResult.failed;
@@ -549,7 +550,7 @@ async function resolvePath(fileName, excludeSources, followSymlink = false) {
  * https://github.com/mikepenz/action-junit-report/
  */
 async function parseFile(file, suiteRegex = '', // no-op
-annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, breadCrumbDelimiter = '/', testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true) {
+annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, breadCrumbDelimiter = '/', testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false) {
     core.debug(`Parsing file ${file}`);
     const data = fs.readFileSync(file, 'utf8');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -559,6 +560,8 @@ annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__p
     }
     catch (error) {
         core.error(`⚠️ Failed to parse file (${file}) with error ${error}`);
+        if (failOnParseError)
+            throw Error(`⚠️ Failed to parse file (${file}) with error ${error}`);
         return {
             name: '',
             totalCount: 0,
@@ -807,7 +810,7 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
  * https://github.com/mikepenz/action-junit-report/
  */
 async function parseTestReports(checkName, summary, reportPaths, suiteRegex, // no-op
-annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, breadCrumbDelimiter, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true) {
+annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, breadCrumbDelimiter, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false) {
     core.debug(`Process test report for: ${reportPaths} (${checkName})`);
     const globber = await glob.create(reportPaths, { followSymbolicLinks: followSymlink });
     let annotations = [];
@@ -817,7 +820,7 @@ annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate
     for await (const file of globber.globGenerator()) {
         foundFiles++;
         core.debug(`Parsing report file: ${file}`);
-        const { totalCount: c, skippedCount: s, annotations: a } = await parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces);
+        const { totalCount: c, skippedCount: s, annotations: a } = await parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError);
         if (c === 0)
             continue;
         totalCount += c;

@@ -45,6 +45,10 @@ inputs:
     description: 'Fail the build in case a test failure occurred.'
     required: false
     default: 'false'
+  fail_on_parse_error:
+    description: 'Fail the build if the test report file can not be parsed.'
+    required: false
+    default: 'false'
   require_tests:
     description: 'Fail if no test are found.'
     required: false

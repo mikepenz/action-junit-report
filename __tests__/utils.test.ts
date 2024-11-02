@@ -2,7 +2,7 @@ import {parseFile, Transformer} from '../src/testParser'
 import {readTransformers} from '../src/utils'
 
 /**
- *   Copyright 2022 Mike Penz
+ *   Copyright 2024 Mike Penz
  */
 jest.setTimeout(30000)
 
