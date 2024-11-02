@@ -97,8 +97,8 @@ export async function resolveFileAndLine(
     core.debug(`Resolved file ${fileName} and line ${line}`)
 
     return {fileName, line: safeParseInt(line) || -1}
-  } catch (error) {
-    core.warning(`⚠️ Failed to resolve file (${file}) and/or line (${line}) for ${className}`)
+  } catch (error: unknown) {
+    core.warning(`⚠️ Failed to resolve file (${file}) and/or line (${line}) for ${className} (${error})`)
     return {fileName, line: safeParseInt(line) || -1}
   }
 }

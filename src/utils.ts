@@ -37,13 +37,13 @@ export function readTransformers(raw: string | undefined): Transformer[] {
     for (const transformer of transformers) {
       try {
         transformer.regex = new RegExp(transformer.searchValue.replace('\\\\', '\\'), 'gu')
-      } catch (error) {
-        core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue}`)
+      } catch (error: unknown) {
+        core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue} (${error})`)
       }
     }
     return transformers
-  } catch (error) {
-    core.info(`⚠️ Transformers provided, but they couldn't be parsed. Fallback to Defaults.`)
+  } catch (error: unknown) {
+    core.info(`⚠️ Transformers provided, but they couldn't be parsed. Fallback to Defaults. (${error})`)
     core.debug(`  Provided input: ${raw}`)
     return []
   }
@@ -65,7 +65,7 @@ export function buildTable(rows: SummaryTableRow[]): string {
   const tableBody = rows
     .map(row => {
       const cells = row
-        // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((cell: any) => {
           if (typeof cell === 'string') {
             return wrap('td', cell)

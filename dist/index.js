@@ -492,7 +492,7 @@ async function resolveFileAndLine(file, line, className, output) {
         return { fileName, line: safeParseInt(line) || -1 };
     }
     catch (error) {
-        core.warning(`⚠️ Failed to resolve file (${file}) and/or line (${line}) for ${className}`);
+        core.warning(`⚠️ Failed to resolve file (${file}) and/or line (${line}) for ${className} (${error})`);
         return { fileName, line: safeParseInt(line) || -1 };
     }
 }
@@ -923,13 +923,13 @@ function readTransformers(raw) {
                 transformer.regex = new RegExp(transformer.searchValue.replace('\\\\', '\\'), 'gu');
             }
             catch (error) {
-                core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue}`);
+                core.warning(`⚠️ Bad replacer regex: ${transformer.searchValue} (${error})`);
             }
         }
         return transformers;
     }
     catch (error) {
-        core.info(`⚠️ Transformers provided, but they couldn't be parsed. Fallback to Defaults.`);
+        core.info(`⚠️ Transformers provided, but they couldn't be parsed. Fallback to Defaults. (${error})`);
         core.debug(`  Provided input: ${raw}`);
         return [];
     }
@@ -950,7 +950,7 @@ function buildTable(rows) {
     const tableBody = rows
         .map(row => {
         const cells = row
-            // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .map((cell) => {
             if (typeof cell === 'string') {
                 return wrap('td', cell);
