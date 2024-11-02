@@ -113,6 +113,9 @@ inputs:
   annotations_limit:
     description: 'Specify the limit for annotations. This will also interrupt parsing all test-suites if the limit is reached.'
     required: false
+  skip_annotations:
+    description: 'Setting this flag will result in no annotations being added to the run.'
+    required: false
   truncate_stack_traces:
     description: 'Truncate stack traces from test output to 2 lines in annotations'
     required: false

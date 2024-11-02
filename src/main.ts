@@ -43,6 +43,7 @@ export async function run(): Promise<void> {
     const transformers = readTransformers(core.getInput('transformers', {trimWhitespace: true}))
     const followSymlink = core.getBooleanInput('follow_symlink')
     const annotationsLimit = Number(core.getInput('annotations_limit') || -1)
+    const skipAnnotations = core.getInput('skip_annotations') === 'true'
     const truncateStackTraces = core.getBooleanInput('truncate_stack_traces')
 
     if (excludeSources.length === 0) {
@@ -114,24 +115,26 @@ export async function run(): Promise<void> {
     core.endGroup()
     core.startGroup(`🚀 Publish results`)
 
-    try {
-      for (const testResult of testResults) {
-        await annotateTestResult(
-          testResult,
-          token,
-          headSha,
-          checkAnnotations,
-          annotateOnly,
-          updateCheck,
-          annotateNotice,
-          jobName
+    if (!skipAnnotations) {
+      try {
+        for (const testResult of testResults) {
+          await annotateTestResult(
+            testResult,
+            token,
+            headSha,
+            checkAnnotations,
+            annotateOnly,
+            updateCheck,
+            annotateNotice,
+            jobName
+          )
+        }
+      } catch (error) {
+        core.error(`❌ Failed to create checks using the provided token. (${error})`)
+        core.warning(
+          `⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/23`
         )
       }
-    } catch (error) {
-      core.error(`❌ Failed to create checks using the provided token. (${error})`)
-      core.warning(
-        `⚠️ This usually indicates insufficient permissions. More details: https://github.com/mikepenz/action-junit-report/issues/23`
-      )
     }
 
     const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY']
