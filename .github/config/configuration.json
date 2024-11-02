@@ -21,5 +21,5 @@
             "labels": ["dependencies"]
         }
     ],
-    "template": "#{{CHANGELOG}}\n\nContributors:\n- #{{CONTRIBUTORS}}"
+    "template": "#{{CHANGELOG}}\n## Contributors:\n- #{{CONTRIBUTORS}}"
 }
