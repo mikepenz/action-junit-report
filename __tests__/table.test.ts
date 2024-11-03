@@ -40,10 +40,6 @@ const NORMAL_TABLE = [
 const FLAKY_TABLE = [
   [
     {
-      'data': '',
-      'header': true
-    },
-    {
       'data': 'Test',
       'header': true
     },
@@ -74,10 +70,6 @@ describe('buildSummaryTables', () => {
     expect(detailTable).toStrictEqual([
       [
         {
-          "data": "",
-          "header": true
-        },
-        {
           "data": "Test",
           "header": true
         },
@@ -87,17 +79,20 @@ describe('buildSummaryTables', () => {
         }
       ],
       [
-        "checkName",
+        {
+          "data": "checkName",
+          "colspan": "2"
+        }
+      ],
+      [
         "ABC-0199: XMPP Ping/PingIntegrationTest.pingAsync (Normal)",
         "✅ pass"
       ],
       [
-        "checkName",
         "ABC-0199: XMPP Ping/PingIntegrationTest.pingServer (Normal)",
         "✅ pass"
       ],
       [
-        "checkName",
         "ABC-0045: Multi-User Chat/MultiUserIntegrationTest.mucRoleTestForReceivingModerator (Normal)",
         "✅ pass"
       ]
@@ -124,10 +119,6 @@ describe('buildSummaryTables', () => {
     expect(detailTable).toStrictEqual([
       [
         {
-          "data": "",
-          "header": true
-        },
-        {
           "data": "Test",
           "header": true
         },
@@ -137,27 +128,32 @@ describe('buildSummaryTables', () => {
         }
       ],
       [
-        "ABC-0199: XMPP Ping",
-        "",
-        ""
+        {
+          "data": "checkName",
+          "colspan": "2"
+        }
       ],
       [
-        "",
+        {
+          "data": "ABC-0199: XMPP Ping",
+          "colspan": "2"
+        }
+      ],
+      [
         "ABC-0199: XMPP Ping/PingIntegrationTest.pingAsync (Normal)",
         "✅ pass"
       ],
       [
-        "",
         "ABC-0199: XMPP Ping/PingIntegrationTest.pingServer (Normal)",
         "✅ pass"
       ],
       [
-        "ABC-0045: Multi-User Chat",
-        "",
-        ""
+        {
+          "data": "ABC-0045: Multi-User Chat",
+          "colspan": "2"
+        }
       ],
       [
-        "",
         "ABC-0045: Multi-User Chat/MultiUserIntegrationTest.mucRoleTestForReceivingModerator (Normal)",
         "✅ pass"
       ]
