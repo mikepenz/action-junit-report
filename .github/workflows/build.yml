@@ -98,7 +98,7 @@ jobs:
           group_suite: true
           comment: true
           skip_annotations: true
-          check_title_template: '{{SUITE_NAME}} | {{TEST_NAME}}'
+          check_title_template: '{{TEST_NAME}}'
           annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
 
   release:

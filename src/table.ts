@@ -76,6 +76,7 @@ export function buildSummaryTables(
             ])
           }
         } else {
+          detailsTable.push([`${testResult.checkName}`, ``, ``])
           for (const internalTestResult of testResult.testResults) {
             appendDetailsTable(internalTestResult, detailsTable, includePassed)
           }
@@ -100,10 +101,9 @@ function appendDetailsTable(
     annotation => includePassed || annotation.annotation_level !== 'notice'
   )
   if (annotations.length > 0) {
-    detailsTable.push([`${testResult.name}`, ``, ``])
     for (const annotation of annotations) {
       detailsTable.push([
-        ``,
+        `${testResult.name}`,
         `${annotation.title}`,
         `${
           annotation.status === 'success'
