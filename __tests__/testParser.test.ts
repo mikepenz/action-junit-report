@@ -1,4 +1,4 @@
-import {Annotation, parseFile, parseTestReports, resolveFileAndLine, resolvePath, Transformer} from '../src/testParser'
+import {parseFile, parseTestReports, resolveFileAndLine, resolvePath, Transformer} from '../src/testParser'
 
 /**
  * Original test cases:
@@ -1308,7 +1308,7 @@ describe('parseTestReports', () => {
       foundFiles: 1,
       globalAnnotations: [],
       passed: 0,
-      annotations: []
+      testResults: []
     })
   })
 })
