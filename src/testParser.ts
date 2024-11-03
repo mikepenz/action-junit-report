@@ -5,6 +5,11 @@ import * as parser from 'xml-js'
 import * as pathHelper from 'path'
 import {applyTransformer} from './utils'
 
+interface ParseFileResult {
+  globalAnnotations: Annotation[]
+  testResult?: InternalTestResult
+}
+
 interface InternalTestResult {
   name: string
   totalCount: number
@@ -121,6 +126,7 @@ function safeParseInt(line: string | null): number | null {
  * https://github.com/mikepenz/action-junit-report/
  */
 const resolvePathCache: {[key: string]: string} = {}
+
 export async function resolvePath(fileName: string, excludeSources: string[], followSymlink = false): Promise<string> {
   if (resolvePathCache[fileName]) {
     return resolvePathCache[fileName]
@@ -168,7 +174,7 @@ export async function parseFile(
   annotationsLimit = -1,
   truncateStackTraces = true,
   failOnParseError = false
-): Promise<InternalTestResult> {
+): Promise<ParseFileResult> {
   core.debug(`Parsing file ${file}`)
 
   const data: string = fs.readFileSync(file, 'utf8')
@@ -181,11 +187,7 @@ export async function parseFile(
     core.error(`⚠️ Failed to parse file (${file}) with error ${error}`)
     if (failOnParseError) throw Error(`⚠️ Failed to parse file (${file}) with error ${error}`)
     return {
-      name: '',
-      totalCount: 0,
-      skippedCount: 0,
-      annotations: [],
-      testResults: []
+      globalAnnotations: []
     }
   }
 
@@ -195,15 +197,12 @@ export async function parseFile(
   if (!testsuite) {
     core.error(`⚠️ Failed to retrieve root test suite`)
     return {
-      name: '',
-      totalCount: 0,
-      skippedCount: 0,
-      annotations: [],
-      testResults: []
+      globalAnnotations: []
     }
   }
 
-  return parseSuite(
+  const globalAnnotations: Annotation[] = []
+  const testResult = await parseSuite(
     testsuite,
     suiteRegex, // no-op
     '',
@@ -217,8 +216,12 @@ export async function parseFile(
     followSymlink,
     annotationsLimit,
     truncateStackTraces,
-    []
+    globalAnnotations
   )
+  return {
+    testResult,
+    globalAnnotations
+  }
 }
 
 function templateVar(varName: string): string {
@@ -241,10 +244,10 @@ async function parseSuite(
   annotationsLimit: number,
   truncateStackTraces: boolean,
   globalAnnotations: Annotation[]
-): Promise<InternalTestResult> {
+): Promise<InternalTestResult | undefined> {
   if (!suite) {
     // not a valid suite, return fast
-    return {name: '', totalCount: 0, skippedCount: 0, annotations: [], testResults: []}
+    return undefined
   }
 
   let suiteName = ''
@@ -291,7 +294,7 @@ async function parseSuite(
       name: suiteName,
       totalCount,
       skippedCount,
-      annotations: globalAnnotations,
+      annotations,
       testResults: []
     }
   }
@@ -325,9 +328,11 @@ async function parseSuite(
       globalAnnotations
     )
 
-    childSuiteResults.push(childSuiteResult)
-    totalCount += childSuiteResult.totalCount
-    skippedCount += childSuiteResult.skippedCount
+    if (childSuiteResult) {
+      childSuiteResults.push(childSuiteResult)
+      totalCount += childSuiteResult.totalCount
+      skippedCount += childSuiteResult.skippedCount
+    }
 
     // skip out if we reached our annotations limit
     if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
@@ -335,8 +340,8 @@ async function parseSuite(
         name: suiteName,
         totalCount,
         skippedCount,
-        annotations: globalAnnotations,
-        testResults: []
+        annotations,
+        testResults: childSuiteResults
       }
     }
   }
@@ -345,7 +350,7 @@ async function parseSuite(
     name: suiteName,
     totalCount,
     skippedCount,
-    annotations: globalAnnotations,
+    annotations,
     testResults: childSuiteResults
   }
 }
@@ -564,11 +569,7 @@ export async function parseTestReports(
     foundFiles++
     core.debug(`Parsing report file: ${file}`)
 
-    const {
-      totalCount: c,
-      skippedCount: s,
-      annotations: a
-    } = await parseFile(
+    const {testResult: tr, globalAnnotations: ga} = await parseFile(
       file,
       suiteRegex,
       annotatePassed,
@@ -583,10 +584,12 @@ export async function parseTestReports(
       truncateStackTraces,
       failOnParseError
     )
-    if (c === 0) continue
+
+    if (!tr) continue
+    const {totalCount: c, skippedCount: s} = tr
     totalCount += c
     skipped += s
-    annotations = annotations.concat(a)
+    annotations = annotations.concat(ga)
 
     if (annotationsLimit > 0 && annotations.length >= annotationsLimit) {
       break

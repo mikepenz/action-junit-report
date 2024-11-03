@@ -1,9 +1,10 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {annotateTestResult, attachComment, attachSummary, buildSummaryTables} from './annotator'
+import {annotateTestResult, attachComment, attachSummary} from './annotator'
 import {parseTestReports, TestResult} from './testParser'
 import {buildTable, readTransformers, retrieve} from './utils'
 import {GitHub} from '@actions/github/lib/utils'
+import {buildSummaryTables} from './table'
 
 export async function run(): Promise<void> {
   try {

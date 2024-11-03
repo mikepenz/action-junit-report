@@ -1,4 +1,3 @@
-import {parseFile, Transformer} from '../src/testParser'
 import {readTransformers} from '../src/utils'
 
 /**
