@@ -1,12 +1,13 @@
 import * as core from '@actions/core'
 import {SummaryTableRow} from '@actions/core/lib/summary'
-import {TestResult} from './testParser'
+import {ActualTestResult, TestResult} from './testParser'
 
 export function buildSummaryTables(
   testResults: TestResult[],
   includePassed: boolean,
   detailedSummary: boolean,
-  flakySummary: boolean
+  flakySummary: boolean,
+  groupSuite = false
 ): [SummaryTableRow[], SummaryTableRow[], SummaryTableRow[]] {
   const table: SummaryTableRow[] = [
     [
@@ -22,7 +23,6 @@ export function buildSummaryTables(
     ? []
     : [
         [
-          {data: '', header: true},
           {data: 'Test', header: true},
           {data: 'Result', header: true}
         ]
@@ -32,7 +32,6 @@ export function buildSummaryTables(
     ? []
     : [
         [
-          {data: '', header: true},
           {data: 'Test', header: true},
           {data: 'Retries', header: true}
         ]
@@ -47,37 +46,78 @@ export function buildSummaryTables(
       `${testResult.failed} failed`
     ])
 
-    if (detailedSummary) {
-      const annotations = testResult.globalAnnotations.filter(
-        annotation => includePassed || annotation.annotation_level !== 'notice'
-      )
-      if (annotations.length === 0) {
-        if (!includePassed) {
-          core.info(
-            `⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`
-          )
-        }
-        detailsTable.push([`-`, `No test annotations available`, `-`])
-      } else {
-        for (const annotation of annotations) {
-          detailsTable.push([
-            `${testResult.checkName}`,
-            `${annotation.title}`,
-            `${
-              annotation.status === 'success'
-                ? '✅ pass'
-                : annotation.status === 'skipped'
-                  ? `⏭️ skipped`
-                  : `❌ ${annotation.annotation_level}`
-            }`
-          ])
+    const annotations = testResult.globalAnnotations.filter(
+      annotation => includePassed || annotation.annotation_level !== 'notice'
+    )
 
-          if (annotation.retries > 0) {
-            flakyTable.push([`${testResult.checkName}`, `${annotation.title}`, `${annotation.retries}`])
+    if (annotations.length === 0) {
+      if (!includePassed) {
+        core.info(
+          `⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`
+        )
+      }
+      detailsTable.push([{data: `No test annotations available`, colspan: '2'}])
+    } else {
+      if (detailedSummary) {
+        detailsTable.push([{data: `<strong>${testResult.checkName}</strong>`, colspan: '2'}])
+        if (!groupSuite) {
+          for (const annotation of annotations) {
+            detailsTable.push([
+              `${annotation.title}`,
+              `${
+                annotation.status === 'success'
+                  ? '✅ pass'
+                  : annotation.status === 'skipped'
+                    ? `⏭️ skipped`
+                    : `❌ ${annotation.annotation_level}`
+              }`
+            ])
+          }
+        } else {
+          for (const internalTestResult of testResult.testResults) {
+            appendDetailsTable(internalTestResult, detailsTable, includePassed)
+          }
+        }
+      }
+
+      if (flakySummary) {
+        const flakyAnnotations = annotations.filter(annotation => annotation.retries > 0)
+        if (flakyAnnotations.length > 0) {
+          flakyTable.push([{data: `<strong>${testResult.checkName}</strong>`, colspan: '2'}])
+          for (const annotation of flakyAnnotations) {
+            flakyTable.push([`${annotation.title}`, `${annotation.retries}`])
           }
         }
       }
     }
   }
   return [table, detailsTable, flakyTable]
+}
+
+function appendDetailsTable(
+  testResult: ActualTestResult,
+  detailsTable: SummaryTableRow[],
+  includePassed: boolean
+): void {
+  const annotations = testResult.annotations.filter(
+    annotation => includePassed || annotation.annotation_level !== 'notice'
+  )
+  if (annotations.length > 0) {
+    detailsTable.push([{data: `<em>${testResult.name}</em>`, colspan: '2'}])
+    for (const annotation of annotations) {
+      detailsTable.push([
+        `${annotation.title}`,
+        `${
+          annotation.status === 'success'
+            ? '✅ pass'
+            : annotation.status === 'skipped'
+              ? `⏭️ skipped`
+              : `❌ ${annotation.annotation_level}`
+        }`
+      ])
+    }
+  }
+  for (const childTestResult of testResult.testResults) {
+    appendDetailsTable(childTestResult, detailsTable, includePassed)
+  }
 }

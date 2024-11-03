@@ -130,7 +130,7 @@ export async function attachSummary(
   flakySummary: SummaryTableRow[]
 ): Promise<void> {
   await core.summary.addTable(table).write()
-  if (detailsTable.length > 0) {
+  if (detailsTable.length > 1) {
     await core.summary.addTable(detailsTable).write()
   }
   if (flakySummary.length > 1) {

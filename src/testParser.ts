@@ -5,13 +5,13 @@ import * as parser from 'xml-js'
 import * as pathHelper from 'path'
 import {applyTransformer} from './utils'
 
-interface InternalTestResult {
+export interface ActualTestResult {
   name: string
   totalCount: number
   skippedCount: number
   annotations: Annotation[]
   globalAnnotations: Annotation[]
-  testResults: InternalTestResult[]
+  testResults: ActualTestResult[]
 }
 
 interface TestCasesResult {
@@ -28,8 +28,8 @@ export interface TestResult {
   failed: number
   passed: number
   foundFiles: number
-  annotations: Annotation[]
   globalAnnotations: Annotation[]
+  testResults: ActualTestResult[]
 }
 
 export interface Annotation {
@@ -172,7 +172,7 @@ export async function parseFile(
   truncateStackTraces = true,
   failOnParseError = false,
   globalAnnotations: Annotation[] = []
-): Promise<InternalTestResult | undefined> {
+): Promise<ActualTestResult | undefined> {
   core.debug(`Parsing file ${file}`)
 
   const data: string = fs.readFileSync(file, 'utf8')
@@ -233,7 +233,7 @@ async function parseSuite(
   annotationsLimit: number,
   truncateStackTraces: boolean,
   globalAnnotations: Annotation[]
-): Promise<InternalTestResult | undefined> {
+): Promise<ActualTestResult | undefined> {
   if (!suite) {
     // not a valid suite, return fast
     return undefined
@@ -298,7 +298,7 @@ async function parseSuite(
       ? suite.testsuites
       : [suite.testsuites]
 
-  const childSuiteResults: InternalTestResult[] = []
+  const childSuiteResults: ActualTestResult[] = []
   const childBreadCrumb = suiteName ? `${breadCrumb}${suiteName}${breadCrumbDelimiter}` : breadCrumb
   for (const childSuite of childTestSuites) {
     const childSuiteResult = await parseSuite(
@@ -554,7 +554,7 @@ export async function parseTestReports(
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const globber = await glob.create(reportPaths, {followSymbolicLinks: followSymlink})
   const globalAnnotations: Annotation[] = []
-  const annotations: Annotation[] = []
+  const testResults: ActualTestResult[] = []
   let totalCount = 0
   let skipped = 0
   let foundFiles = 0
@@ -583,7 +583,7 @@ export async function parseTestReports(
     const {totalCount: c, skippedCount: s} = testResult
     totalCount += c
     skipped += s
-    annotations.push(...testResult.annotations)
+    testResults.push(testResult)
 
     if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
       break
@@ -602,8 +602,8 @@ export async function parseTestReports(
     failed,
     passed,
     foundFiles,
-    annotations,
-    globalAnnotations
+    globalAnnotations,
+    testResults
   }
 }
 
