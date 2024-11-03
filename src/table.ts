@@ -100,7 +100,7 @@ function appendDetailsTable(
     annotation => includePassed || annotation.annotation_level !== 'notice'
   )
   if (annotations.length > 0) {
-    detailsTable.push([`${testResult.name}`])
+    detailsTable.push([`${testResult.name}`, ``, ``])
     for (const annotation of annotations) {
       detailsTable.push([
         ``,

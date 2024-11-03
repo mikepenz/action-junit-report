@@ -137,7 +137,9 @@ describe('buildSummaryTables', () => {
         }
       ],
       [
-        "ABC-0199: XMPP Ping"
+        "ABC-0199: XMPP Ping",
+        "",
+        ""
       ],
       [
         "",
@@ -150,7 +152,9 @@ describe('buildSummaryTables', () => {
         "✅ pass"
       ],
       [
-        "ABC-0045: Multi-User Chat"
+        "ABC-0045: Multi-User Chat",
+        "",
+        ""
       ],
       [
         "",
