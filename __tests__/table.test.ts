@@ -80,7 +80,7 @@ describe('buildSummaryTables', () => {
       ],
       [
         {
-          "data": "checkName",
+          "data": "**checkName**",
           "colspan": "2"
         }
       ],
@@ -129,13 +129,13 @@ describe('buildSummaryTables', () => {
       ],
       [
         {
-          "data": "checkName",
+          "data": "**checkName**",
           "colspan": "2"
         }
       ],
       [
         {
-          "data": "ABC-0199: XMPP Ping",
+          "data": "*ABC-0199: XMPP Ping*",
           "colspan": "2"
         }
       ],
@@ -149,7 +149,7 @@ describe('buildSummaryTables', () => {
       ],
       [
         {
-          "data": "ABC-0045: Multi-User Chat",
+          "data": "*ABC-0045: Multi-User Chat*",
           "colspan": "2"
         }
       ],

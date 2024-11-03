@@ -59,7 +59,7 @@ export function buildSummaryTables(
       detailsTable.push([{data: `No test annotations available`, colspan: '2'}])
     } else {
       if (detailedSummary) {
-        detailsTable.push([{data: `${testResult.checkName}`, colspan: '2'}])
+        detailsTable.push([{data: `**${testResult.checkName}**`, colspan: '2'}])
         if (!groupSuite) {
           for (const annotation of annotations) {
             detailsTable.push([
@@ -83,7 +83,7 @@ export function buildSummaryTables(
       if (flakySummary) {
         const flakyAnnotations = annotations.filter(annotation => annotation.retries > 0)
         if (flakyAnnotations.length > 0) {
-          flakyTable.push([{data: `${testResult.checkName}`, colspan: '2'}])
+          flakyTable.push([{data: `**${testResult.checkName}**`, colspan: '2'}])
           for (const annotation of flakyAnnotations) {
             flakyTable.push([`${annotation.title}`, `${annotation.retries}`])
           }
@@ -103,7 +103,7 @@ function appendDetailsTable(
     annotation => includePassed || annotation.annotation_level !== 'notice'
   )
   if (annotations.length > 0) {
-    detailsTable.push([{data: `${testResult.name}`, colspan: '2'}])
+    detailsTable.push([{data: `*${testResult.name}*`, colspan: '2'}])
     for (const annotation of annotations) {
       detailsTable.push([
         `${annotation.title}`,
