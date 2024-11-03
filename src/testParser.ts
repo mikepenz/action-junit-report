@@ -10,6 +10,7 @@ interface InternalTestResult {
   totalCount: number
   skippedCount: number
   annotations: Annotation[]
+  globalAnnotations: Annotation[]
   testResults: InternalTestResult[]
 }
 
@@ -28,6 +29,7 @@ export interface TestResult {
   passed: number
   foundFiles: number
   annotations: Annotation[]
+  globalAnnotations: Annotation[]
 }
 
 export interface Annotation {
@@ -121,6 +123,7 @@ function safeParseInt(line: string | null): number | null {
  * https://github.com/mikepenz/action-junit-report/
  */
 const resolvePathCache: {[key: string]: string} = {}
+
 export async function resolvePath(fileName: string, excludeSources: string[], followSymlink = false): Promise<string> {
   if (resolvePathCache[fileName]) {
     return resolvePathCache[fileName]
@@ -167,8 +170,9 @@ export async function parseFile(
   followSymlink = false,
   annotationsLimit = -1,
   truncateStackTraces = true,
-  failOnParseError = false
-): Promise<InternalTestResult> {
+  failOnParseError = false,
+  globalAnnotations: Annotation[] = []
+): Promise<InternalTestResult | undefined> {
   core.debug(`Parsing file ${file}`)
 
   const data: string = fs.readFileSync(file, 'utf8')
@@ -180,13 +184,7 @@ export async function parseFile(
   } catch (error) {
     core.error(`⚠️ Failed to parse file (${file}) with error ${error}`)
     if (failOnParseError) throw Error(`⚠️ Failed to parse file (${file}) with error ${error}`)
-    return {
-      name: '',
-      totalCount: 0,
-      skippedCount: 0,
-      annotations: [],
-      testResults: []
-    }
+    return undefined
   }
 
   // parse child test suites
@@ -194,16 +192,10 @@ export async function parseFile(
 
   if (!testsuite) {
     core.error(`⚠️ Failed to retrieve root test suite`)
-    return {
-      name: '',
-      totalCount: 0,
-      skippedCount: 0,
-      annotations: [],
-      testResults: []
-    }
+    return undefined
   }
 
-  return parseSuite(
+  return await parseSuite(
     testsuite,
     suiteRegex, // no-op
     '',
@@ -217,7 +209,7 @@ export async function parseFile(
     followSymlink,
     annotationsLimit,
     truncateStackTraces,
-    []
+    globalAnnotations
   )
 }
 
@@ -241,10 +233,10 @@ async function parseSuite(
   annotationsLimit: number,
   truncateStackTraces: boolean,
   globalAnnotations: Annotation[]
-): Promise<InternalTestResult> {
+): Promise<InternalTestResult | undefined> {
   if (!suite) {
     // not a valid suite, return fast
-    return {name: '', totalCount: 0, skippedCount: 0, annotations: [], testResults: []}
+    return undefined
   }
 
   let suiteName = ''
@@ -291,7 +283,8 @@ async function parseSuite(
       name: suiteName,
       totalCount,
       skippedCount,
-      annotations: globalAnnotations,
+      annotations,
+      globalAnnotations,
       testResults: []
     }
   }
@@ -325,9 +318,11 @@ async function parseSuite(
       globalAnnotations
     )
 
-    childSuiteResults.push(childSuiteResult)
-    totalCount += childSuiteResult.totalCount
-    skippedCount += childSuiteResult.skippedCount
+    if (childSuiteResult) {
+      childSuiteResults.push(childSuiteResult)
+      totalCount += childSuiteResult.totalCount
+      skippedCount += childSuiteResult.skippedCount
+    }
 
     // skip out if we reached our annotations limit
     if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
@@ -335,8 +330,9 @@ async function parseSuite(
         name: suiteName,
         totalCount,
         skippedCount,
-        annotations: globalAnnotations,
-        testResults: []
+        annotations,
+        globalAnnotations,
+        testResults: childSuiteResults
       }
     }
   }
@@ -345,7 +341,8 @@ async function parseSuite(
     name: suiteName,
     totalCount,
     skippedCount,
-    annotations: globalAnnotations,
+    annotations,
+    globalAnnotations,
     testResults: childSuiteResults
   }
 }
@@ -556,7 +553,8 @@ export async function parseTestReports(
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const globber = await glob.create(reportPaths, {followSymbolicLinks: followSymlink})
-  let annotations: Annotation[] = []
+  const globalAnnotations: Annotation[] = []
+  const annotations: Annotation[] = []
   let totalCount = 0
   let skipped = 0
   let foundFiles = 0
@@ -564,11 +562,7 @@ export async function parseTestReports(
     foundFiles++
     core.debug(`Parsing report file: ${file}`)
 
-    const {
-      totalCount: c,
-      skippedCount: s,
-      annotations: a
-    } = await parseFile(
+    const testResult = await parseFile(
       file,
       suiteRegex,
       annotatePassed,
@@ -581,20 +575,23 @@ export async function parseTestReports(
       followSymlink,
       annotationsLimit,
       truncateStackTraces,
-      failOnParseError
+      failOnParseError,
+      globalAnnotations
     )
-    if (c === 0) continue
+
+    if (!testResult) continue
+    const {totalCount: c, skippedCount: s} = testResult
     totalCount += c
     skipped += s
-    annotations = annotations.concat(a)
+    annotations.push(...testResult.annotations)
 
-    if (annotationsLimit > 0 && annotations.length >= annotationsLimit) {
+    if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
       break
     }
   }
 
   // get the count of passed and failed tests.
-  const failed = annotations.filter(a => a.annotation_level === 'failure').length
+  const failed = globalAnnotations.filter(a => a.annotation_level === 'failure').length
   const passed = totalCount - failed - skipped
 
   return {
@@ -605,7 +602,8 @@ export async function parseTestReports(
     failed,
     passed,
     foundFiles,
-    annotations
+    annotations,
+    globalAnnotations
   }
 }
 

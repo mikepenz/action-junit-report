@@ -31,7 +31,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.annotateTestResult = annotateTestResult;
-exports.buildSummaryTables = buildSummaryTables;
 exports.attachSummary = attachSummary;
 exports.buildCommentIdentifier = buildCommentIdentifier;
 exports.attachComment = attachComment;
@@ -40,7 +39,7 @@ const github = __importStar(__nccwpck_require__(3228));
 const utils_1 = __nccwpck_require__(8006);
 const utils_2 = __nccwpck_require__(9277);
 async function annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName) {
-    const annotations = testResult.annotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
+    const annotations = testResult.globalAnnotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
     const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
     let title = 'No test results found!';
     if (foundResults) {
@@ -132,70 +131,6 @@ async function updateChecks(octokit, check_run_id, title, summary, annotations) 
     };
     core.debug(JSON.stringify(updateCheckRequest, null, 2));
     await octokit.rest.checks.update(updateCheckRequest);
-}
-function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary) {
-    const table = [
-        [
-            { data: '', header: true },
-            { data: 'Tests', header: true },
-            { data: 'Passed ✅', header: true },
-            { data: 'Skipped ⏭️', header: true },
-            { data: 'Failed ❌', header: true }
-        ]
-    ];
-    const detailsTable = !detailedSummary
-        ? []
-        : [
-            [
-                { data: '', header: true },
-                { data: 'Test', header: true },
-                { data: 'Result', header: true }
-            ]
-        ];
-    const flakyTable = !flakySummary
-        ? []
-        : [
-            [
-                { data: '', header: true },
-                { data: 'Test', header: true },
-                { data: 'Retries', header: true }
-            ]
-        ];
-    for (const testResult of testResults) {
-        table.push([
-            `${testResult.checkName}`,
-            `${testResult.totalCount} ran`,
-            `${testResult.passed} passed`,
-            `${testResult.skipped} skipped`,
-            `${testResult.failed} failed`
-        ]);
-        if (detailedSummary) {
-            const annotations = testResult.annotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
-            if (annotations.length === 0) {
-                if (!includePassed) {
-                    core.info(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
-                }
-                detailsTable.push([`-`, `No test annotations available`, `-`]);
-            }
-            else {
-                for (const annotation of annotations) {
-                    detailsTable.push([
-                        `${testResult.checkName}`,
-                        `${annotation.title}`,
-                        `${annotation.status === 'success'
-                            ? '✅ pass'
-                            : annotation.status === 'skipped'
-                                ? `⏭️ skipped`
-                                : `❌ ${annotation.annotation_level}`}`
-                    ]);
-                    if (annotation.retries > 0) {
-                        flakyTable.push([`${testResult.checkName}`, `${annotation.title}`, `${annotation.retries}`]);
-                    }
-                }
-            }
-        }
-    }
-    return [table, detailsTable, flakyTable];
 }
 async function attachSummary(table, detailsTable, flakySummary) {
     await core.summary.addTable(table).write();
@@ -291,6 +226,7 @@ const github = __importStar(__nccwpck_require__(3228));
 const annotator_1 = __nccwpck_require__(2164);
 const testParser_1 = __nccwpck_require__(81);
 const utils_1 = __nccwpck_require__(9277);
+const table_1 = __nccwpck_require__(2944);
 async function run() {
     try {
         core.startGroup(`📘 Reading input values`);
@@ -344,7 +280,8 @@ async function run() {
             failed: 0,
             passed: 0,
             foundFiles: 0,
-            annotations: []
+            annotations: [],
+            globalAnnotations: []
         };
         core.info(`Preparing ${reportsCount} report as configured.`);
         for (let i = 0; i < reportsCount; i++) {
@@ -386,7 +323,7 @@ async function run() {
             }
         }
         const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
-        const [table, detailTable, flakyTable] = (0, annotator_1.buildSummaryTables)(testResults, includePassed, detailedSummary, flakySummary);
+        const [table, detailTable, flakyTable] = (0, table_1.buildSummaryTables)(testResults, includePassed, detailedSummary, flakySummary);
         if (jobSummary && supportsJobSummary) {
             try {
                 await (0, annotator_1.attachSummary)(table, detailTable, flakyTable);
@@ -418,6 +355,105 @@ async function run() {
     }
 }
 run();
+
+
+/***/ }),
+
+/***/ 2944:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.buildSummaryTables = buildSummaryTables;
+const core = __importStar(__nccwpck_require__(7484));
+function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary) {
+    const table = [
+        [
+            { data: '', header: true },
+            { data: 'Tests', header: true },
+            { data: 'Passed ✅', header: true },
+            { data: 'Skipped ⏭️', header: true },
+            { data: 'Failed ❌', header: true }
+        ]
+    ];
+    const detailsTable = !detailedSummary
+        ? []
+        : [
+            [
+                { data: '', header: true },
+                { data: 'Test', header: true },
+                { data: 'Result', header: true }
+            ]
+        ];
+    const flakyTable = !flakySummary
+        ? []
+        : [
+            [
+                { data: '', header: true },
+                { data: 'Test', header: true },
+                { data: 'Retries', header: true }
+            ]
+        ];
+    for (const testResult of testResults) {
+        table.push([
+            `${testResult.checkName}`,
+            `${testResult.totalCount} ran`,
+            `${testResult.passed} passed`,
+            `${testResult.skipped} skipped`,
+            `${testResult.failed} failed`
+        ]);
+        if (detailedSummary) {
+            const annotations = testResult.globalAnnotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
+            if (annotations.length === 0) {
+                if (!includePassed) {
+                    core.info(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
+                }
+                detailsTable.push([`-`, `No test annotations available`, `-`]);
+            }
+            else {
+                for (const annotation of annotations) {
+                    detailsTable.push([
+                        `${testResult.checkName}`,
+                        `${annotation.title}`,
+                        `${annotation.status === 'success'
+                            ? '✅ pass'
+                            : annotation.status === 'skipped'
+                                ? `⏭️ skipped`
+                                : `❌ ${annotation.annotation_level}`}`
+                    ]);
+                    if (annotation.retries > 0) {
+                        flakyTable.push([`${testResult.checkName}`, `${annotation.title}`, `${annotation.retries}`]);
+                    }
+                }
+            }
+        }
+    }
+    return [table, detailsTable, flakyTable];
+}
 
 
 /***/ }),
@@ -550,7 +586,7 @@ async function resolvePath(fileName, excludeSources, followSymlink = false) {
  * https://github.com/mikepenz/action-junit-report/
  */
 async function parseFile(file, suiteRegex = '', // no-op
-annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, breadCrumbDelimiter = '/', testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false) {
+annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, breadCrumbDelimiter = '/', testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false, globalAnnotations = []) {
     core.debug(`Parsing file ${file}`);
     const data = fs.readFileSync(file, 'utf8');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -562,28 +598,16 @@ annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__p
         core.error(`⚠️ Failed to parse file (${file}) with error ${error}`);
         if (failOnParseError)
             throw Error(`⚠️ Failed to parse file (${file}) with error ${error}`);
-        return {
-            name: '',
-            totalCount: 0,
-            skippedCount: 0,
-            annotations: [],
-            testResults: []
-        };
+        return undefined;
     }
     // parse child test suites
     const testsuite = report.testsuites ? report.testsuites : report.testsuite;
     if (!testsuite) {
         core.error(`⚠️ Failed to retrieve root test suite`);
-        return {
-            name: '',
-            totalCount: 0,
-            skippedCount: 0,
-            annotations: [],
-            testResults: []
-        };
+        return undefined;
     }
-    return parseSuite(testsuite, suiteRegex, // no-op
-    '', breadCrumbDelimiter, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, []);
+    return await parseSuite(testsuite, suiteRegex, // no-op
+    '', breadCrumbDelimiter, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations);
 }
 function templateVar(varName) {
     return `{{${varName}}}`;
@@ -594,7 +618,7 @@ suite, suiteRegex, // no-op
 breadCrumb, breadCrumbDelimiter = '/', annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations) {
     if (!suite) {
         // not a valid suite, return fast
-        return { name: '', totalCount: 0, skippedCount: 0, annotations: [], testResults: [] };
+        return undefined;
     }
     let suiteName = '';
     if (suite._attributes && suite._attributes.name) {
@@ -622,7 +646,8 @@ breadCrumb, breadCrumbDelimiter = '/', annotatePassed = false, checkRetries = fa
             name: suiteName,
             totalCount,
             skippedCount,
-            annotations: globalAnnotations,
+            annotations,
+            globalAnnotations,
             testResults: []
         };
     }
@@ -638,17 +663,20 @@ breadCrumb, breadCrumbDelimiter = '/', annotatePassed = false, checkRetries = fa
     const childBreadCrumb = suiteName ? `${breadCrumb}${suiteName}${breadCrumbDelimiter}` : breadCrumb;
     for (const childSuite of childTestSuites) {
         const childSuiteResult = await parseSuite(childSuite, suiteRegex, childBreadCrumb, breadCrumbDelimiter, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations);
-        childSuiteResults.push(childSuiteResult);
-        totalCount += childSuiteResult.totalCount;
-        skippedCount += childSuiteResult.skippedCount;
+        if (childSuiteResult) {
+            childSuiteResults.push(childSuiteResult);
+            totalCount += childSuiteResult.totalCount;
+            skippedCount += childSuiteResult.skippedCount;
+        }
         // skip out if we reached our annotations limit
         if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
             return {
                 name: suiteName,
                 totalCount,
                 skippedCount,
-                annotations: globalAnnotations,
-                testResults: []
+                annotations,
+                globalAnnotations,
+                testResults: childSuiteResults
             };
         }
     }
@@ -656,7 +684,8 @@ breadCrumb, breadCrumbDelimiter = '/', annotatePassed = false, checkRetries = fa
         name: suiteName,
         totalCount,
         skippedCount,
-        annotations: globalAnnotations,
+        annotations,
+        globalAnnotations,
         testResults: childSuiteResults
     };
 }
@@ -813,25 +842,27 @@ async function parseTestReports(checkName, summary, reportPaths, suiteRegex, // 
 annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, breadCrumbDelimiter, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false) {
     core.debug(`Process test report for: ${reportPaths} (${checkName})`);
     const globber = await glob.create(reportPaths, { followSymbolicLinks: followSymlink });
-    let annotations = [];
+    const globalAnnotations = [];
+    const annotations = [];
     let totalCount = 0;
     let skipped = 0;
     let foundFiles = 0;
     for await (const file of globber.globGenerator()) {
         foundFiles++;
         core.debug(`Parsing report file: ${file}`);
-        const { totalCount: c, skippedCount: s, annotations: a } = await parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError);
-        if (c === 0)
+        const testResult = await parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError, globalAnnotations);
+        if (!testResult)
             continue;
+        const { totalCount: c, skippedCount: s } = testResult;
         totalCount += c;
         skipped += s;
-        annotations = annotations.concat(a);
-        if (annotationsLimit > 0 && annotations.length >= annotationsLimit) {
+        annotations.push(...testResult.annotations);
+        if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
             break;
         }
     }
     // get the count of passed and failed tests.
-    const failed = annotations.filter(a => a.annotation_level === 'failure').length;
+    const failed = globalAnnotations.filter(a => a.annotation_level === 'failure').length;
     const passed = totalCount - failed - skipped;
     return {
         checkName,
@@ -841,7 +872,8 @@ annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate
         failed,
         passed,
         foundFiles,
-        annotations
+        annotations,
+        globalAnnotations
     };
 }
 /**
