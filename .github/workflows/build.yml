@@ -95,6 +95,8 @@ jobs:
           report_paths: 'test_results/nested/multi-level.xml'
           include_passed: true
           detailed_summary: true
+          group_suite: true
+          comment: true
           skip_annotations: true
           check_title_template: '{{SUITE_NAME}} | {{TEST_NAME}}'
           annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
