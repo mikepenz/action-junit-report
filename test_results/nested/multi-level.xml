@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<testsuites failures="0" name="XMPP specification test run with ID uj4f1" skipped="0" tests="57" time="5.922" timestamp="2024-04-19T08:20:31.569834">
-    <testsuite failures="0" name="XEP-0199: XMPP Ping" skipped="0" tests="2" time="0.054">
-        <testcase classname="org.jivesoftware.smackx.ping.PingIntegrationTest" name="PingIntegrationTest.pingAsync (Normal)" time="0.054">
+<testsuites failures="0" name="ABC specification test run with" skipped="0" tests="57" time="5.922" timestamp="2024-04-19T08:20:31.569834">
+    <testsuite failures="0" name="ABC-0199: XMPP Ping" skipped="0" tests="2" time="0.054">
+        <testcase classname="corp.proj.PingIntegrationTest" name="PingIntegrationTest.pingAsync (Normal)" time="0.054">
         </testcase>
-        <testcase classname="org.jivesoftware.smackx.ping.PingIntegrationTest" name="PingIntegrationTest.pingServer (Normal)" time="0.0">
+        <testcase classname="corp.proj.PingIntegrationTest" name="PingIntegrationTest.pingServer (Normal)" time="0.0">
         </testcase>
     </testsuite>
-    <testsuite failures="0" name="XEP-0045: Multi-User Chat" skipped="0" tests="27" time="1.508">
-        <testcase classname="org.jivesoftware.smackx.muc.MultiUserChatRolesAffiliationsPrivilegesIntegrationTest" name="MultiUserChatRolesAffiliationsPrivilegesIntegrationTest.mucRoleTestForReceivingModerator (Normal)" time="0.046">
+    <testsuite failures="0" name="ABC-0045: Multi-User Chat" skipped="0" tests="27" time="1.508">
+        <testcase classname="corp.proj2.MultiUserChatRolesAffiliationsPrivilegesIntegrationTest" name="MultiUserIntegrationTest.mucRoleTestForReceivingModerator (Normal)" time="0.046">
         </testcase>
     </testsuite>
 </testsuites>

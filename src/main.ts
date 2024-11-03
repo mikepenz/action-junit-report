@@ -30,6 +30,7 @@ export async function run(): Promise<void> {
     const jobSummary = core.getInput('job_summary') === 'true'
     const detailedSummary = core.getInput('detailed_summary') === 'true'
     const flakySummary = core.getInput('flaky_summary') === 'true'
+    const groupSuite = core.getInput('group_suite') === 'true'
     const comment = core.getInput('comment') === 'true'
     const updateComment = core.getInput('updateComment') === 'true'
     const jobName = core.getInput('job_name')
@@ -66,8 +67,8 @@ export async function run(): Promise<void> {
       failed: 0,
       passed: 0,
       foundFiles: 0,
-      annotations: [],
-      globalAnnotations: []
+      globalAnnotations: [],
+      testResults: []
     }
 
     core.info(`Preparing ${reportsCount} report as configured.`)
@@ -146,7 +147,8 @@ export async function run(): Promise<void> {
       testResults,
       includePassed,
       detailedSummary,
-      flakySummary
+      flakySummary,
+      groupSuite
     )
     if (jobSummary && supportsJobSummary) {
       try {

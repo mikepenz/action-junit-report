@@ -88,6 +88,16 @@ jobs:
             [{"searchValue":"::","replaceValue":"/"}]
           annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
 
+      - name: Test Nested JUnit test import
+        uses: ./
+        with:
+          check_name: Example Nested JUnit Test Report
+          report_paths: 'test_results/nested/multi-level.xml'
+          include_passed: true
+          detailed_summary: true
+          check_title_template: '{{SUITE_NAME}} | {{TEST_NAME}}'
+          annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
+
   release:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest

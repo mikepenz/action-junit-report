@@ -249,6 +249,7 @@ async function run() {
         const jobSummary = core.getInput('job_summary') === 'true';
         const detailedSummary = core.getInput('detailed_summary') === 'true';
         const flakySummary = core.getInput('flaky_summary') === 'true';
+        const groupSuite = core.getInput('group_suite') === 'true';
         const comment = core.getInput('comment') === 'true';
         const updateComment = core.getInput('updateComment') === 'true';
         const jobName = core.getInput('job_name');
@@ -280,8 +281,8 @@ async function run() {
             failed: 0,
             passed: 0,
             foundFiles: 0,
-            annotations: [],
-            globalAnnotations: []
+            globalAnnotations: [],
+            testResults: []
         };
         core.info(`Preparing ${reportsCount} report as configured.`);
         for (let i = 0; i < reportsCount; i++) {
@@ -323,7 +324,7 @@ async function run() {
             }
         }
         const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
-        const [table, detailTable, flakyTable] = (0, table_1.buildSummaryTables)(testResults, includePassed, detailedSummary, flakySummary);
+        const [table, detailTable, flakyTable] = (0, table_1.buildSummaryTables)(testResults, includePassed, detailedSummary, flakySummary, groupSuite);
         if (jobSummary && supportsJobSummary) {
             try {
                 await (0, annotator_1.attachSummary)(table, detailTable, flakyTable);
@@ -390,7 +391,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.buildSummaryTables = buildSummaryTables;
 const core = __importStar(__nccwpck_require__(7484));
-function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary) {
+function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, groupSuite = false) {
     const table = [
         [
             { data: '', header: true },
@@ -435,24 +436,53 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
                 detailsTable.push([`-`, `No test annotations available`, `-`]);
             }
             else {
-                for (const annotation of annotations) {
-                    detailsTable.push([
-                        `${testResult.checkName}`,
-                        `${annotation.title}`,
-                        `${annotation.status === 'success'
-                            ? '✅ pass'
-                            : annotation.status === 'skipped'
-                                ? `⏭️ skipped`
-                                : `❌ ${annotation.annotation_level}`}`
-                    ]);
-                    if (annotation.retries > 0) {
-                        flakyTable.push([`${testResult.checkName}`, `${annotation.title}`, `${annotation.retries}`]);
+                if (!groupSuite) {
+                    for (const annotation of annotations) {
+                        detailsTable.push([
+                            `${testResult.checkName}`,
+                            `${annotation.title}`,
+                            `${annotation.status === 'success'
+                                ? '✅ pass'
+                                : annotation.status === 'skipped'
+                                    ? `⏭️ skipped`
+                                    : `❌ ${annotation.annotation_level}`}`
+                        ]);
                     }
+                }
+                else {
+                    for (const internalTestResult of testResult.testResults) {
+                        appendDetailsTable(internalTestResult, detailsTable, includePassed);
+                    }
+                }
+            }
+            for (const annotation of annotations) {
+                if (annotation.retries > 0) {
+                    flakyTable.push([`${testResult.checkName}`, `${annotation.title}`, `${annotation.retries}`]);
                 }
             }
         }
     }
     return [table, detailsTable, flakyTable];
+}
+function appendDetailsTable(testResult, detailsTable, includePassed) {
+    const annotations = testResult.annotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
+    if (annotations.length > 0) {
+        detailsTable.push([`${testResult.name}`]);
+        for (const annotation of annotations) {
+            detailsTable.push([
+                ``,
+                `${annotation.title}`,
+                `${annotation.status === 'success'
+                    ? '✅ pass'
+                    : annotation.status === 'skipped'
+                        ? `⏭️ skipped`
+                        : `❌ ${annotation.annotation_level}`}`
+            ]);
+        }
+    }
+    for (const childTestResult of testResult.testResults) {
+        appendDetailsTable(childTestResult, detailsTable, includePassed);
+    }
 }
 
 
@@ -843,7 +873,7 @@ annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate
     core.debug(`Process test report for: ${reportPaths} (${checkName})`);
     const globber = await glob.create(reportPaths, { followSymbolicLinks: followSymlink });
     const globalAnnotations = [];
-    const annotations = [];
+    const testResults = [];
     let totalCount = 0;
     let skipped = 0;
     let foundFiles = 0;
@@ -856,7 +886,7 @@ annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate
         const { totalCount: c, skippedCount: s } = testResult;
         totalCount += c;
         skipped += s;
-        annotations.push(...testResult.annotations);
+        testResults.push(testResult);
         if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
             break;
         }
@@ -872,8 +902,8 @@ annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate
         failed,
         passed,
         foundFiles,
-        annotations,
-        globalAnnotations
+        globalAnnotations,
+        testResults
     };
 }
 /**
