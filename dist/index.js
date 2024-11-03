@@ -39,7 +39,7 @@ const github = __importStar(__nccwpck_require__(3228));
 const utils_1 = __nccwpck_require__(8006);
 const utils_2 = __nccwpck_require__(9277);
 async function annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName) {
-    const annotations = testResult.annotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
+    const annotations = testResult.globalAnnotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
     const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
     let title = 'No test results found!';
     if (foundResults) {
@@ -280,7 +280,8 @@ async function run() {
             failed: 0,
             passed: 0,
             foundFiles: 0,
-            annotations: []
+            annotations: [],
+            globalAnnotations: []
         };
         core.info(`Preparing ${reportsCount} report as configured.`);
         for (let i = 0; i < reportsCount; i++) {
@@ -426,7 +427,7 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
             `${testResult.failed} failed`
         ]);
         if (detailedSummary) {
-            const annotations = testResult.annotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
+            const annotations = testResult.globalAnnotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
             if (annotations.length === 0) {
                 if (!includePassed) {
                     core.info(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
@@ -585,7 +586,7 @@ async function resolvePath(fileName, excludeSources, followSymlink = false) {
  * https://github.com/mikepenz/action-junit-report/
  */
 async function parseFile(file, suiteRegex = '', // no-op
-annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, breadCrumbDelimiter = '/', testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false) {
+annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, breadCrumbDelimiter = '/', testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false, globalAnnotations = []) {
     core.debug(`Parsing file ${file}`);
     const data = fs.readFileSync(file, 'utf8');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -597,25 +598,16 @@ annotatePassed = false, checkRetries = false, excludeSources = ['/build/', '/__p
         core.error(`⚠️ Failed to parse file (${file}) with error ${error}`);
         if (failOnParseError)
             throw Error(`⚠️ Failed to parse file (${file}) with error ${error}`);
-        return {
-            globalAnnotations: []
-        };
+        return undefined;
     }
     // parse child test suites
     const testsuite = report.testsuites ? report.testsuites : report.testsuite;
     if (!testsuite) {
         core.error(`⚠️ Failed to retrieve root test suite`);
-        return {
-            globalAnnotations: []
-        };
+        return undefined;
     }
-    const globalAnnotations = [];
-    const testResult = await parseSuite(testsuite, suiteRegex, // no-op
+    return await parseSuite(testsuite, suiteRegex, // no-op
     '', breadCrumbDelimiter, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations);
-    return {
-        testResult,
-        globalAnnotations
-    };
 }
 function templateVar(varName) {
     return `{{${varName}}}`;
@@ -655,6 +647,7 @@ breadCrumb, breadCrumbDelimiter = '/', annotatePassed = false, checkRetries = fa
             totalCount,
             skippedCount,
             annotations,
+            globalAnnotations,
             testResults: []
         };
     }
@@ -682,6 +675,7 @@ breadCrumb, breadCrumbDelimiter = '/', annotatePassed = false, checkRetries = fa
                 totalCount,
                 skippedCount,
                 annotations,
+                globalAnnotations,
                 testResults: childSuiteResults
             };
         }
@@ -691,6 +685,7 @@ breadCrumb, breadCrumbDelimiter = '/', annotatePassed = false, checkRetries = fa
         totalCount,
         skippedCount,
         annotations,
+        globalAnnotations,
         testResults: childSuiteResults
     };
 }
@@ -847,20 +842,21 @@ async function parseTestReports(checkName, summary, reportPaths, suiteRegex, // 
 annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, breadCrumbDelimiter, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false) {
     core.debug(`Process test report for: ${reportPaths} (${checkName})`);
     const globber = await glob.create(reportPaths, { followSymbolicLinks: followSymlink });
-    let annotations = [];
+    const globalAnnotations = [];
+    const annotations = [];
     let totalCount = 0;
     let skipped = 0;
     let foundFiles = 0;
     for await (const file of globber.globGenerator()) {
         foundFiles++;
         core.debug(`Parsing report file: ${file}`);
-        const { testResult: tr, globalAnnotations: ga } = await parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError);
-        if (!tr)
+        const testResult = await parseFile(file, suiteRegex, annotatePassed, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError, globalAnnotations);
+        if (!testResult)
             continue;
-        const { totalCount: c, skippedCount: s } = tr;
+        const { totalCount: c, skippedCount: s } = testResult;
         totalCount += c;
         skipped += s;
-        annotations = annotations.concat(ga);
+        annotations.push(...testResult.annotations);
         if (annotationsLimit > 0 && annotations.length >= annotationsLimit) {
             break;
         }
@@ -876,7 +872,8 @@ annotatePassed = false, checkRetries = false, excludeSources, checkTitleTemplate
         failed,
         passed,
         foundFiles,
-        annotations
+        annotations,
+        globalAnnotations
     };
 }
 /**

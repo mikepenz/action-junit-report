@@ -66,7 +66,8 @@ export async function run(): Promise<void> {
       failed: 0,
       passed: 0,
       foundFiles: 0,
-      annotations: []
+      annotations: [],
+      globalAnnotations: []
     }
 
     core.info(`Preparing ${reportsCount} report as configured.`)

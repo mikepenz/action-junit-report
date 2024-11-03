@@ -48,7 +48,7 @@ export function buildSummaryTables(
     ])
 
     if (detailedSummary) {
-      const annotations = testResult.annotations.filter(
+      const annotations = testResult.globalAnnotations.filter(
         annotation => includePassed || annotation.annotation_level !== 'notice'
       )
       if (annotations.length === 0) {

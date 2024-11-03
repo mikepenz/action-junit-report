@@ -15,7 +15,7 @@ export async function annotateTestResult(
   annotateNotice: boolean,
   jobName: string
 ): Promise<void> {
-  const annotations = testResult.annotations.filter(
+  const annotations = testResult.globalAnnotations.filter(
     annotation => annotateNotice || annotation.annotation_level !== 'notice'
   )
   const foundResults = testResult.totalCount > 0 || testResult.skipped > 0
