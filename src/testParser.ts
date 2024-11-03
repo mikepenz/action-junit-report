@@ -585,13 +585,13 @@ export async function parseTestReports(
     skipped += s
     annotations.push(...testResult.annotations)
 
-    if (annotationsLimit > 0 && annotations.length >= annotationsLimit) {
+    if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
       break
     }
   }
 
   // get the count of passed and failed tests.
-  const failed = annotations.filter(a => a.annotation_level === 'failure').length
+  const failed = globalAnnotations.filter(a => a.annotation_level === 'failure').length
   const passed = totalCount - failed - skipped
 
   return {
