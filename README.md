@@ -64,7 +64,7 @@ jobs:
       - name: Build and Run Tests
         run: # execute your tests generating test results
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v4
+        uses: mikepenz/action-junit-report@v5
         if: success() || failure() # always run even if the previous step fails
         with:
           report_paths: '**/build/test-results/test/TEST-*.xml'
@@ -136,7 +136,7 @@ you can increase the memory allocation by setting an environment variable
 
 ```yaml
 - name: Publish Test Report
-  uses: mikepenz/action-junit-report@v4
+  uses: mikepenz/action-junit-report@v5
   env:
     NODE_OPTIONS: "--max_old_space_size=4096"
   if: success() || failure() # always run even if the previous step fails
@@ -233,7 +233,7 @@ jobs:
           workflow: ${{ github.event.workflow.id }}
           run_id: ${{ github.event.workflow_run.id }}
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v3
+        uses: mikepenz/action-junit-report@v5
         with:
           commit: ${{github.event.workflow_run.head_sha}}
           report_paths: '**/build/test-results/test/TEST-*.xml'
