@@ -249,6 +249,7 @@ is to just leverage the annotate\_only option.
 
 <details><summary><b>Example</b></summary>
 <p>
+
 ```yml
 name: pr
 
@@ -277,6 +278,8 @@ jobs:
         with:
           annotate_only: true # forked repo cannot write to checks so just do annotations
 ```
+
+This will selectively use different methods for forked and unforked repos.
 </p>
 </details>
 
