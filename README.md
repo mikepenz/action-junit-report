@@ -244,6 +244,40 @@ This will securely post the check results from the privileged workflow onto the 
 </p>
 </details>
 
+In environments that do not allow `checks: write`, the action can be configured to leverage the annotate\_only option.
+
+<details><summary><b>Example</b></summary>
+<p>
+
+```yml
+name: pr
+
+on:
+  pull_request:
+
+jobs:
+  unit_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and Run Tests
+        run: # execute your tests generating test results
+
+      - name: Write out Unit Test report annotation for forked repo
+        if: ${{ failure() &&  (github.event.pull_request.head.repo.full_name != github.repository) }}
+        uses: mikepenz/action-junit-report@v5
+        with:
+          annotate_only: true # forked repo cannot write to checks so just do annotations
+```
+
+This will selectively use different methods for forked and unforked repos.
+</p>
+</details>
+
+
+
 ## Sample 🖥️
 
 <div align="center">
