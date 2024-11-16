@@ -244,8 +244,7 @@ This will securely post the check results from the privileged workflow onto the 
 </p>
 </details>
 
-Another way to have this action be useful when permissions do not allow for checks: write
-is to just leverage the annotate\_only option.
+In environments that do not allow `checks: write`, the action can be configured to leverage the annotate\_only option.
 
 <details><summary><b>Example</b></summary>
 <p>
@@ -261,18 +260,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Build and Run Tests ( this step will create a check failure if tests fail)
+      - name: Build and Run Tests
         run: # execute your tests generating test results
 
-      - name: Publish Test Report as a check
-        # only report if a test has failed and we are a non forked repo
-        if: ${{ failure() && (github.event.pull_request.head.repo.full_name == github.repository) }}
-        uses: mikepenz/action-junit-report@v5
-
       - name: Write out Unit Test report annotation for forked repo
-        # only report if a test has failed and we are a forked repo
         if: ${{ failure() &&  (github.event.pull_request.head.repo.full_name != github.repository) }}
         uses: mikepenz/action-junit-report@v5
         with:
