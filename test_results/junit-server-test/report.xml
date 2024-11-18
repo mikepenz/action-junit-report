@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="3" failures="1" errors="0" time="24.733407">
+	<testsuite tests="3" failures="1" time="10.715000" name="github.com/example/example/server/v8/channels/api4" timestamp="2024-10-24T12:07:54Z">
+		<properties>
+			<property name="go.version" value="go1.22.6 linux/amd64"></property>
+		</properties>
+		<testcase classname="github.com/example/example/server/v8/channels/api4" name="TestWebSocketReconnectRace" time="3.320000">
+			<failure message="Failed" type="">=== RUN   TestWebSocketReconnectRace --- FAIL: TestWebSocketReconnectRace (3.32s)</failure>
+		</testcase>
+		<testcase classname="github.com/example/example/server/v8/channels/api4" name="TestCreateChannelBookmark" time="0.000000">
+			<skipped message="=== RUN   TestCreateChannelBookmark --- SKIP: TestCreateChannelBookmark (0.00s)"></skipped>
+		</testcase>
+		<testcase classname="github.com/example/example/server/v8/channels/api4" name="TestWebSocketUpgrade" time="2.170000"></testcase>
+		<testcase classname="github.com/example/example/server/v8/channels/api4" name="TestWebSocketReconnectRace" time="7.780000"></testcase>
+	</testsuite>
+</testsuites>
