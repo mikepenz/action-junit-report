@@ -191,6 +191,7 @@ describe('parseFile', () => {
       undefined,
       undefined,
       undefined,
+      undefined,
       '/',
       undefined,
       undefined,
@@ -266,6 +267,7 @@ describe('parseFile', () => {
     const testResult = await parseFile(
       'test_results/python/report.xml',
       '',
+      false,
       false,
       false,
       ['/build/', '/__pycache__/'],
@@ -434,6 +436,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       '',
       false,
       false,
+      false,
       undefined,
       '{{BREAD_CRUMB}}{{SUITE_NAME}}/{{TEST_NAME}}'
     )
@@ -503,6 +506,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const testResult = await parseFile(
       'test_results/issues/testDisabled.xml',
       '',
+      true,
       true,
       false,
       undefined,
@@ -813,6 +817,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       'test_results/mocha/mocha.xml',
       '*',
       true,
+      true,
       false,
       undefined,
       '{{SUITE_NAME}}/{{TEST_NAME}}'
@@ -844,6 +849,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       'test_results/mocha/mocha.xml',
       '*',
       true,
+      true,
       false,
       ['/build/', '/__pycache__/'],
       '{{TEST_NAME}}'
@@ -874,6 +880,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const testResult = await parseFile(
       'test_results/mocha/mocha.xml',
       '*',
+      true,
       true,
       false,
       ['/build/', '/__pycache__/'],
@@ -983,6 +990,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const testResult = await parseFile(
       'test_results/junit-web-test/expectedRetries.xml',
       '',
+      false,
       false,
       true,
       ['/build/', '/__pycache__/']
@@ -1132,6 +1140,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       'test_results/perl/result.xml',
       '',
       true,
+      true,
       undefined,
       undefined,
       undefined,
@@ -1254,6 +1263,7 @@ describe('parseTestReports', () => {
       '*',
       true,
       true,
+      true,
       [],
       '{{SUITE_NAME}}/{{TEST_NAME}}',
       '/'
@@ -1288,6 +1298,7 @@ describe('parseTestReports', () => {
       '',
       'test_results/corrupt-junit/**/target/sf-reports/TEST-*.xml',
       '',
+      false,
       false,
       false,
       [],

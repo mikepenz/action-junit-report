@@ -182,7 +182,8 @@ export async function resolvePath(
 export async function parseFile(
   file: string,
   suiteRegex = '', // no-op
-  annotatePassed = false,
+  includePassed = false,
+  annotateNotice = false,
   checkRetries = false,
   excludeSources: string[] = ['/build/', '/__pycache__/'],
   checkTitleTemplate: string | undefined = undefined,
@@ -222,7 +223,8 @@ export async function parseFile(
     suiteRegex, // no-op
     '',
     breadCrumbDelimiter,
-    annotatePassed,
+    includePassed,
+    annotateNotice,
     checkRetries,
     excludeSources,
     checkTitleTemplate,
@@ -245,7 +247,8 @@ async function parseSuite(
   suiteRegex: string, // no-op
   breadCrumb: string,
   breadCrumbDelimiter = '/',
-  annotatePassed = false,
+  includePassed = false,
+  annotateNotice = false,
   checkRetries = false,
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
@@ -282,7 +285,8 @@ async function parseSuite(
       suiteLine,
       breadCrumb,
       testcases,
-      annotatePassed,
+      includePassed,
+      annotateNotice,
       checkRetries,
       excludeSources,
       checkTitleTemplate,
@@ -328,7 +332,8 @@ async function parseSuite(
       suiteRegex,
       childBreadCrumb,
       breadCrumbDelimiter,
-      annotatePassed,
+      includePassed,
+      annotateNotice,
       checkRetries,
       excludeSources,
       checkTitleTemplate,
@@ -375,7 +380,8 @@ async function parseTestCases(
   suiteLine: string | null,
   breadCrumb: string,
   testcases: any[],
-  annotatePassed = false,
+  includePassed = false,
+  annotateNotice = false,
   checkRetries = false,
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
@@ -429,9 +435,9 @@ async function parseTestCases(
       skippedCount++
     }
 
-    // If this won't be reported as a failure and processing all passed tests
+    // If this isn't reported as a failure and processing all passed tests
     // isn't enabled, then skip the rest of the processing.
-    if (annotationLevel !== 'failure' && !annotatePassed) {
+    if (annotationLevel !== 'failure' && !includePassed) {
       continue
     }
 
@@ -484,7 +490,7 @@ async function parseTestCases(
 
     const githubWorkspacePath = process.env['GITHUB_WORKSPACE']
     let resolvedPath: string = transformedFileName
-    if (failed || (annotatePassed && success)) {
+    if (failed || (annotateNotice && success)) {
       if (fs.existsSync(transformedFileName)) {
         resolvedPath = transformedFileName
       } else if (githubWorkspacePath && fs.existsSync(`${githubWorkspacePath}${transformedFileName}`)) {
@@ -561,7 +567,8 @@ export async function parseTestReports(
   summary: string,
   reportPaths: string,
   suiteRegex: string, // no-op
-  annotatePassed = false,
+  includePassed = false,
+  annotateNotice = false,
   checkRetries = false,
   excludeSources: string[],
   checkTitleTemplate: string | undefined = undefined,
@@ -587,7 +594,8 @@ export async function parseTestReports(
     const testResult = await parseFile(
       file,
       suiteRegex,
-      annotatePassed,
+      includePassed,
+      annotateNotice,
       checkRetries,
       excludeSources,
       checkTitleTemplate,
