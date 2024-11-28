@@ -586,13 +586,23 @@ function safeParseInt(line) {
  * https://github.com/mikepenz/action-junit-report/
  */
 const resolvePathCache = {};
-async function resolvePath(fileName, excludeSources, followSymlink = false) {
+/**
+ * Resolves the path of a given file, optionally following symbolic links.
+ *
+ * @param {string} workspace - The optional workspace directory.
+ * @param {string} transformedFileName - The transformed file name to find.
+ * @param {string[]} excludeSources - List of source paths to exclude.
+ * @param {boolean} [followSymlink=false] - Whether to follow symbolic links.
+ * @returns {Promise<string>} - The resolved file path.
+ */
+async function resolvePath(workspace, transformedFileName, excludeSources, followSymlink = false) {
+    const fileName = (0, utils_1.removePrefix)(transformedFileName, workspace);
     if (resolvePathCache[fileName]) {
         return resolvePathCache[fileName];
     }
     core.debug(`Resolving path for ${fileName}`);
     const normalizedFilename = fileName.replace(/^\.\//, ''); // strip relative prefix (./)
-    const globber = await glob.create(`**/${normalizedFilename}.*`, {
+    const globber = await glob.create(`${workspace}/**/${normalizedFilename}.*`, {
         followSymbolicLinks: followSymlink
     });
     const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : '';
@@ -776,7 +786,7 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
             : undefined;
         // the action only supports 1 failure per testcase
         const failure = failures ? failures[0] : undefined;
-        // identify amount of flaky failures
+        // identify the number of flaky failures
         const flakyFailuresCount = testcase.flakyFailure
             ? Array.isArray(testcase.flakyFailure)
                 ? testcase.flakyFailure.length
@@ -809,7 +819,7 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
                 resolvedPath = `${githubWorkspacePath}${transformedFileName}`;
             }
             else {
-                resolvedPath = await resolvePath(transformedFileName, excludeSources, followSymlink);
+                resolvedPath = await resolvePath(githubWorkspacePath || '', transformedFileName, excludeSources, followSymlink);
             }
         }
         core.debug(`Path prior to stripping: ${resolvedPath}`);
@@ -951,6 +961,7 @@ exports.retrieve = retrieve;
 exports.readTransformers = readTransformers;
 exports.applyTransformer = applyTransformer;
 exports.buildTable = buildTable;
+exports.removePrefix = removePrefix;
 const core = __importStar(__nccwpck_require__(7484));
 function retrieve(name, items, index, total) {
     if (total > 1) {
@@ -1055,6 +1066,21 @@ function wrap(tag, content, attrs = {}) {
         return `<${tag}${htmlAttrs}>`;
     }
     return `<${tag}${htmlAttrs}>${content}</${tag}>`;
+}
+/**
+ * Removes a specified prefix from the beginning of a string.
+ *
+ * @param {string} str - The original string.
+ * @param {string} prefix - The prefix to be removed.
+ * @returns {string} - The string without the prefix if it was present, otherwise the original string.
+ */
+function removePrefix(str, prefix) {
+    if (prefix.length === 0)
+        return str;
+    if (str.startsWith(prefix)) {
+        return str.slice(prefix.length);
+    }
+    return str;
 }
 
 

@@ -3,7 +3,7 @@ import * as glob from '@actions/glob'
 import * as fs from 'fs'
 import * as parser from 'xml-js'
 import * as pathHelper from 'path'
-import {applyTransformer} from './utils'
+import {applyTransformer, removePrefix} from './utils'
 
 export interface ActualTestResult {
   name: string
@@ -124,14 +124,29 @@ function safeParseInt(line: string | null): number | null {
  */
 const resolvePathCache: {[key: string]: string} = {}
 
-export async function resolvePath(fileName: string, excludeSources: string[], followSymlink = false): Promise<string> {
+/**
+ * Resolves the path of a given file, optionally following symbolic links.
+ *
+ * @param {string} workspace - The optional workspace directory.
+ * @param {string} transformedFileName - The transformed file name to find.
+ * @param {string[]} excludeSources - List of source paths to exclude.
+ * @param {boolean} [followSymlink=false] - Whether to follow symbolic links.
+ * @returns {Promise<string>} - The resolved file path.
+ */
+export async function resolvePath(
+  workspace: string,
+  transformedFileName: string,
+  excludeSources: string[],
+  followSymlink = false
+): Promise<string> {
+  const fileName: string = removePrefix(transformedFileName, workspace)
   if (resolvePathCache[fileName]) {
     return resolvePathCache[fileName]
   }
 
   core.debug(`Resolving path for ${fileName}`)
   const normalizedFilename = fileName.replace(/^\.\//, '') // strip relative prefix (./)
-  const globber = await glob.create(`**/${normalizedFilename}.*`, {
+  const globber = await glob.create(`${workspace}/**/${normalizedFilename}.*`, {
     followSymbolicLinks: followSymlink
   })
   const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : ''
@@ -422,7 +437,7 @@ async function parseTestCases(
     // the action only supports 1 failure per testcase
     const failure = failures ? failures[0] : undefined
 
-    // identify amount of flaky failures
+    // identify the number of flaky failures
     const flakyFailuresCount = testcase.flakyFailure
       ? Array.isArray(testcase.flakyFailure)
         ? testcase.flakyFailure.length
@@ -468,7 +483,7 @@ async function parseTestCases(
       } else if (githubWorkspacePath && fs.existsSync(`${githubWorkspacePath}${transformedFileName}`)) {
         resolvedPath = `${githubWorkspacePath}${transformedFileName}`
       } else {
-        resolvedPath = await resolvePath(transformedFileName, excludeSources, followSymlink)
+        resolvedPath = await resolvePath(githubWorkspacePath || '', transformedFileName, excludeSources, followSymlink)
       }
     }
 
