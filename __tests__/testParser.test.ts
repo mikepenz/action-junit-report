@@ -1270,17 +1270,19 @@ describe('parseTestReports', () => {
   })
 
   it('should parse retried tests', async () => {
-    const {checkName, summary, totalCount, skipped, failed, passed, retried, globalAnnotations} = await parseTestReports(
-      'checkName',
-      'summary',
-      'test_results/junit-server-test/report.xml',
-      '*',
-      true,
-      true,
-      [],
-      '{{SUITE_NAME}}/{{TEST_NAME}}',
-      '/'
-    )
+    const {checkName, summary, totalCount, skipped, failed, passed, retried, globalAnnotations} =
+      await parseTestReports(
+        'checkName',
+        'summary',
+        'test_results/junit-server-test/report.xml',
+        '*',
+        true,
+        true,
+        true,
+        [],
+        '{{SUITE_NAME}}/{{TEST_NAME}}',
+        '/'
+      )
 
     expect(checkName).toBe('checkName')
     expect(summary).toBe('summary')
@@ -1314,21 +1316,21 @@ describe('parseTestReports', () => {
         start_column: 0,
         start_line: 1,
         status: 'skipped',
-        title: 'github.com/example/example/server/v8/channels/api4/TestCreateChannelBookmark',
+        title: 'github.com/example/example/server/v8/channels/api4/TestCreateChannelBookmark'
       },
       {
-          annotation_level: 'notice',
-          end_column: 0,
-          end_line: 1,
-          message: 'TestWebSocketUpgrade',
-          path: 'com/example/example/server/v8/channels/api4',
-          raw_details: '',
-          retries: 0,
-          start_column: 0,
-          start_line: 1,
-          status: 'success',
-          title: 'github.com/example/example/server/v8/channels/api4/TestWebSocketUpgrade',
-        }
+        annotation_level: 'notice',
+        end_column: 0,
+        end_line: 1,
+        message: 'TestWebSocketUpgrade',
+        path: 'com/example/example/server/v8/channels/api4',
+        raw_details: '',
+        retries: 0,
+        start_column: 0,
+        start_line: 1,
+        status: 'success',
+        title: 'github.com/example/example/server/v8/channels/api4/TestWebSocketUpgrade'
+      }
     ])
   })
 

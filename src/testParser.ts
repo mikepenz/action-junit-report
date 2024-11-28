@@ -355,6 +355,7 @@ async function parseSuite(
       childSuiteResults.push(childSuiteResult)
       totalCount += childSuiteResult.totalCount
       skippedCount += childSuiteResult.skippedCount
+      retriedCount += childSuiteResult.retriedCount
     }
 
     // skip out if we reached our annotations limit
@@ -424,7 +425,6 @@ async function parseTestCases(
           testcaseMap.set(key, testcase)
           retriedCount += 1
           core.debug(`Drop flaky test failure for (2): ${JSON.stringify(testcase)}`)
-          core.debug(`Drop flaky test failure for (2): ${key}`)
         }
       } else {
         testcaseMap.set(key, testcase)
@@ -599,6 +599,7 @@ export async function parseTestReports(
   const testResults: ActualTestResult[] = []
   let totalCount = 0
   let skipped = 0
+  let retried = 0
   let foundFiles = 0
   for await (const file of globber.globGenerator()) {
     foundFiles++
@@ -623,9 +624,10 @@ export async function parseTestReports(
     )
 
     if (!testResult) continue
-    const {totalCount: c, skippedCount: s} = testResult
+    const {totalCount: c, skippedCount: s, retriedCount: r} = testResult
     totalCount += c
     skipped += s
+    retried += r
     testResults.push(testResult)
 
     if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
@@ -636,7 +638,6 @@ export async function parseTestReports(
   // get the count of passed and failed tests.
   const failed = globalAnnotations.filter(a => a.annotation_level === 'failure').length
   const passed = totalCount - failed - skipped
-  const retried = globalAnnotations.filter(a => a.retries > 0).length
 
   return {
     checkName,
