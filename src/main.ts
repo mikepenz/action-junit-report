@@ -80,6 +80,7 @@ export async function run(): Promise<void> {
         retrieve('reportPaths', reportPaths, i, reportsCount),
         retrieve('suiteRegex', suiteRegex, i, reportsCount),
         includePassed,
+        annotateNotice,
         checkRetries,
         excludeSources,
         retrieve('checkTitleTemplate', checkTitleTemplate, i, reportsCount),

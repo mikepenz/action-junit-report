@@ -124,17 +124,17 @@ note: run with &#x60;RUST_BACKTRACE&#x3D;1&#x60; environment variable to display
 
 describe('resolvePath', () => {
   it('should find correct file for Java fileName', async () => {
-    const path = await resolvePath('EmailAddressTest', ['/build/', '/__pycache__/'])
+    const path = await resolvePath('', 'EmailAddressTest', ['/build/', '/__pycache__/'])
     expect(path).toBe('test_results/tests/email/src/test/java/action/surefire/report/email/EmailAddressTest.java')
   })
 
   it('should find correct file for Kotlin fileName', async () => {
-    const path = await resolvePath('CalcUtilsTest', ['/build/', '/__pycache__/'])
+    const path = await resolvePath('', 'CalcUtilsTest', ['/build/', '/__pycache__/'])
     expect(path).toBe('test_results/tests/utils/src/test/java/action/surefire/report/calc/CalcUtilsTest.kt')
   })
 
   it('should find correct file with a relative path', async () => {
-    const path = await resolvePath('./test_results/CalcUtilsTest.kt', ['/build/', '/__pycache__/'])
+    const path = await resolvePath('', './test_results/CalcUtilsTest.kt', ['/build/', '/__pycache__/'])
     expect(path).toBe('test_results/CalcUtilsTest.kt')
   })
 })
@@ -186,6 +186,7 @@ describe('parseFile', () => {
     const annotationsLimit = 1
     const testResult = await parseFile(
       'test_results/tests/utils/target/surefire-reports/TEST-action.surefire.report.calc.CalcUtilsTest.xml',
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -266,6 +267,7 @@ describe('parseFile', () => {
     const testResult = await parseFile(
       'test_results/python/report.xml',
       '',
+      false,
       false,
       false,
       ['/build/', '/__pycache__/'],
@@ -434,6 +436,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       '',
       false,
       false,
+      false,
       undefined,
       '{{BREAD_CRUMB}}{{SUITE_NAME}}/{{TEST_NAME}}'
     )
@@ -503,6 +506,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const testResult = await parseFile(
       'test_results/issues/testDisabled.xml',
       '',
+      true,
       true,
       false,
       undefined,
@@ -813,6 +817,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       'test_results/mocha/mocha.xml',
       '*',
       true,
+      true,
       false,
       undefined,
       '{{SUITE_NAME}}/{{TEST_NAME}}'
@@ -844,6 +849,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       'test_results/mocha/mocha.xml',
       '*',
       true,
+      true,
       false,
       ['/build/', '/__pycache__/'],
       '{{TEST_NAME}}'
@@ -874,6 +880,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const testResult = await parseFile(
       'test_results/mocha/mocha.xml',
       '*',
+      true,
       true,
       false,
       ['/build/', '/__pycache__/'],
@@ -984,6 +991,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       'test_results/junit-web-test/expectedRetries.xml',
       '',
       false,
+      false,
       true,
       ['/build/', '/__pycache__/']
     )
@@ -1060,7 +1068,8 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       'test_results/junit-web-test/expectedRetries.xml',
       '',
       true,
-      true
+      true,
+      true,
     )
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, globalAnnotations} = testResult!!
@@ -1131,6 +1140,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const testResult = await parseFile(
       'test_results/perl/result.xml',
       '',
+      true,
       true,
       undefined,
       undefined,
@@ -1254,6 +1264,7 @@ describe('parseTestReports', () => {
       '*',
       true,
       true,
+      true,
       [],
       '{{SUITE_NAME}}/{{TEST_NAME}}',
       '/'
@@ -1288,6 +1299,7 @@ describe('parseTestReports', () => {
       '',
       'test_results/corrupt-junit/**/target/sf-reports/TEST-*.xml',
       '',
+      false,
       false,
       false,
       [],

@@ -59,6 +59,7 @@ describe('buildSummaryTables', () => {
       '*',
       true,
       true,
+      true,
       [],
       '{{SUITE_NAME}}/{{TEST_NAME}}',
       '/'
@@ -106,6 +107,7 @@ describe('buildSummaryTables', () => {
       'summary',
       'test_results/nested/multi-level.xml',
       '*',
+      true,
       true,
       true,
       [],

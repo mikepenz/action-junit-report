@@ -109,3 +109,18 @@ function wrap(tag: string, content: string | null, attrs: {[attribute: string]: 
 
   return `<${tag}${htmlAttrs}>${content}</${tag}>`
 }
+
+/**
+ * Removes a specified prefix from the beginning of a string.
+ *
+ * @param {string} str - The original string.
+ * @param {string} prefix - The prefix to be removed.
+ * @returns {string} - The string without the prefix if it was present, otherwise the original string.
+ */
+export function removePrefix(str: string, prefix: string): string {
+  if (prefix.length === 0) return str
+  if (str.startsWith(prefix)) {
+    return str.slice(prefix.length)
+  }
+  return str
+}
