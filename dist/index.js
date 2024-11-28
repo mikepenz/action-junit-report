@@ -300,6 +300,7 @@ async function run() {
             skipped: 0,
             failed: 0,
             passed: 0,
+            retried: 0,
             foundFiles: 0,
             globalAnnotations: [],
             testResults: []
@@ -311,12 +312,14 @@ async function run() {
             mergedResult.skipped += testResult.skipped;
             mergedResult.failed += testResult.failed;
             mergedResult.passed += testResult.passed;
+            mergedResult.retried += testResult.retried;
             testResults.push(testResult);
         }
         core.setOutput('total', mergedResult.totalCount);
         core.setOutput('passed', mergedResult.passed);
         core.setOutput('skipped', mergedResult.skipped);
         core.setOutput('failed', mergedResult.failed);
+        core.setOutput('retried', mergedResult.retried);
         if (!(mergedResult.totalCount > 0 || mergedResult.skipped > 0) && requireTests) {
             core.setFailed(`❌ No test results found for ${checkName}`);
             return; // end if we failed due to no tests, but configured to require tests
@@ -714,6 +717,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
     }
     let totalCount = 0;
     let skippedCount = 0;
+    let retriedCount = 0;
     const annotations = [];
     // parse testCases
     if (suite.testcase) {
@@ -725,6 +729,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
         // expand global annotations array
         totalCount += parsedTestCases.totalCount;
         skippedCount += parsedTestCases.skippedCount;
+        retriedCount += parsedTestCases.retriedCount;
         annotations.push(...parsedTestCases.annotations);
         globalAnnotations.push(...parsedTestCases.annotations);
     }
@@ -734,6 +739,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
             name: suiteName,
             totalCount,
             skippedCount,
+            retriedCount,
             annotations,
             globalAnnotations,
             testResults: []
@@ -755,6 +761,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
             childSuiteResults.push(childSuiteResult);
             totalCount += childSuiteResult.totalCount;
             skippedCount += childSuiteResult.skippedCount;
+            retriedCount += childSuiteResult.retriedCount;
         }
         // skip out if we reached our annotations limit
         if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
@@ -762,6 +769,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
                 name: suiteName,
                 totalCount,
                 skippedCount,
+                retriedCount,
                 annotations,
                 globalAnnotations,
                 testResults: childSuiteResults
@@ -772,6 +780,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
         name: suiteName,
         totalCount,
         skippedCount,
+        retriedCount,
         annotations,
         globalAnnotations,
         testResults: childSuiteResults
@@ -782,6 +791,7 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
     const annotations = [];
     let totalCount = 0;
     let skippedCount = 0;
+    let retriedCount = 0;
     if (checkRetries) {
         // identify duplicates, in case of flaky tests, and remove them
         const testcaseMap = new Map();
@@ -795,13 +805,15 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
                 if (failed && !previousFailed) {
                     // previous is a success, drop failure
                     previous.retries = (previous.retries || 0) + 1;
+                    retriedCount += 1;
                     core.debug(`Drop flaky test failure for (1): ${key}`);
                 }
                 else if (!failed && previousFailed) {
                     // previous failed, new one not, replace
                     testcase.retries = (previous.retries || 0) + 1;
                     testcaseMap.set(key, testcase);
-                    core.debug(`Drop flaky test failure for (2): ${key}`);
+                    retriedCount += 1;
+                    core.debug(`Drop flaky test failure for (2): ${JSON.stringify(testcase)}`);
                 }
             }
             else {
@@ -916,6 +928,7 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
     return {
         totalCount,
         skippedCount,
+        retriedCount,
         annotations
     };
 }
@@ -934,6 +947,7 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
     const testResults = [];
     let totalCount = 0;
     let skipped = 0;
+    let retried = 0;
     let foundFiles = 0;
     for await (const file of globber.globGenerator()) {
         foundFiles++;
@@ -941,9 +955,10 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
         const testResult = await parseFile(file, suiteRegex, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError, globalAnnotations);
         if (!testResult)
             continue;
-        const { totalCount: c, skippedCount: s } = testResult;
+        const { totalCount: c, skippedCount: s, retriedCount: r } = testResult;
         totalCount += c;
         skipped += s;
+        retried += r;
         testResults.push(testResult);
         if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
             break;
@@ -959,6 +974,7 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
         skipped,
         failed,
         passed,
+        retried,
         foundFiles,
         globalAnnotations,
         testResults

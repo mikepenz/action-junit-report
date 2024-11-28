@@ -9,6 +9,7 @@ export interface ActualTestResult {
   name: string
   totalCount: number
   skippedCount: number
+  retriedCount: number
   annotations: Annotation[]
   globalAnnotations: Annotation[]
   testResults: ActualTestResult[]
@@ -17,6 +18,7 @@ export interface ActualTestResult {
 interface TestCasesResult {
   totalCount: number
   skippedCount: number
+  retriedCount: number
   annotations: Annotation[]
 }
 
@@ -27,6 +29,7 @@ export interface TestResult {
   skipped: number
   failed: number
   passed: number
+  retried: number
   foundFiles: number
   globalAnnotations: Annotation[]
   testResults: ActualTestResult[]
@@ -271,6 +274,7 @@ async function parseSuite(
 
   let totalCount = 0
   let skippedCount = 0
+  let retriedCount = 0
   const annotations: Annotation[] = []
 
   // parse testCases
@@ -300,6 +304,7 @@ async function parseSuite(
     // expand global annotations array
     totalCount += parsedTestCases.totalCount
     skippedCount += parsedTestCases.skippedCount
+    retriedCount += parsedTestCases.retriedCount
     annotations.push(...parsedTestCases.annotations)
     globalAnnotations.push(...parsedTestCases.annotations)
   }
@@ -309,6 +314,7 @@ async function parseSuite(
       name: suiteName,
       totalCount,
       skippedCount,
+      retriedCount,
       annotations,
       globalAnnotations,
       testResults: []
@@ -349,6 +355,7 @@ async function parseSuite(
       childSuiteResults.push(childSuiteResult)
       totalCount += childSuiteResult.totalCount
       skippedCount += childSuiteResult.skippedCount
+      retriedCount += childSuiteResult.retriedCount
     }
 
     // skip out if we reached our annotations limit
@@ -357,6 +364,7 @@ async function parseSuite(
         name: suiteName,
         totalCount,
         skippedCount,
+        retriedCount,
         annotations,
         globalAnnotations,
         testResults: childSuiteResults
@@ -368,6 +376,7 @@ async function parseSuite(
     name: suiteName,
     totalCount,
     skippedCount,
+    retriedCount,
     annotations,
     globalAnnotations,
     testResults: childSuiteResults
@@ -394,6 +403,7 @@ async function parseTestCases(
   const annotations: Annotation[] = []
   let totalCount = 0
   let skippedCount = 0
+  let retriedCount = 0
   if (checkRetries) {
     // identify duplicates, in case of flaky tests, and remove them
     const testcaseMap = new Map<string, any>()
@@ -407,12 +417,14 @@ async function parseTestCases(
         if (failed && !previousFailed) {
           // previous is a success, drop failure
           previous.retries = (previous.retries || 0) + 1
+          retriedCount += 1
           core.debug(`Drop flaky test failure for (1): ${key}`)
         } else if (!failed && previousFailed) {
           // previous failed, new one not, replace
           testcase.retries = (previous.retries || 0) + 1
           testcaseMap.set(key, testcase)
-          core.debug(`Drop flaky test failure for (2): ${key}`)
+          retriedCount += 1
+          core.debug(`Drop flaky test failure for (2): ${JSON.stringify(testcase)}`)
         }
       } else {
         testcaseMap.set(key, testcase)
@@ -551,6 +563,7 @@ async function parseTestCases(
   return {
     totalCount,
     skippedCount,
+    retriedCount,
     annotations
   }
 }
@@ -586,6 +599,7 @@ export async function parseTestReports(
   const testResults: ActualTestResult[] = []
   let totalCount = 0
   let skipped = 0
+  let retried = 0
   let foundFiles = 0
   for await (const file of globber.globGenerator()) {
     foundFiles++
@@ -610,9 +624,10 @@ export async function parseTestReports(
     )
 
     if (!testResult) continue
-    const {totalCount: c, skippedCount: s} = testResult
+    const {totalCount: c, skippedCount: s, retriedCount: r} = testResult
     totalCount += c
     skipped += s
+    retried += r
     testResults.push(testResult)
 
     if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
@@ -631,6 +646,7 @@ export async function parseTestReports(
     skipped,
     failed,
     passed,
+    retried,
     foundFiles,
     globalAnnotations,
     testResults
