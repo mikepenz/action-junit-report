@@ -242,9 +242,9 @@ describe('parseFile', () => {
         annotation_level: 'failure',
         status: 'failure',
         title: 'test_sample.test_which_fails',
-        message: 'AssertionError: assert \'test\' == \'xyz\'\n  - xyz\n  + test',
+        message: "AssertionError: assert 'test' == 'xyz'\n  - xyz\n  + test",
         raw_details:
-          'def test_which_fails():\n        event = { \'attr\': \'test\'}\n>       assert event[\'attr\'] == \'xyz\'\nE       AssertionError: assert \'test\' == \'xyz\'\nE         - xyz\nE         + test\n\npython/test_sample.py:10: AssertionError'
+          "def test_which_fails():\n        event = { 'attr': 'test'}\n>       assert event['attr'] == 'xyz'\nE       AssertionError: assert 'test' == 'xyz'\nE         - xyz\nE         + test\n\npython/test_sample.py:10: AssertionError"
       },
       {
         path: 'test_results/python/test_sample.py',
@@ -256,9 +256,9 @@ describe('parseFile', () => {
         annotation_level: 'failure',
         status: 'failure',
         title: 'test_sample.test_with_error',
-        message: 'AttributeError: \'dict\' object has no attribute \'attr\'',
+        message: "AttributeError: 'dict' object has no attribute 'attr'",
         raw_details:
-          'def test_with_error():\n        event = { \'attr\': \'test\'}\n>       assert event.attr == \'test\'\nE       AttributeError: \'dict\' object has no attribute \'attr\'\n\npython/test_sample.py:14: AttributeError'
+          "def test_with_error():\n        event = { 'attr': 'test'}\n>       assert event.attr == 'test'\nE       AttributeError: 'dict' object has no attribute 'attr'\n\npython/test_sample.py:14: AttributeError"
       }
     ])
   })
@@ -292,9 +292,9 @@ describe('parseFile', () => {
         annotation_level: 'failure',
         status: 'failure',
         title: 'pytest/test_which_fails',
-        message: 'AssertionError: assert \'test\' == \'xyz\'\n  - xyz\n  + test',
+        message: "AssertionError: assert 'test' == 'xyz'\n  - xyz\n  + test",
         raw_details:
-          'def test_which_fails():\n        event = { \'attr\': \'test\'}\n>       assert event[\'attr\'] == \'xyz\'\nE       AssertionError: assert \'test\' == \'xyz\'\nE         - xyz\nE         + test\n\npython/test_sample.py:10: AssertionError'
+          "def test_which_fails():\n        event = { 'attr': 'test'}\n>       assert event['attr'] == 'xyz'\nE       AssertionError: assert 'test' == 'xyz'\nE         - xyz\nE         + test\n\npython/test_sample.py:10: AssertionError"
       },
       {
         path: 'subproject/test_results/python/test_sample.py',
@@ -306,17 +306,15 @@ describe('parseFile', () => {
         annotation_level: 'failure',
         status: 'failure',
         title: 'pytest/test_with_error',
-        message: 'AttributeError: \'dict\' object has no attribute \'attr\'',
+        message: "AttributeError: 'dict' object has no attribute 'attr'",
         raw_details:
-          'def test_with_error():\n        event = { \'attr\': \'test\'}\n>       assert event.attr == \'test\'\nE       AttributeError: \'dict\' object has no attribute \'attr\'\n\npython/test_sample.py:14: AttributeError'
+          "def test_with_error():\n        event = { 'attr': 'test'}\n>       assert event.attr == 'test'\nE       AttributeError: 'dict' object has no attribute 'attr'\n\npython/test_sample.py:14: AttributeError"
       }
     ])
   })
 
   it('should parse marathon results', async () => {
-    const testResult = await parseFile(
-      'test_results/marathon_tests/com.mikepenz.DummyTest#test_02_dummy.xml'
-    )
+    const testResult = await parseFile('test_results/marathon_tests/com.mikepenz.DummyTest#test_02_dummy.xml')
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, globalAnnotations} = testResult!!
     const filtered = globalAnnotations.filter(annotation => annotation.annotation_level !== 'notice')
@@ -327,9 +325,7 @@ describe('parseFile', () => {
   })
 
   it('should parse marathon results and retrieve message', async () => {
-    const testResult = await parseFile(
-      'test_results/marathon_tests/com.mikepenz.DummyTest3#test_01.xml'
-    )
+    const testResult = await parseFile('test_results/marathon_tests/com.mikepenz.DummyTest3#test_01.xml')
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, globalAnnotations} = testResult!!
 
@@ -353,9 +349,7 @@ describe('parseFile', () => {
   })
 
   it('should parse and fail marathon results', async () => {
-    const testResult = await parseFile(
-      'test_results/marathon_tests/com.mikepenz.DummyUtilTest#test_01_dummy.xml'
-    )
+    const testResult = await parseFile('test_results/marathon_tests/com.mikepenz.DummyUtilTest#test_01_dummy.xml')
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, globalAnnotations} = testResult!!
 
@@ -837,7 +831,8 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
-        title: 'default config/Config files default config projectUTCOffset should be a callable with current UTC offset',
+        title:
+          'default config/Config files default config projectUTCOffset should be a callable with current UTC offset',
         message: 'Config files default config projectUTCOffset should be a callable with current UTC offset',
         raw_details: ''
       }
@@ -987,14 +982,10 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
   })
 
   it('should handle retries', async () => {
-    const testResult = await parseFile(
-      'test_results/junit-web-test/expectedRetries.xml',
-      '',
-      false,
-      false,
-      true,
-      ['/build/', '/__pycache__/']
-    )
+    const testResult = await parseFile('test_results/junit-web-test/expectedRetries.xml', '', false, false, true, [
+      '/build/',
+      '/__pycache__/'
+    ])
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, globalAnnotations} = testResult!!
     const filtered = globalAnnotations.filter(annotation => annotation.annotation_level !== 'notice')
@@ -1020,11 +1011,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
   })
 
   it('there should be two errors if retries are not handled', async () => {
-    const testResult = await parseFile(
-      'test_results/junit-web-test/expectedRetries.xml',
-      '',
-      false
-    )
+    const testResult = await parseFile('test_results/junit-web-test/expectedRetries.xml', '', false)
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, globalAnnotations} = testResult!!
     const filtered = globalAnnotations.filter(annotation => annotation.annotation_level !== 'notice')
@@ -1064,13 +1051,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
   })
 
   it('merge flaky tests, and include retry count', async () => {
-    const testResult = await parseFile(
-      'test_results/junit-web-test/expectedRetries.xml',
-      '',
-      true,
-      true,
-      true,
-    )
+    const testResult = await parseFile('test_results/junit-web-test/expectedRetries.xml', '', true, true, true)
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, globalAnnotations} = testResult!!
     const filtered = globalAnnotations.filter(annotation => annotation.retries > 0)
@@ -1095,12 +1076,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
   })
 
   it('flaky tests, and include retry count', async () => {
-    const testResult = await parseFile(
-      'test_results/junit_flaky_failure/marathon_junit_report.xml',
-      '',
-      true,
-      true
-    )
+    const testResult = await parseFile('test_results/junit_flaky_failure/marathon_junit_report.xml', '', true, true)
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, globalAnnotations} = testResult!!
     const filtered = globalAnnotations.filter(annotation => annotation.retries > 0)
@@ -1109,17 +1085,17 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     expect(skippedCount).toBe(0)
     expect(filtered).toStrictEqual([
       {
-        'annotation_level': 'notice',
-        'end_column': 0,
-        'end_line': 1,
-        'message': 'testFlakyFailure',
-        'path': 'Class',
-        'raw_details': '',
-        'retries': 1,
-        'start_column': 0,
-        'start_line': 1,
-        'status': 'success',
-        'title': 'Class.testFlakyFailure'
+        annotation_level: 'notice',
+        end_column: 0,
+        end_line: 1,
+        message: 'testFlakyFailure',
+        path: 'Class',
+        raw_details: '',
+        retries: 1,
+        start_column: 0,
+        start_line: 1,
+        status: 'success',
+        title: 'Class.testFlakyFailure'
       }
     ])
   })

@@ -9,43 +9,37 @@ jest.setTimeout(30000)
 const NORMAL_TABLE = [
   [
     {
-      'data': '',
-      'header': true
+      data: '',
+      header: true
     },
     {
-      'data': 'Tests',
-      'header': true
+      data: 'Tests',
+      header: true
     },
     {
-      'data': 'Passed ✅',
-      'header': true
+      data: 'Passed ✅',
+      header: true
     },
     {
-      'data': 'Skipped ⏭️',
-      'header': true
+      data: 'Skipped ⏭️',
+      header: true
     },
     {
-      'data': 'Failed ❌',
-      'header': true
+      data: 'Failed ❌',
+      header: true
     }
   ],
-  [
-    'checkName',
-    '3 ran',
-    '3 passed',
-    '0 skipped',
-    '0 failed'
-  ]
+  ['checkName', '3 ran', '3 passed', '0 skipped', '0 failed']
 ]
 const FLAKY_TABLE = [
   [
     {
-      'data': 'Test',
-      'header': true
+      data: 'Test',
+      header: true
     },
     {
-      'data': 'Retries',
-      'header': true
+      data: 'Retries',
+      header: true
     }
   ]
 ]
@@ -71,32 +65,23 @@ describe('buildSummaryTables', () => {
     expect(detailTable).toStrictEqual([
       [
         {
-          "data": "Test",
-          "header": true
+          data: 'Test',
+          header: true
         },
         {
-          "data": "Result",
-          "header": true
+          data: 'Result',
+          header: true
         }
       ],
       [
         {
-          "data": "<strong>checkName</strong>",
-          "colspan": "2"
+          data: '<strong>checkName</strong>',
+          colspan: '2'
         }
       ],
-      [
-        "ABC-0199: XMPP Ping/PingIntegrationTest.pingAsync (Normal)",
-        "✅ pass"
-      ],
-      [
-        "ABC-0199: XMPP Ping/PingIntegrationTest.pingServer (Normal)",
-        "✅ pass"
-      ],
-      [
-        "ABC-0045: Multi-User Chat/MultiUserIntegrationTest.mucRoleTestForReceivingModerator (Normal)",
-        "✅ pass"
-      ]
+      ['ABC-0199: XMPP Ping/PingIntegrationTest.pingAsync (Normal)', '✅ pass'],
+      ['ABC-0199: XMPP Ping/PingIntegrationTest.pingServer (Normal)', '✅ pass'],
+      ['ABC-0045: Multi-User Chat/MultiUserIntegrationTest.mucRoleTestForReceivingModerator (Normal)', '✅ pass']
     ])
     expect(flakyTable).toStrictEqual(FLAKY_TABLE)
   })
@@ -121,44 +106,35 @@ describe('buildSummaryTables', () => {
     expect(detailTable).toStrictEqual([
       [
         {
-          "data": "Test",
-          "header": true
+          data: 'Test',
+          header: true
         },
         {
-          "data": "Result",
-          "header": true
+          data: 'Result',
+          header: true
         }
       ],
       [
         {
-          "data": "<strong>checkName</strong>",
-          "colspan": "2"
+          data: '<strong>checkName</strong>',
+          colspan: '2'
         }
       ],
       [
         {
-          "data": "<em>ABC-0199: XMPP Ping</em>",
-          "colspan": "2"
+          data: '<em>ABC-0199: XMPP Ping</em>',
+          colspan: '2'
         }
       ],
-      [
-        "ABC-0199: XMPP Ping/PingIntegrationTest.pingAsync (Normal)",
-        "✅ pass"
-      ],
-      [
-        "ABC-0199: XMPP Ping/PingIntegrationTest.pingServer (Normal)",
-        "✅ pass"
-      ],
+      ['ABC-0199: XMPP Ping/PingIntegrationTest.pingAsync (Normal)', '✅ pass'],
+      ['ABC-0199: XMPP Ping/PingIntegrationTest.pingServer (Normal)', '✅ pass'],
       [
         {
-          "data": "<em>ABC-0045: Multi-User Chat</em>",
-          "colspan": "2"
+          data: '<em>ABC-0045: Multi-User Chat</em>',
+          colspan: '2'
         }
       ],
-      [
-        "ABC-0045: Multi-User Chat/MultiUserIntegrationTest.mucRoleTestForReceivingModerator (Normal)",
-        "✅ pass"
-      ]
+      ['ABC-0045: Multi-User Chat/MultiUserIntegrationTest.mucRoleTestForReceivingModerator (Normal)', '✅ pass']
     ])
     expect(flakyTable).toStrictEqual(FLAKY_TABLE)
   })
