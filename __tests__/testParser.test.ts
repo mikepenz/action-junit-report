@@ -1068,7 +1068,8 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       'test_results/junit-web-test/expectedRetries.xml',
       '',
       true,
-      true
+      true,
+      true,
     )
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, globalAnnotations} = testResult!!
