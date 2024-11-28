@@ -163,6 +163,7 @@ A full set list of possible output values for this action.
 | `outputs.total`            | The total number of test cases covered by this test-step.                                                           |
 | `outputs.passed`           | The number of passed test cases.                                                                                    |
 | `outputs.skipped`          | The number of skipped test cases.                                                                                   |
+| `outputs.retried`          | The number of retried test cases.                                                                                   |
 | `outputs.failed`           | The number of failed test cases.                                                                                    |
 | `outputs.summary`          | The short summary of the junit report. In html format (as also constructed by GitHub for the summary).              |
 | `outputs.detailed_summary` | The full table with all test results in a summary. In html format (as also constructed by GitHub for the summary).  |
