@@ -144,9 +144,16 @@ export async function resolvePath(
     return resolvePathCache[fileName]
   }
 
-  core.debug(`Resolving path for ${fileName}`)
+  let workspacePath: string
+  if (workspace.length === 0 || workspace.endsWith('/')) {
+    workspacePath = workspace
+  } else {
+    workspacePath = `${workspace}/`
+  }
+
+  core.debug(`Resolving path for ${fileName} in ${workspacePath}`)
   const normalizedFilename = fileName.replace(/^\.\//, '') // strip relative prefix (./)
-  const globber = await glob.create(`${workspace}/**/${normalizedFilename}.*`, {
+  const globber = await glob.create(`${workspacePath}**/${normalizedFilename}.*`, {
     followSymbolicLinks: followSymlink
   })
   const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : ''
