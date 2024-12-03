@@ -128,6 +128,10 @@ inputs:
     description: 'Truncate stack traces from test output to 2 lines in annotations'
     required: false
     default: 'true'
+  resolve_ignore_classname:
+    description: 'Force ignore classname in resolveFileAndLine (Fixes nextest annotations)'
+    required: false
+    default: 'false'
 outputs:
   total:
     description: 'The total count of all checks'

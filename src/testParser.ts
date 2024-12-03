@@ -197,7 +197,8 @@ export async function parseFile(
   annotationsLimit = -1,
   truncateStackTraces = true,
   failOnParseError = false,
-  globalAnnotations: Annotation[] = []
+  globalAnnotations: Annotation[] = [],
+  resolveIgnoreClassname = false
 ): Promise<ActualTestResult | undefined> {
   core.debug(`Parsing file ${file}`)
 
@@ -236,7 +237,8 @@ export async function parseFile(
     followSymlink,
     annotationsLimit,
     truncateStackTraces,
-    globalAnnotations
+    globalAnnotations,
+    resolveIgnoreClassname
   )
 }
 
@@ -260,7 +262,8 @@ async function parseSuite(
   followSymlink: boolean,
   annotationsLimit: number,
   truncateStackTraces: boolean,
-  globalAnnotations: Annotation[]
+  globalAnnotations: Annotation[],
+  resolveIgnoreClassname = false
 ): Promise<ActualTestResult | undefined> {
   if (!suite) {
     // not a valid suite, return fast
@@ -298,7 +301,8 @@ async function parseSuite(
       transformer,
       followSymlink,
       truncateStackTraces,
-      limit
+      limit,
+      resolveIgnoreClassname
     )
 
     // expand global annotations array
@@ -348,7 +352,8 @@ async function parseSuite(
       followSymlink,
       annotationsLimit,
       truncateStackTraces,
-      globalAnnotations
+      globalAnnotations,
+      resolveIgnoreClassname
     )
 
     if (childSuiteResult) {
@@ -398,7 +403,8 @@ async function parseTestCases(
   transformer: Transformer[],
   followSymlink: boolean,
   truncateStackTraces: boolean,
-  limit = -1
+  limit = -1,
+  resolveIgnoreClassname = false
 ): Promise<TestCasesResult> {
   const annotations: Annotation[] = []
   let totalCount = 0
@@ -488,10 +494,15 @@ async function parseTestCases(
       testcase._attributes.name
     ).trim()
 
+    let resolveClassname = testcase._attributes.name
+    if (!resolveIgnoreClassname && testcase._attributes.classname) {
+      resolveClassname = testcase._attributes.classname
+    }
+
     const pos = await resolveFileAndLine(
       testcase._attributes.file || failure?._attributes?.file || suiteFile,
       testcase._attributes.line || failure?._attributes?.line || suiteLine,
-      testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name,
+      resolveClassname,
       stackTrace
     )
 
@@ -530,7 +541,11 @@ async function parseTestCases(
         .replace(templateVar('TEST_NAME'), testcase._attributes.name)
         .replace(templateVar('CLASS_NAME'), className)
     } else if (pos.fileName !== testcase._attributes.name) {
-      title = `${pos.fileName}.${testcase._attributes.name}`
+      if (resolveIgnoreClassname && testcase._attributes.classname) {
+        title = `${testcase._attributes.classname}.${testcase._attributes.name}`
+      } else {
+        title = `${pos.fileName}.${testcase._attributes.name}`
+      }
     } else {
       title = `${testcase._attributes.name}`
     }
@@ -591,7 +606,8 @@ export async function parseTestReports(
   followSymlink = false,
   annotationsLimit = -1,
   truncateStackTraces = true,
-  failOnParseError = false
+  failOnParseError = false,
+  resolveIgnoreClassname = false
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const globber = await glob.create(reportPaths, {followSymbolicLinks: followSymlink})
@@ -620,7 +636,8 @@ export async function parseTestReports(
       annotationsLimit,
       truncateStackTraces,
       failOnParseError,
-      globalAnnotations
+      globalAnnotations,
+      resolveIgnoreClassname
     )
 
     if (!testResult) continue
