@@ -48,6 +48,7 @@ export async function run(): Promise<void> {
     const annotationsLimit = Number(core.getInput('annotations_limit') || -1)
     const skipAnnotations = core.getInput('skip_annotations') === 'true'
     const truncateStackTraces = core.getBooleanInput('truncate_stack_traces')
+    const resolveIgnoreClassname = core.getBooleanInput('resolve_ignore_classname')
 
     if (excludeSources.length === 0) {
       excludeSources = ['/build/', '/__pycache__/']
@@ -91,7 +92,8 @@ export async function run(): Promise<void> {
         followSymlink,
         annotationsLimit,
         truncateStackTraces,
-        failOnParseError
+        failOnParseError,
+        resolveIgnoreClassname
       )
       mergedResult.totalCount += testResult.totalCount
       mergedResult.skipped += testResult.skipped

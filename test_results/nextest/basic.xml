@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="nextest-run" tests="3" failures="1" errors="0" uuid="437f8a75-ec69-48cf-9bda-e3f5045c2c28" timestamp="2024-12-02T20:06:10.512+00:00" time="0.946">
+    <testsuite name="oxidized_navigation::parry3d" tests="3" disabled="0" errors="0" failures="1">
+        <testcase name="test_failure" classname="oxidized_navigation::parry3d" timestamp="2024-12-02T20:06:10.513+00:00" time="0.774">
+            <failure type="test failure">thread &apos;test_failure&apos; panicked at tests/parry3d.rs:154:5:
+                assertion `left == right` failed: 0 must equal 1
+                left: 0
+                right: 1
+                note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace</failure>
+            <system-out>
+                running 1 test
+                test test_failure ... FAILED
+
+                failures:
+
+                failures:
+                test_failure
+
+                test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.66s
+
+            </system-out>
+            <system-err>thread &apos;test_failure&apos; panicked at tests/parry3d.rs:154:5:
+                assertion `left == right` failed: 0 must equal 1
+                left: 0
+                right: 1
+                note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+            </system-err>
+        </testcase>
+        <testcase name="test_simple_navigation" classname="oxidized_navigation::parry3d" timestamp="2024-12-02T20:06:10.514+00:00" time="0.944">
+            <system-out>
+                running 1 test
+                test test_simple_navigation ... ok
+
+                test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.70s
+
+            </system-out>
+            <system-err></system-err>
+        </testcase>
+        <testcase name="test_annotations" classname="oxidized_navigation::parry3d" timestamp="2024-12-02T20:06:10.512+00:00" time="0.945">
+            <system-out>
+                running 1 test
+                test test_annotations ... ok
+
+                test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.74s
+
+            </system-out>
+            <system-err></system-err>
+        </testcase>
+    </testsuite>
+</testsuites>

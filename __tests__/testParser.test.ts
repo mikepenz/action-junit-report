@@ -409,6 +409,52 @@ describe('parseFile', () => {
     ])
   })
 
+  it('should ignore classname when requested', async () => {
+    const testResult = await parseFile(
+      'test_results/nextest/basic.xml',
+      '',
+      false,
+      false,
+      false,
+      undefined,
+      undefined,
+      '/',
+      '',
+      undefined,
+      false,
+      -1,
+      true,
+      false,
+      undefined,
+      true)
+    expect(testResult).toBeDefined()
+    const {totalCount, skippedCount, globalAnnotations} = testResult!!
+    const filtered = globalAnnotations.filter(annotation => annotation.annotation_level !== 'notice')
+
+    expect(totalCount).toBe(3)
+    expect(skippedCount).toBe(0)
+    expect(filtered).toStrictEqual([
+      {
+        annotation_level: 'failure',
+        end_column: 0,
+        end_line: 154,
+        message: 'thread \'test_failure\' panicked at tests/parry3d.rs:154:5:\n' +
+          '                assertion `left == right` failed: 0 must equal 1',
+        path: 'tests/parry3d.rs',
+        raw_details: 'thread \'test_failure\' panicked at tests/parry3d.rs:154:5:\n' +
+          '                assertion `left == right` failed: 0 must equal 1\n' +
+          '                left: 0\n' +
+          '                right: 1\n' +
+          '                note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace',
+        start_column: 0,
+        start_line: 154,
+        retries: 0,
+        status: 'failure',
+        title: 'oxidized_navigation::parry3d.test_failure'
+      }
+    ])
+  })
+
   it('should parse correctly fileName and line for a Java file with invalid chars', async () => {
     const {fileName, line} = await resolveFileAndLine(
       null,
