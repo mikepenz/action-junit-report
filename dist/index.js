@@ -426,13 +426,21 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.buildSummaryTables = buildSummaryTables;
 const core = __importStar(__nccwpck_require__(7484));
 function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, groupSuite = false) {
+    // only include a warning icon if there are skipped tests
+    const hasPassed = testResults.some(testResult => testResult.passed > 0);
+    const hasSkipped = testResults.some(testResult => testResult.skipped > 0);
+    const hasFailed = testResults.some(testResult => testResult.failed > 0);
+    const hasTests = testResults.some(testResult => testResult.totalCount > 0);
+    const passedHeader = hasTests ? (hasPassed ? (hasFailed ? 'Passed ☑️' : 'Passed ✅') : 'Passed') : 'Passed ❌️';
+    const skippedHeader = hasSkipped ? 'Skipped ⚠️' : 'Skipped';
+    const failedHeader = hasFailed ? 'Failed ❌️' : 'Failed';
     const table = [
         [
             { data: '', header: true },
             { data: 'Tests', header: true },
-            { data: 'Passed ✅', header: true },
-            { data: 'Skipped ⏭️', header: true },
-            { data: 'Failed ❌', header: true }
+            { data: passedHeader, header: true },
+            { data: skippedHeader, header: true },
+            { data: failedHeader, header: true }
         ]
     ];
     const detailsTable = !detailedSummary
@@ -476,7 +484,7 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
                             `${annotation.status === 'success'
                                 ? '✅ pass'
                                 : annotation.status === 'skipped'
-                                    ? `⏭️ skipped`
+                                    ? `⚠️️ skipped`
                                     : `❌ ${annotation.annotation_level}`}`
                         ]);
                     }
@@ -510,7 +518,7 @@ function appendDetailsTable(testResult, detailsTable, includePassed) {
                 `${annotation.status === 'success'
                     ? '✅ pass'
                     : annotation.status === 'skipped'
-                        ? `⏭️ skipped`
+                        ? `⚠️️ skipped`
                         : `❌ ${annotation.annotation_level}`}`
             ]);
         }
