@@ -694,7 +694,7 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
     // parse child test suites
     const testsuite = report.testsuites ? report.testsuites : report.testsuite;
     if (!testsuite) {
-        core.error(`⚠️ Failed to retrieve root test suite`);
+        core.error(`⚠️ Failed to retrieve root test suite from file (${file})`);
         return undefined;
     }
     return await parseSuite(testsuite, suiteRegex, // no-op
