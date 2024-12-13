@@ -217,7 +217,7 @@ export async function parseFile(
   const testsuite = report.testsuites ? report.testsuites : report.testsuite
 
   if (!testsuite) {
-    core.error(`⚠️ Failed to retrieve root test suite`)
+    core.error(`⚠️ Failed to retrieve root test suite from file (${file})`)
     return undefined
   }
 
