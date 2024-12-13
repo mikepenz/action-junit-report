@@ -541,6 +541,7 @@ async function parseTestCases(
         .replace(templateVar('TEST_NAME'), testcase._attributes.name)
         .replace(templateVar('CLASS_NAME'), className)
     } else if (pos.fileName !== testcase._attributes.name) {
+      // special handling to use class name only for title in face class name was ignored for `resolveClassname1
       if (resolveIgnoreClassname && testcase._attributes.classname) {
         title = `${testcase._attributes.classname}.${testcase._attributes.name}`
       } else {

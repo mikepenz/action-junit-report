@@ -129,7 +129,7 @@ inputs:
     required: false
     default: 'true'
   resolve_ignore_classname:
-    description: 'Force ignore classname in resolveFileAndLine (Fixes nextest annotations)'
+    description: 'Force ignore test case classname from the xml report (This can help fix issues with some tools/languages)'
     required: false
     default: 'false'
 outputs:
