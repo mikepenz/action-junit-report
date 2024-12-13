@@ -21,11 +21,11 @@ const NORMAL_TABLE = [
       header: true
     },
     {
-      data: 'Skipped ⏭️',
+      data: 'Skipped',
       header: true
     },
     {
-      data: 'Failed ❌',
+      data: 'Failed',
       header: true
     }
   ],
