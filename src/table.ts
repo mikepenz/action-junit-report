@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
-import {SummaryTableRow} from '@actions/core/lib/summary'
-import {ActualTestResult, TestResult} from './testParser'
+// eslint-disable-next-line import/extensions
+import {SummaryTableRow} from '@actions/core/lib/summary.js'
+import {ActualTestResult, TestResult} from './testParser.js'
 
 export function buildSummaryTables(
   testResults: TestResult[],
