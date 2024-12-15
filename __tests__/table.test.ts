@@ -1,5 +1,5 @@
-import {parseTestReports} from '../src/testParser'
-import {buildSummaryTables} from '../src/table'
+import {parseTestReports} from '../src/testParser.js'
+import {buildSummaryTables} from '../src/table.js'
 
 /**
  *   Copyright Mike Penz

@@ -1,4 +1,4 @@
-import {readTransformers} from '../src/utils'
+import {readTransformers} from '../src/utils.js'
 
 /**
  *   Copyright 2024 Mike Penz

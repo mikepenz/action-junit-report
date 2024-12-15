@@ -1,4 +1,4 @@
-import {parseFile, parseTestReports, resolveFileAndLine, resolvePath, Transformer} from '../src/testParser'
+import {parseFile, parseTestReports, resolveFileAndLine, resolvePath, Transformer} from '../src/testParser.js'
 
 /**
  * Original test cases:
@@ -426,7 +426,8 @@ describe('parseFile', () => {
       true,
       false,
       undefined,
-      true)
+      true
+    )
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, globalAnnotations} = testResult!!
     const filtered = globalAnnotations.filter(annotation => annotation.annotation_level !== 'notice')
@@ -438,10 +439,12 @@ describe('parseFile', () => {
         annotation_level: 'failure',
         end_column: 0,
         end_line: 154,
-        message: 'thread \'test_failure\' panicked at tests/parry3d.rs:154:5:\n' +
+        message:
+          "thread 'test_failure' panicked at tests/parry3d.rs:154:5:\n" +
           '                assertion `left == right` failed: 0 must equal 1',
         path: 'tests/parry3d.rs',
-        raw_details: 'thread \'test_failure\' panicked at tests/parry3d.rs:154:5:\n' +
+        raw_details:
+          "thread 'test_failure' panicked at tests/parry3d.rs:154:5:\n" +
           '                assertion `left == right` failed: 0 must equal 1\n' +
           '                left: 0\n' +
           '                right: 1\n' +

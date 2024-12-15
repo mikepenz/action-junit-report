@@ -3,7 +3,7 @@ import * as glob from '@actions/glob'
 import * as fs from 'fs'
 import * as parser from 'xml-js'
 import * as pathHelper from 'path'
-import {applyTransformer, removePrefix} from './utils'
+import {applyTransformer, removePrefix} from './utils.js'
 
 export interface ActualTestResult {
   name: string

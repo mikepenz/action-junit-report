@@ -1,9 +1,11 @@
 import * as core from '@actions/core'
-import {Annotation, TestResult} from './testParser'
+import {Annotation, TestResult} from './testParser.js'
 import * as github from '@actions/github'
-import {SummaryTableRow} from '@actions/core/lib/summary'
-import {context, GitHub} from '@actions/github/lib/utils'
-import {buildTable} from './utils'
+// eslint-disable-next-line import/extensions
+import {SummaryTableRow} from '@actions/core/lib/summary.js'
+// eslint-disable-next-line import/extensions
+import {context, GitHub} from '@actions/github/lib/utils.js'
+import {buildTable} from './utils.js'
 
 export async function annotateTestResult(
   testResult: TestResult,
