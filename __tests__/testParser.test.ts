@@ -242,9 +242,9 @@ describe('parseFile', () => {
         annotation_level: 'failure',
         status: 'failure',
         title: 'test_sample.test_which_fails',
-        message: 'AssertionError: assert \'test\' == \'xyz\'\n  - xyz\n  + test',
+        message: "AssertionError: assert 'test' == 'xyz'\n  - xyz\n  + test",
         raw_details:
-          'def test_which_fails():\n        event = { \'attr\': \'test\'}\n>       assert event[\'attr\'] == \'xyz\'\nE       AssertionError: assert \'test\' == \'xyz\'\nE         - xyz\nE         + test\n\npython/test_sample.py:10: AssertionError'
+          "def test_which_fails():\n        event = { 'attr': 'test'}\n>       assert event['attr'] == 'xyz'\nE       AssertionError: assert 'test' == 'xyz'\nE         - xyz\nE         + test\n\npython/test_sample.py:10: AssertionError"
       },
       {
         path: 'test_results/python/test_sample.py',
@@ -256,9 +256,9 @@ describe('parseFile', () => {
         annotation_level: 'failure',
         status: 'failure',
         title: 'test_sample.test_with_error',
-        message: 'AttributeError: \'dict\' object has no attribute \'attr\'',
+        message: "AttributeError: 'dict' object has no attribute 'attr'",
         raw_details:
-          'def test_with_error():\n        event = { \'attr\': \'test\'}\n>       assert event.attr == \'test\'\nE       AttributeError: \'dict\' object has no attribute \'attr\'\n\npython/test_sample.py:14: AttributeError'
+          "def test_with_error():\n        event = { 'attr': 'test'}\n>       assert event.attr == 'test'\nE       AttributeError: 'dict' object has no attribute 'attr'\n\npython/test_sample.py:14: AttributeError"
       }
     ])
   })
@@ -292,9 +292,9 @@ describe('parseFile', () => {
         annotation_level: 'failure',
         status: 'failure',
         title: 'pytest/test_which_fails',
-        message: 'AssertionError: assert \'test\' == \'xyz\'\n  - xyz\n  + test',
+        message: "AssertionError: assert 'test' == 'xyz'\n  - xyz\n  + test",
         raw_details:
-          'def test_which_fails():\n        event = { \'attr\': \'test\'}\n>       assert event[\'attr\'] == \'xyz\'\nE       AssertionError: assert \'test\' == \'xyz\'\nE         - xyz\nE         + test\n\npython/test_sample.py:10: AssertionError'
+          "def test_which_fails():\n        event = { 'attr': 'test'}\n>       assert event['attr'] == 'xyz'\nE       AssertionError: assert 'test' == 'xyz'\nE         - xyz\nE         + test\n\npython/test_sample.py:10: AssertionError"
       },
       {
         path: 'subproject/test_results/python/test_sample.py',
@@ -306,9 +306,9 @@ describe('parseFile', () => {
         annotation_level: 'failure',
         status: 'failure',
         title: 'pytest/test_with_error',
-        message: 'AttributeError: \'dict\' object has no attribute \'attr\'',
+        message: "AttributeError: 'dict' object has no attribute 'attr'",
         raw_details:
-          'def test_with_error():\n        event = { \'attr\': \'test\'}\n>       assert event.attr == \'test\'\nE       AttributeError: \'dict\' object has no attribute \'attr\'\n\npython/test_sample.py:14: AttributeError'
+          "def test_with_error():\n        event = { 'attr': 'test'}\n>       assert event.attr == 'test'\nE       AttributeError: 'dict' object has no attribute 'attr'\n\npython/test_sample.py:14: AttributeError"
       }
     ])
   })
@@ -426,7 +426,8 @@ describe('parseFile', () => {
       true,
       false,
       undefined,
-      true)
+      true
+    )
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, globalAnnotations} = testResult!!
     const filtered = globalAnnotations.filter(annotation => annotation.annotation_level !== 'notice')
@@ -438,10 +439,12 @@ describe('parseFile', () => {
         annotation_level: 'failure',
         end_column: 0,
         end_line: 154,
-        message: 'thread \'test_failure\' panicked at tests/parry3d.rs:154:5:\n' +
+        message:
+          "thread 'test_failure' panicked at tests/parry3d.rs:154:5:\n" +
           '                assertion `left == right` failed: 0 must equal 1',
         path: 'tests/parry3d.rs',
-        raw_details: 'thread \'test_failure\' panicked at tests/parry3d.rs:154:5:\n' +
+        raw_details:
+          "thread 'test_failure' panicked at tests/parry3d.rs:154:5:\n" +
           '                assertion `left == right` failed: 0 must equal 1\n' +
           '                left: 0\n' +
           '                right: 1\n' +

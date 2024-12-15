@@ -300,6 +300,9 @@ $ npm install
 # Verify lint is happy
 $ npm run lint -- --fix
 
+# Format
+$ npm run format
+
 # Build the typescript and package it for distribution
 $ npm run build && npm run package
 
