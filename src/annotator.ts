@@ -4,7 +4,7 @@ import * as github from '@actions/github'
 // eslint-disable-next-line import/extensions
 import {SummaryTableRow} from '@actions/core/lib/summary.js'
 // eslint-disable-next-line import/extensions
-import {GitHub, context} from '@actions/github/lib/utils.js'
+import {context, GitHub} from '@actions/github/lib/utils.js'
 import {buildTable} from './utils.js'
 
 export async function annotateTestResult(

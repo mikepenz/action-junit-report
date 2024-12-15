@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {annotateTestResult, attachComment, attachSummary} from './annotator.js'
-import {TestResult, parseTestReports} from './testParser.js'
+import {parseTestReports, TestResult} from './testParser.js'
 import {buildTable, readTransformers, retrieve} from './utils.js'
 // eslint-disable-next-line import/extensions
 import {GitHub} from '@actions/github/lib/utils.js'
