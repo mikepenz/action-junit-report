@@ -34,7 +34,7 @@
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
     "@actions/glob": "^0.5.0",
-    "@octokit/rest": "^21.0.2",
+    "@octokit/rest": "^21.1.0",
     "eslint-import-resolver-typescript": "^3.7.0",
     "nock": "^13.5.6",
     "webpack": "^5.97.1",
