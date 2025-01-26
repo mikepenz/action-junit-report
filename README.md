@@ -94,9 +94,10 @@ jobs:
 | `annotate_only`            | Optional. Will only annotate the results on the files, won't create a check run. Defaults to `false`.                                                                                               |
 | `transformers`             | Optional. Array of `Transformer`s offering the ability to adjust the fileName. Defaults to: `[{"searchValue":"::","replaceValue":"/"}]`                                                             |
 | `job_summary`              | Optional. Enables the publishing of the job summary for the results. Defaults to `true`. May be required to disable [Enterprise Server](https://github.com/mikepenz/action-junit-report/issues/637) |
-| `detailed_summary`         | Optional. Include table with all test results in the summary. Defaults to `false`.                                                                                                                  |
-| `flaky_summary`            | Optional. Include table with all flaky results in the summary. Defaults to `false`.                                                                                                                 |
-| `verbose_summary`          | Optional. Detail table will note if there were no test annotations for a test suite. Defaults to `true`.                                                                                            |
+| `detailed_summary`         | Optional. Include table with all test results in the summary (Also applies to comment). Defaults to `false`.                                                                                        |
+| `flaky_summary`            | Optional. Include table with all flaky results in the summary (Also applies to comment). Defaults to `false`.                                                                                       |
+| `verbose_summary`          | Optional. Detail table will note if there were no test annotations for a test suite (Also applies to comment). Defaults to `true`.                                                                  |
+| `skip_success_summary`     | Optional. Skips the summary table if only successful tests were detected (Also applies to comment). Defaults to `true`.                                                                             |
 | `group_suite`              | Optional. If enabled, will group the testcases by test suite in the `detailed_summary`. Defaults to `false`.                                                                                        |
 | `comment`                  | Optional. Enables a comment being added to the PR with the summary tables (Respects the summary configuration flags). Defaults to `false`.                                                          |
 | `updateComment`            | Optional. If a prior action run comment exists, it is updated. If disabled, new comments are creted for each run. Defaults to `true`.                                                               |
@@ -149,7 +150,6 @@ you can increase the memory allocation by setting an environment variable
 
 </p>
 </details>
-
 
 ### Action outputs
 
@@ -279,8 +279,6 @@ jobs:
 This will selectively use different methods for forked and unforked repos.
 </p>
 </details>
-
-
 
 ## Sample 🖥️
 

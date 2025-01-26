@@ -32,6 +32,7 @@ export async function run(): Promise<void> {
     const detailedSummary = core.getInput('detailed_summary') === 'true'
     const flakySummary = core.getInput('flaky_summary') === 'true'
     const verboseSummary = core.getInput('verbose_summary') === 'true'
+    const skipSuccessSummary = core.getInput('skip_success_summary') === 'true'
     const groupSuite = core.getInput('group_suite') === 'true'
     const comment = core.getInput('comment') === 'true'
     const updateComment = core.getInput('updateComment') === 'true'
@@ -157,6 +158,7 @@ export async function run(): Promise<void> {
       detailedSummary,
       flakySummary,
       verboseSummary,
+      skipSuccessSummary,
       groupSuite
     )
     if (jobSummary && supportsJobSummary) {

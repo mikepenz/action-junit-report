@@ -131,7 +131,9 @@ export async function attachSummary(
   detailsTable: SummaryTableRow[],
   flakySummary: SummaryTableRow[]
 ): Promise<void> {
-  await core.summary.addTable(table).write()
+  if (table.length > 0) {
+    await core.summary.addTable(table).write()
+  }
   if (detailsTable.length > 1) {
     await core.summary.addTable(detailsTable).write()
   }
@@ -154,6 +156,11 @@ export async function attachComment(
 ): Promise<void> {
   if (!context.issue.number) {
     core.warning(`⚠️ Action requires a valid issue number (PR reference) to be able to attach a comment..`)
+    return
+  }
+
+  if (table.length === 0 && detailsTable.length === 0 && flakySummary.length === 0) {
+    core.debug(`Tables for comment were empty. 'skip_success_summary' enabled?`)
     return
   }
 

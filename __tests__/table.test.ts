@@ -59,7 +59,7 @@ describe('buildSummaryTables', () => {
       '/'
     )
 
-    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true)
+    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true, false)
 
     expect(table).toStrictEqual(NORMAL_TABLE)
     expect(detailTable).toStrictEqual([
@@ -86,7 +86,7 @@ describe('buildSummaryTables', () => {
     expect(flakyTable).toStrictEqual(FLAKY_TABLE)
   })
 
-  it('should group detail tables', async () => {
+  it('should skip only successful tables', async () => {
     const testResult = await parseTestReports(
       'checkName',
       'summary',
@@ -101,6 +101,26 @@ describe('buildSummaryTables', () => {
     )
 
     const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true, true)
+    expect(table).toStrictEqual([])
+    expect(detailTable).toStrictEqual([])
+    expect(flakyTable).toStrictEqual([])
+  })
+
+  it('should group detail tables', async () => {
+    const testResult = await parseTestReports(
+      'checkName',
+      'summary',
+      'test_results/nested/multi-level.xml',
+      '*',
+      true,
+      true,
+      true,
+      [],
+      '{{SUITE_NAME}}/{{TEST_NAME}}',
+      '/'
+    )
+
+    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true, false, true)
 
     expect(table).toStrictEqual(NORMAL_TABLE)
     expect(detailTable).toStrictEqual([
