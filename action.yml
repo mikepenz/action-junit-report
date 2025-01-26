@@ -98,6 +98,10 @@ inputs:
     description: 'Include note of missing test annotations in summary.'
     required: false
     default: 'true'
+  skip_success_summary:
+    description: 'Skips summaries that would not contain failed tests'
+    required: false
+    default: 'false'
   group_suite:
     description: 'If enabled, will group the testcases by test suite in the `detailed_summary`'
     required: false

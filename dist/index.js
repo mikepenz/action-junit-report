@@ -36850,7 +36850,9 @@ async function updateChecks(octokit, check_run_id, title, summary, annotations) 
     await octokit.rest.checks.update(updateCheckRequest);
 }
 async function attachSummary(table, detailsTable, flakySummary) {
-    await core.summary.addTable(table).write();
+    if (table.length > 0) {
+        await core.summary.addTable(table).write();
+    }
     if (detailsTable.length > 1) {
         await core.summary.addTable(detailsTable).write();
     }
@@ -36864,6 +36866,10 @@ function buildCommentIdentifier(checkName) {
 async function attachComment(octokit, checkName, updateComment, table, detailsTable, flakySummary) {
     if (!utils.context.issue.number) {
         core.warning(`⚠️ Action requires a valid issue number (PR reference) to be able to attach a comment..`);
+        return;
+    }
+    if (table.length === 0 && detailsTable.length === 0 && flakySummary.length === 0) {
+        core.debug(`Tables for comment were empty. 'skip_success_summary' enabled?`);
         return;
     }
     const identifier = buildCommentIdentifier(checkName);
@@ -37347,12 +37353,16 @@ function escapeEmoji(input) {
 
 ;// CONCATENATED MODULE: ./lib/table.js
 
-function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, groupSuite = false) {
+function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite = false) {
     // only include a warning icon if there are skipped tests
     const hasPassed = testResults.some(testResult => testResult.passed > 0);
     const hasSkipped = testResults.some(testResult => testResult.skipped > 0);
     const hasFailed = testResults.some(testResult => testResult.failed > 0);
     const hasTests = testResults.some(testResult => testResult.totalCount > 0);
+    if (skipSuccessSummary && !hasFailed) {
+        // if we have skip success summary enabled, and we don't have any test failures, return empty tables
+        return [[], [], []];
+    }
     const passedHeader = hasTests ? (hasPassed ? (hasFailed ? 'Passed ☑️' : 'Passed ✅') : 'Passed') : 'Passed ❌️';
     const skippedHeader = hasSkipped ? 'Skipped ⚠️' : 'Skipped';
     const failedHeader = hasFailed ? 'Failed ❌️' : 'Failed';
@@ -37482,6 +37492,7 @@ async function run() {
         const detailedSummary = core.getInput('detailed_summary') === 'true';
         const flakySummary = core.getInput('flaky_summary') === 'true';
         const verboseSummary = core.getInput('verbose_summary') === 'true';
+        const skipSuccessSummary = core.getInput('skip_success_summary') === 'true';
         const groupSuite = core.getInput('group_suite') === 'true';
         const comment = core.getInput('comment') === 'true';
         const updateComment = core.getInput('updateComment') === 'true';
@@ -37561,7 +37572,7 @@ async function run() {
             }
         }
         const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
-        const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, groupSuite);
+        const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite);
         if (jobSummary && supportsJobSummary) {
             try {
                 await attachSummary(table, detailTable, flakyTable);

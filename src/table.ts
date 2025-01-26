@@ -9,6 +9,7 @@ export function buildSummaryTables(
   detailedSummary: boolean,
   flakySummary: boolean,
   verboseSummary: boolean,
+  skipSuccessSummary: boolean,
   groupSuite = false
 ): [SummaryTableRow[], SummaryTableRow[], SummaryTableRow[]] {
   // only include a warning icon if there are skipped tests
@@ -16,6 +17,11 @@ export function buildSummaryTables(
   const hasSkipped = testResults.some(testResult => testResult.skipped > 0)
   const hasFailed = testResults.some(testResult => testResult.failed > 0)
   const hasTests = testResults.some(testResult => testResult.totalCount > 0)
+
+  if (skipSuccessSummary && !hasFailed) {
+    // if we have skip success summary enabled, and we don't have any test failures, return empty tables
+    return [[], [], []]
+  }
 
   const passedHeader = hasTests ? (hasPassed ? (hasFailed ? 'Passed ☑️' : 'Passed ✅') : 'Passed') : 'Passed ❌️'
   const skippedHeader = hasSkipped ? 'Skipped ⚠️' : 'Skipped'
