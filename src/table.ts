@@ -8,6 +8,7 @@ export function buildSummaryTables(
   includePassed: boolean,
   detailedSummary: boolean,
   flakySummary: boolean,
+  verboseSummary: boolean,
   groupSuite = false
 ): [SummaryTableRow[], SummaryTableRow[], SummaryTableRow[]] {
   // only include a warning icon if there are skipped tests
@@ -67,7 +68,9 @@ export function buildSummaryTables(
           `⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`
         )
       }
-      detailsTable.push([{data: `No test annotations available`, colspan: '2'}])
+      if (verboseSummary) {
+        detailsTable.push([{data: `No test annotations available`, colspan: '2'}])
+      }
     } else {
       if (detailedSummary) {
         detailsTable.push([{data: `<strong>${testResult.checkName}</strong>`, colspan: '2'}])

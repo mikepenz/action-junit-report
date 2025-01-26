@@ -59,7 +59,7 @@ describe('buildSummaryTables', () => {
       '/'
     )
 
-    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true)
+    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true)
 
     expect(table).toStrictEqual(NORMAL_TABLE)
     expect(detailTable).toStrictEqual([
@@ -100,7 +100,7 @@ describe('buildSummaryTables', () => {
       '/'
     )
 
-    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true)
+    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true, true)
 
     expect(table).toStrictEqual(NORMAL_TABLE)
     expect(detailTable).toStrictEqual([

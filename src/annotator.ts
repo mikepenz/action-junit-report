@@ -160,7 +160,7 @@ export async function attachComment(
   const identifier = buildCommentIdentifier(checkName)
 
   let comment = buildTable(table)
-  if (detailsTable.length > 0) {
+  if (detailsTable.length > 1) {
     comment += '\n\n'
     comment += buildTable(detailsTable)
   }

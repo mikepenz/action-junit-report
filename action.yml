@@ -94,6 +94,10 @@ inputs:
     description: 'Include table with all flaky results in summary'
     required: false
     default: 'false'
+  verbose_summary:
+    description: 'Include note of missing test annotations in summary.'
+    required: false
+    default: 'true'
   group_suite:
     description: 'If enabled, will group the testcases by test suite in the `detailed_summary`'
     required: false

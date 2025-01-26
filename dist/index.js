@@ -36853,7 +36853,7 @@ async function attachComment(octokit, checkName, updateComment, table, detailsTa
     }
     const identifier = buildCommentIdentifier(checkName);
     let comment = buildTable(table);
-    if (detailsTable.length > 0) {
+    if (detailsTable.length > 1) {
         comment += '\n\n';
         comment += buildTable(detailsTable);
     }
@@ -37332,7 +37332,7 @@ function escapeEmoji(input) {
 
 ;// CONCATENATED MODULE: ./lib/table.js
 
-function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, groupSuite = false) {
+function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, groupSuite = false) {
     // only include a warning icon if there are skipped tests
     const hasPassed = testResults.some(testResult => testResult.passed > 0);
     const hasSkipped = testResults.some(testResult => testResult.skipped > 0);
@@ -37379,7 +37379,9 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
             if (!includePassed) {
                 core.info(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
             }
-            detailsTable.push([{ data: `No test annotations available`, colspan: '2' }]);
+            if (verboseSummary) {
+                detailsTable.push([{ data: `No test annotations available`, colspan: '2' }]);
+            }
         }
         else {
             if (detailedSummary) {
@@ -37464,6 +37466,7 @@ async function run() {
         const jobSummary = core.getInput('job_summary') === 'true';
         const detailedSummary = core.getInput('detailed_summary') === 'true';
         const flakySummary = core.getInput('flaky_summary') === 'true';
+        const verboseSummary = core.getInput('verbose_summary') === 'true';
         const groupSuite = core.getInput('group_suite') === 'true';
         const comment = core.getInput('comment') === 'true';
         const updateComment = core.getInput('updateComment') === 'true';
@@ -37543,7 +37546,7 @@ async function run() {
             }
         }
         const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
-        const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, groupSuite);
+        const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, groupSuite);
         if (jobSummary && supportsJobSummary) {
             try {
                 await attachSummary(table, detailTable, flakyTable);
