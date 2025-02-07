@@ -222,7 +222,7 @@ export async function parseFile(
     return undefined
   }
 
-  return await parseSuite(
+  const testResult = await parseSuite(
     testsuite,
     suiteRegex, // no-op
     '',
@@ -240,6 +240,12 @@ export async function parseFile(
     globalAnnotations,
     resolveIgnoreClassname
   )
+
+  if (testResult !== undefined && !testResult.name) {
+    testResult.name = pathHelper.basename(file)
+  }
+
+  return testResult
 }
 
 function templateVar(varName: string): string {
