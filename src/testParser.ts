@@ -9,6 +9,8 @@ export interface ActualTestResult {
   name: string
   totalCount: number
   skippedCount: number
+  failedCount: number
+  passedCount: number
   retriedCount: number
   annotations: Annotation[]
   globalAnnotations: Annotation[]
@@ -18,6 +20,8 @@ export interface ActualTestResult {
 interface TestCasesResult {
   totalCount: number
   skippedCount: number
+  failedCount: number
+  passedCount: number
   retriedCount: number
   annotations: Annotation[]
 }
@@ -283,6 +287,8 @@ async function parseSuite(
 
   let totalCount = 0
   let skippedCount = 0
+  let failedCount = 0
+  let passedCount = 0
   let retriedCount = 0
   const annotations: Annotation[] = []
 
@@ -314,6 +320,8 @@ async function parseSuite(
     // expand global annotations array
     totalCount += parsedTestCases.totalCount
     skippedCount += parsedTestCases.skippedCount
+    failedCount += parsedTestCases.failedCount
+    passedCount += parsedTestCases.passedCount
     retriedCount += parsedTestCases.retriedCount
     annotations.push(...parsedTestCases.annotations)
     globalAnnotations.push(...parsedTestCases.annotations)
@@ -324,6 +332,8 @@ async function parseSuite(
       name: suiteName,
       totalCount,
       skippedCount,
+      failedCount,
+      passedCount,
       retriedCount,
       annotations,
       globalAnnotations,
@@ -366,6 +376,8 @@ async function parseSuite(
       childSuiteResults.push(childSuiteResult)
       totalCount += childSuiteResult.totalCount
       skippedCount += childSuiteResult.skippedCount
+      failedCount += childSuiteResult.failedCount
+      passedCount += childSuiteResult.passedCount
       retriedCount += childSuiteResult.retriedCount
     }
 
@@ -375,6 +387,8 @@ async function parseSuite(
         name: suiteName,
         totalCount,
         skippedCount,
+        failedCount,
+        passedCount,
         retriedCount,
         annotations,
         globalAnnotations,
@@ -387,6 +401,8 @@ async function parseSuite(
     name: suiteName,
     totalCount,
     skippedCount,
+    failedCount,
+    passedCount,
     retriedCount,
     annotations,
     globalAnnotations,
@@ -582,9 +598,13 @@ async function parseTestCases(
     if (limit >= 0 && annotations.length >= limit) break
   }
 
+  const failedCount = annotations.filter(a => a.annotation_level === 'failure').length
+  const passedCount = totalCount - failedCount - skippedCount
   return {
     totalCount,
     skippedCount,
+    failedCount,
+    passedCount,
     retriedCount,
     annotations
   }
@@ -622,6 +642,8 @@ export async function parseTestReports(
   const testResults: ActualTestResult[] = []
   let totalCount = 0
   let skipped = 0
+  let failed = 0
+  let passed = 0
   let retried = 0
   let foundFiles = 0
   for await (const file of globber.globGenerator()) {
@@ -648,9 +670,11 @@ export async function parseTestReports(
     )
 
     if (!testResult) continue
-    const {totalCount: c, skippedCount: s, retriedCount: r} = testResult
+    const {totalCount: c, skippedCount: s, failedCount: f, passedCount: p, retriedCount: r} = testResult
     totalCount += c
     skipped += s
+    failed += f
+    passed += p
     retried += r
     testResults.push(testResult)
 
@@ -658,10 +682,6 @@ export async function parseTestReports(
       break
     }
   }
-
-  // get the count of passed and failed tests.
-  const failed = globalAnnotations.filter(a => a.annotation_level === 'failure').length
-  const passed = totalCount - failed - skipped
 
   return {
     checkName,
