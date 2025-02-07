@@ -111,7 +111,7 @@ export async function run(): Promise<void> {
         for (const actualTestResult of testResult.testResults) {
           const failedCount = actualTestResult.annotations.filter(a => a.annotation_level === 'failure').length
           testResults.push({
-            checkName: actualTestResult.name,
+            checkName: `${testResult.checkName} | ${actualTestResult.name}`,
             summary: testResult.summary,
             totalCount: actualTestResult.totalCount,
             skipped: actualTestResult.skippedCount,

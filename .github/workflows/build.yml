@@ -62,6 +62,7 @@ jobs:
         with:
           check_name: Example Ungrouped Test Report
           report_paths: test_results/multiple/*.xml
+          verbose_summary: false
           include_passed: true
           detailed_summary: false
           group_reports: false

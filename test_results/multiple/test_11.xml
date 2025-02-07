@@ -2,6 +2,8 @@
     <testsuite name = "test">
         <testcase name="Command Test: apt-get upgrade" time="999638317"></testcase>
         <testcase name="File Existence Test: /home/app/app" time="0"></testcase>
-        <testcase name="Metadata Test" time="0"></testcase>
+        <testcase name="Metadata Test" time="0">
+            <failure message="failure"></failure>
+        </testcase>
     </testsuite>
 </testsuites>
