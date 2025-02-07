@@ -37565,14 +37565,13 @@ async function run() {
             }
             else {
                 for (const actualTestResult of testResult.testResults) {
-                    const failedCount = actualTestResult.annotations.filter(a => a.annotation_level === 'failure').length;
                     testResults.push({
                         checkName: `${testResult.checkName} | ${actualTestResult.name}`,
                         summary: testResult.summary,
                         totalCount: actualTestResult.totalCount,
                         skipped: actualTestResult.skippedCount,
-                        failed: failedCount,
-                        passed: actualTestResult.totalCount - failedCount - actualTestResult.skippedCount,
+                        failed: actualTestResult.failedCount,
+                        passed: actualTestResult.passedCount,
                         retried: actualTestResult.retriedCount,
                         foundFiles: 1,
                         globalAnnotations: actualTestResult.annotations,
