@@ -37051,8 +37051,12 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
         core.error(`⚠️ Failed to retrieve root test suite from file (${file})`);
         return undefined;
     }
-    return await parseSuite(testsuite, suiteRegex, // no-op
+    const testResult = await parseSuite(testsuite, suiteRegex, // no-op
     '', breadCrumbDelimiter, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations, resolveIgnoreClassname);
+    if (testResult !== undefined && !testResult.name) {
+        testResult.name = external_path_.basename(file);
+    }
+    return testResult;
 }
 function templateVar(varName) {
     return `{{${varName}}}`;
@@ -37071,6 +37075,8 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
     }
     let totalCount = 0;
     let skippedCount = 0;
+    let failedCount = 0;
+    let passedCount = 0;
     let retriedCount = 0;
     const annotations = [];
     // parse testCases
@@ -37083,6 +37089,8 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
         // expand global annotations array
         totalCount += parsedTestCases.totalCount;
         skippedCount += parsedTestCases.skippedCount;
+        failedCount += parsedTestCases.failedCount;
+        passedCount += parsedTestCases.passedCount;
         retriedCount += parsedTestCases.retriedCount;
         annotations.push(...parsedTestCases.annotations);
         globalAnnotations.push(...parsedTestCases.annotations);
@@ -37093,6 +37101,8 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
             name: suiteName,
             totalCount,
             skippedCount,
+            failedCount,
+            passedCount,
             retriedCount,
             annotations,
             globalAnnotations,
@@ -37115,6 +37125,8 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
             childSuiteResults.push(childSuiteResult);
             totalCount += childSuiteResult.totalCount;
             skippedCount += childSuiteResult.skippedCount;
+            failedCount += childSuiteResult.failedCount;
+            passedCount += childSuiteResult.passedCount;
             retriedCount += childSuiteResult.retriedCount;
         }
         // skip out if we reached our annotations limit
@@ -37123,6 +37135,8 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
                 name: suiteName,
                 totalCount,
                 skippedCount,
+                failedCount,
+                passedCount,
                 retriedCount,
                 annotations,
                 globalAnnotations,
@@ -37134,6 +37148,8 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
         name: suiteName,
         totalCount,
         skippedCount,
+        failedCount,
+        passedCount,
         retriedCount,
         annotations,
         globalAnnotations,
@@ -37288,9 +37304,13 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
         if (limit >= 0 && annotations.length >= limit)
             break;
     }
+    const failedCount = annotations.filter(a => a.annotation_level === 'failure').length;
+    const passedCount = totalCount - failedCount - skippedCount;
     return {
         totalCount,
         skippedCount,
+        failedCount,
+        passedCount,
         retriedCount,
         annotations
     };
@@ -37310,6 +37330,8 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
     const testResults = [];
     let totalCount = 0;
     let skipped = 0;
+    let failed = 0;
+    let passed = 0;
     let retried = 0;
     let foundFiles = 0;
     for await (const file of globber.globGenerator()) {
@@ -37318,18 +37340,17 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
         const testResult = await parseFile(file, suiteRegex, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError, globalAnnotations, resolveIgnoreClassname);
         if (!testResult)
             continue;
-        const { totalCount: c, skippedCount: s, retriedCount: r } = testResult;
+        const { totalCount: c, skippedCount: s, failedCount: f, passedCount: p, retriedCount: r } = testResult;
         totalCount += c;
         skipped += s;
+        failed += f;
+        passed += p;
         retried += r;
         testResults.push(testResult);
         if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
             break;
         }
     }
-    // get the count of passed and failed tests.
-    const failed = globalAnnotations.filter(a => a.annotation_level === 'failure').length;
-    const passed = totalCount - failed - skipped;
     return {
         checkName,
         summary,
@@ -37477,6 +37498,7 @@ async function run() {
             core.setFailed('❌ A token is required to execute this action');
             return;
         }
+        const groupReports = core.getInput('group_reports') === 'true';
         const annotateOnly = core.getInput('annotate_only') === 'true';
         const updateCheck = core.getInput('update_check') === 'true';
         const checkAnnotations = core.getInput('check_annotations') === 'true';
@@ -37538,7 +37560,25 @@ async function run() {
             mergedResult.failed += testResult.failed;
             mergedResult.passed += testResult.passed;
             mergedResult.retried += testResult.retried;
-            testResults.push(testResult);
+            if (groupReports) {
+                testResults.push(testResult);
+            }
+            else {
+                for (const actualTestResult of testResult.testResults) {
+                    testResults.push({
+                        checkName: `${testResult.checkName} | ${actualTestResult.name}`,
+                        summary: testResult.summary,
+                        totalCount: actualTestResult.totalCount,
+                        skipped: actualTestResult.skippedCount,
+                        failed: actualTestResult.failedCount,
+                        passed: actualTestResult.passedCount,
+                        retried: actualTestResult.retriedCount,
+                        foundFiles: 1,
+                        globalAnnotations: actualTestResult.annotations,
+                        testResults: actualTestResult.testResults
+                    });
+                }
+            }
         }
         core.setOutput('total', mergedResult.totalCount);
         core.setOutput('passed', mergedResult.passed);

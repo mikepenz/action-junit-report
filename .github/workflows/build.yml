@@ -57,6 +57,17 @@ jobs:
           comment: true
           annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
 
+      - name: Test Ungrouped test import
+        uses: ./
+        with:
+          check_name: Example Ungrouped Test Report
+          report_paths: test_results/multiple/*.xml
+          verbose_summary: false
+          include_passed: true
+          detailed_summary: false
+          group_reports: false
+          comment: true
+
       - name: Test JUnit flaky test import
         uses: ./
         with:

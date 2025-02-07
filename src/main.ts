@@ -17,6 +17,7 @@ export async function run(): Promise<void> {
       return
     }
 
+    const groupReports = core.getInput('group_reports') === 'true'
     const annotateOnly = core.getInput('annotate_only') === 'true'
     const updateCheck = core.getInput('update_check') === 'true'
     const checkAnnotations = core.getInput('check_annotations') === 'true'
@@ -103,7 +104,25 @@ export async function run(): Promise<void> {
       mergedResult.failed += testResult.failed
       mergedResult.passed += testResult.passed
       mergedResult.retried += testResult.retried
-      testResults.push(testResult)
+
+      if (groupReports) {
+        testResults.push(testResult)
+      } else {
+        for (const actualTestResult of testResult.testResults) {
+          testResults.push({
+            checkName: `${testResult.checkName} | ${actualTestResult.name}`,
+            summary: testResult.summary,
+            totalCount: actualTestResult.totalCount,
+            skipped: actualTestResult.skippedCount,
+            failed: actualTestResult.failedCount,
+            passed: actualTestResult.passedCount,
+            retried: actualTestResult.retriedCount,
+            foundFiles: 1,
+            globalAnnotations: actualTestResult.annotations,
+            testResults: actualTestResult.testResults
+          })
+        }
+      }
     }
 
     core.setOutput('total', mergedResult.totalCount)
