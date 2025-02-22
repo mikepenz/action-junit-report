@@ -79,9 +79,9 @@ describe('buildSummaryTables', () => {
           colspan: '2'
         }
       ],
-      ['ABC-0199: XMPP Ping/PingIntegrationTest.pingAsync (Normal)', '✅ pass'],
-      ['ABC-0199: XMPP Ping/PingIntegrationTest.pingServer (Normal)', '✅ pass'],
-      ['ABC-0045: Multi-User Chat/MultiUserIntegrationTest.mucRoleTestForReceivingModerator (Normal)', '✅ pass']
+      ['ABC-0199: XMPP Ping/PingIntegrationTest.pingAsync (Normal)', '✅ passed'],
+      ['ABC-0199: XMPP Ping/PingIntegrationTest.pingServer (Normal)', '✅ passed'],
+      ['ABC-0045: Multi-User Chat/MultiUserIntegrationTest.mucRoleTestForReceivingModerator (Normal)', '✅ passed']
     ])
     expect(flakyTable).toStrictEqual(FLAKY_TABLE)
   })
@@ -146,15 +146,15 @@ describe('buildSummaryTables', () => {
           colspan: '2'
         }
       ],
-      ['ABC-0199: XMPP Ping/PingIntegrationTest.pingAsync (Normal)', '✅ pass'],
-      ['ABC-0199: XMPP Ping/PingIntegrationTest.pingServer (Normal)', '✅ pass'],
+      ['ABC-0199: XMPP Ping/PingIntegrationTest.pingAsync (Normal)', '✅ passed'],
+      ['ABC-0199: XMPP Ping/PingIntegrationTest.pingServer (Normal)', '✅ passed'],
       [
         {
           data: '<em>ABC-0045: Multi-User Chat</em>',
           colspan: '2'
         }
       ],
-      ['ABC-0045: Multi-User Chat/MultiUserIntegrationTest.mucRoleTestForReceivingModerator (Normal)', '✅ pass']
+      ['ABC-0045: Multi-User Chat/MultiUserIntegrationTest.mucRoleTestForReceivingModerator (Normal)', '✅ passed']
     ])
     expect(flakyTable).toStrictEqual(FLAKY_TABLE)
   })
