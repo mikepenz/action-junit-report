@@ -11,7 +11,8 @@ export function buildSummaryTables(
   verboseSummary: boolean,
   skipSuccessSummary: boolean,
   groupSuite = false,
-  includeEmptyInSummary = false
+  includeEmptyInSummary = true,
+  simplifiedSummary = false
 ): [SummaryTableRow[], SummaryTableRow[], SummaryTableRow[]] {
   // only include a warning icon if there are skipped tests
   const hasPassed = testResults.some(testResult => testResult.passed > 0)
@@ -27,6 +28,12 @@ export function buildSummaryTables(
   const passedHeader = hasTests ? (hasPassed ? (hasFailed ? 'Passed ☑️' : 'Passed ✅') : 'Passed') : 'Passed ❌️'
   const skippedHeader = hasSkipped ? 'Skipped ⚠️' : 'Skipped'
   const failedHeader = hasFailed ? 'Failed ❌️' : 'Failed'
+
+  const passedIcon = simplifiedSummary ? '✅' : 'passed'
+  const skippedIcon = simplifiedSummary ? '⚠️' : 'skipped'
+  const failedIcon = simplifiedSummary ? '❌' : 'failed'
+  const passedDetailIcon = simplifiedSummary ? '✅' : '✅ passed'
+  const skippedDetailIcon = simplifiedSummary ? '⚠️' : '⚠️ skipped'
 
   const table: SummaryTableRow[] = [
     [
@@ -60,9 +67,9 @@ export function buildSummaryTables(
     table.push([
       `${testResult.checkName}`,
       includeEmptyInSummary || testResult.totalCount > 0 ? `${testResult.totalCount} ran` : ``,
-      includeEmptyInSummary || testResult.passed > 0 ? `${testResult.passed} passed` : ``,
-      includeEmptyInSummary || testResult.skipped > 0 ? `${testResult.skipped} skipped` : ``,
-      includeEmptyInSummary || testResult.failed > 0 ? `${testResult.failed} failed` : ``
+      includeEmptyInSummary || testResult.passed > 0 ? `${testResult.passed} ${passedIcon}` : ``,
+      includeEmptyInSummary || testResult.skipped > 0 ? `${testResult.skipped} ${skippedIcon}` : ``,
+      includeEmptyInSummary || testResult.failed > 0 ? `${testResult.failed} ${failedIcon}` : ``
     ])
 
     const annotations = testResult.globalAnnotations.filter(
@@ -87,16 +94,16 @@ export function buildSummaryTables(
               `${annotation.title}`,
               `${
                 annotation.status === 'success'
-                  ? '✅ pass'
+                  ? passedDetailIcon
                   : annotation.status === 'skipped'
-                    ? `⚠️️ skipped`
+                    ? skippedDetailIcon
                     : `❌ ${annotation.annotation_level}`
               }`
             ])
           }
         } else {
           for (const internalTestResult of testResult.testResults) {
-            appendDetailsTable(internalTestResult, detailsTable, includePassed)
+            appendDetailsTable(internalTestResult, detailsTable, includePassed, passedDetailIcon, skippedDetailIcon)
           }
         }
       }
@@ -118,7 +125,9 @@ export function buildSummaryTables(
 function appendDetailsTable(
   testResult: ActualTestResult,
   detailsTable: SummaryTableRow[],
-  includePassed: boolean
+  includePassed: boolean,
+  passedDetailIcon: string,
+  skippedDetailIcon: string
 ): void {
   const annotations = testResult.annotations.filter(
     annotation => includePassed || annotation.annotation_level !== 'notice'
@@ -130,15 +139,15 @@ function appendDetailsTable(
         `${annotation.title}`,
         `${
           annotation.status === 'success'
-            ? '✅ pass'
+            ? passedDetailIcon
             : annotation.status === 'skipped'
-              ? `⚠️️ skipped`
+              ? skippedDetailIcon
               : `❌ ${annotation.annotation_level}`
         }`
       ])
     }
   }
   for (const childTestResult of testResult.testResults) {
-    appendDetailsTable(childTestResult, detailsTable, includePassed)
+    appendDetailsTable(childTestResult, detailsTable, includePassed, passedDetailIcon, skippedDetailIcon)
   }
 }

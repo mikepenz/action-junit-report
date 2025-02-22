@@ -110,6 +110,10 @@ inputs:
     description: 'Include entries in summaries that have 0 count'
     required: false
     default: 'true'
+  simplified_summary:
+    description: 'Use icons instead of text to indicate status in summary'
+    required: false
+    default: 'false'
   group_suite:
     description: 'If enabled, will group the testcases by test suite in the `detailed_summary`'
     required: false
