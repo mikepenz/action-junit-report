@@ -37373,7 +37373,7 @@ function escapeEmoji(input) {
 
 ;// CONCATENATED MODULE: ./lib/table.js
 
-function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite = false, includeEmptyInSummary = false) {
+function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite = false, includeEmptyInSummary = true, simplifiedSummary = false) {
     // only include a warning icon if there are skipped tests
     const hasPassed = testResults.some(testResult => testResult.passed > 0);
     const hasSkipped = testResults.some(testResult => testResult.skipped > 0);
@@ -37386,6 +37386,11 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
     const passedHeader = hasTests ? (hasPassed ? (hasFailed ? 'Passed ☑️' : 'Passed ✅') : 'Passed') : 'Passed ❌️';
     const skippedHeader = hasSkipped ? 'Skipped ⚠️' : 'Skipped';
     const failedHeader = hasFailed ? 'Failed ❌️' : 'Failed';
+    const passedIcon = simplifiedSummary ? '✅' : 'passed';
+    const skippedIcon = simplifiedSummary ? '⚠️' : 'skipped';
+    const failedIcon = simplifiedSummary ? '❌' : 'failed';
+    const passedDetailIcon = simplifiedSummary ? '✅' : '✅ passed';
+    const skippedDetailIcon = simplifiedSummary ? '⚠️' : '⚠️ skipped';
     const table = [
         [
             { data: '', header: true },
@@ -37415,9 +37420,9 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
         table.push([
             `${testResult.checkName}`,
             includeEmptyInSummary || testResult.totalCount > 0 ? `${testResult.totalCount} ran` : ``,
-            includeEmptyInSummary || testResult.passed > 0 ? `${testResult.passed} passed` : ``,
-            includeEmptyInSummary || testResult.skipped > 0 ? `${testResult.skipped} skipped` : ``,
-            includeEmptyInSummary || testResult.failed > 0 ? `${testResult.failed} failed` : ``
+            includeEmptyInSummary || testResult.passed > 0 ? `${testResult.passed} ${passedIcon}` : ``,
+            includeEmptyInSummary || testResult.skipped > 0 ? `${testResult.skipped} ${skippedIcon}` : ``,
+            includeEmptyInSummary || testResult.failed > 0 ? `${testResult.failed} ${failedIcon}` : ``
         ]);
         const annotations = testResult.globalAnnotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
         if (annotations.length === 0) {
@@ -37436,16 +37441,16 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
                         detailsTable.push([
                             `${annotation.title}`,
                             `${annotation.status === 'success'
-                                ? '✅ pass'
+                                ? passedDetailIcon
                                 : annotation.status === 'skipped'
-                                    ? `⚠️️ skipped`
+                                    ? skippedDetailIcon
                                     : `❌ ${annotation.annotation_level}`}`
                         ]);
                     }
                 }
                 else {
                     for (const internalTestResult of testResult.testResults) {
-                        appendDetailsTable(internalTestResult, detailsTable, includePassed);
+                        appendDetailsTable(internalTestResult, detailsTable, includePassed, passedDetailIcon, skippedDetailIcon);
                     }
                 }
             }
@@ -37462,7 +37467,7 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
     }
     return [table, detailsTable, flakyTable];
 }
-function appendDetailsTable(testResult, detailsTable, includePassed) {
+function appendDetailsTable(testResult, detailsTable, includePassed, passedDetailIcon, skippedDetailIcon) {
     const annotations = testResult.annotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
     if (annotations.length > 0) {
         detailsTable.push([{ data: `<em>${testResult.name}</em>`, colspan: '2' }]);
@@ -37470,15 +37475,15 @@ function appendDetailsTable(testResult, detailsTable, includePassed) {
             detailsTable.push([
                 `${annotation.title}`,
                 `${annotation.status === 'success'
-                    ? '✅ pass'
+                    ? passedDetailIcon
                     : annotation.status === 'skipped'
-                        ? `⚠️️ skipped`
+                        ? skippedDetailIcon
                         : `❌ ${annotation.annotation_level}`}`
             ]);
         }
     }
     for (const childTestResult of testResult.testResults) {
-        appendDetailsTable(childTestResult, detailsTable, includePassed);
+        appendDetailsTable(childTestResult, detailsTable, includePassed, passedDetailIcon, skippedDetailIcon);
     }
 }
 
@@ -37515,6 +37520,7 @@ async function run() {
         const verboseSummary = core.getInput('verbose_summary') === 'true';
         const skipSuccessSummary = core.getInput('skip_success_summary') === 'true';
         const includeEmptyInSummary = core.getInput('include_empty_in_summary') === 'true';
+        const simplifiedSummary = core.getInput('simplified_summary') === 'true';
         const groupSuite = core.getInput('group_suite') === 'true';
         const comment = core.getInput('comment') === 'true';
         const updateComment = core.getInput('updateComment') === 'true';
@@ -37612,7 +37618,7 @@ async function run() {
             }
         }
         const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
-        const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite, includeEmptyInSummary);
+        const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite, includeEmptyInSummary, simplifiedSummary);
         if (jobSummary && supportsJobSummary) {
             try {
                 await attachSummary(table, detailTable, flakyTable);
