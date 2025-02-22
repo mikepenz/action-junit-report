@@ -106,6 +106,10 @@ inputs:
     description: 'Skips summaries that would not contain failed tests'
     required: false
     default: 'false'
+  include_empty_in_summary:
+    description: 'Include entries in summaries that have 0 count'
+    required: false
+    default: 'true'
   group_suite:
     description: 'If enabled, will group the testcases by test suite in the `detailed_summary`'
     required: false

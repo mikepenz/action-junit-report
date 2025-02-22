@@ -10,7 +10,8 @@ export function buildSummaryTables(
   flakySummary: boolean,
   verboseSummary: boolean,
   skipSuccessSummary: boolean,
-  groupSuite = false
+  groupSuite = false,
+  includeEmptyInSummary = false
 ): [SummaryTableRow[], SummaryTableRow[], SummaryTableRow[]] {
   // only include a warning icon if there are skipped tests
   const hasPassed = testResults.some(testResult => testResult.passed > 0)
@@ -58,10 +59,10 @@ export function buildSummaryTables(
   for (const testResult of testResults) {
     table.push([
       `${testResult.checkName}`,
-      `${testResult.totalCount} ran`,
-      `${testResult.passed} passed`,
-      `${testResult.skipped} skipped`,
-      `${testResult.failed} failed`
+      includeEmptyInSummary || testResult.totalCount > 0 ? `${testResult.totalCount} ran` : ``,
+      includeEmptyInSummary || testResult.passed > 0 ? `${testResult.passed} passed` : ``,
+      includeEmptyInSummary || testResult.skipped > 0 ? `${testResult.skipped} skipped` : ``,
+      includeEmptyInSummary || testResult.failed > 0 ? `${testResult.failed} failed` : ``
     ])
 
     const annotations = testResult.globalAnnotations.filter(
