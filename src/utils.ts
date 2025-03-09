@@ -125,3 +125,30 @@ export function removePrefix(str: string, prefix: string): string {
   }
   return str
 }
+
+/**
+ * Formats a time in seconds into a human-readable string representation.
+ * If the input is 0, returns an empty string.
+ * Otherwise, converts seconds to days, hours, minutes, seconds, and milliseconds,
+ * and includes only non-zero units in the output.
+ *
+ * @param {number} timeS - The time in seconds to format.
+ * @returns {string} A formatted string representation of the time (e.g., "1h 30m 45s").
+ */
+export function toFormatedTime(timeS: number): string {
+  if (timeS === 0) return ''
+  let ms = timeS * 1000
+
+  if (ms < 0) ms = -ms
+  const time = {
+    day: Math.floor(ms / 86400000),
+    h: Math.floor(ms / 3600000) % 24,
+    m: Math.floor(ms / 60000) % 60,
+    s: Math.floor(ms / 1000) % 60,
+    ms: Math.floor(ms) % 1000
+  }
+  return Object.entries(time)
+    .filter(val => val[1] !== 0)
+    .map(([key, val]) => `${val}${key}${val !== 1 ? 's' : ''}`)
+    .join(' ')
+}

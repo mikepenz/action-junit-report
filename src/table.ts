@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 // eslint-disable-next-line import/extensions
 import {SummaryTableRow} from '@actions/core/lib/summary.js'
 import {ActualTestResult, TestResult} from './testParser.js'
+import {toFormatedTime} from './utils.js'
 
 export function buildSummaryTables(
   testResults: TestResult[],
@@ -86,7 +87,7 @@ export function buildSummaryTables(
       includeEmptyInSummary || testResult.failed > 0 ? `${testResult.failed} ${failedIcon}` : ``
     ]
     if (includeTimeInSummary) {
-      row.push(`${testResult.time}s`)
+      row.push(toFormatedTime(testResult.time))
     }
     table.push(row)
 
@@ -119,7 +120,7 @@ export function buildSummaryTables(
               }`
             ]
             if (includeTimeInSummary) {
-              detailsRow.push(`${annotation.time}s`)
+              detailsRow.push(toFormatedTime(annotation.time))
             }
             detailsTable.push(detailsRow)
           }
@@ -144,7 +145,7 @@ export function buildSummaryTables(
           for (const annotation of flakyAnnotations) {
             const flakyRow = [`${annotation.title}`, `${annotation.retries}`]
             if (includeTimeInSummary) {
-              flakyRow.push(`${annotation.time}s`)
+              flakyRow.push(toFormatedTime(annotation.time))
             }
             flakyTable.push(flakyRow)
           }
@@ -181,7 +182,7 @@ function appendDetailsTable(
         }`
       ]
       if (includeTimeInSummary) {
-        row.push(`${annotation.time}s`)
+        row.push(toFormatedTime(annotation.time))
       }
       detailsTable.push(row)
     }
