@@ -113,7 +113,7 @@ inputs:
   include_time_in_summary:
     description: 'Include time in summaries'
     required: false
-    default: 'true'
+    default: 'false'
   simplified_summary:
     description: 'Use icons instead of text to indicate status in summary'
     required: false
