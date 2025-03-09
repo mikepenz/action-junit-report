@@ -110,6 +110,10 @@ inputs:
     description: 'Include entries in summaries that have 0 count'
     required: false
     default: 'true'
+  include_time_in_summary:
+    description: 'Include time in summaries'
+    required: false
+    default: 'false'
   simplified_summary:
     description: 'Use icons instead of text to indicate status in summary'
     required: false
@@ -161,6 +165,8 @@ outputs:
     description: 'The count of all skipped tests'
   failed:
     description: 'The count of all failed tests'
+  time:
+    description: 'The total time taken for all the tests'
   summary:
     description: 'The short summary of the junit report. In html format (as also constructed by GitHub for the summary).'
   detailed_summary:

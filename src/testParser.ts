@@ -12,6 +12,7 @@ export interface ActualTestResult {
   failedCount: number
   passedCount: number
   retriedCount: number
+  time: number
   annotations: Annotation[]
   globalAnnotations: Annotation[]
   testResults: ActualTestResult[]
@@ -23,6 +24,7 @@ interface TestCasesResult {
   failedCount: number
   passedCount: number
   retriedCount: number
+  time: number
   annotations: Annotation[]
 }
 
@@ -34,6 +36,7 @@ export interface TestResult {
   failed: number
   passed: number
   retried: number
+  time: number
   foundFiles: number
   globalAnnotations: Annotation[]
   testResults: ActualTestResult[]
@@ -51,6 +54,7 @@ export interface Annotation {
   title: string
   message: string
   raw_details: string
+  time: number
 }
 
 export interface Position {
@@ -290,6 +294,7 @@ async function parseSuite(
   let failedCount = 0
   let passedCount = 0
   let retriedCount = 0
+  let time = 0
   const annotations: Annotation[] = []
 
   // parse testCases
@@ -323,6 +328,7 @@ async function parseSuite(
     failedCount += parsedTestCases.failedCount
     passedCount += parsedTestCases.passedCount
     retriedCount += parsedTestCases.retriedCount
+    time += parsedTestCases.time
     annotations.push(...parsedTestCases.annotations)
     globalAnnotations.push(...parsedTestCases.annotations)
   }
@@ -335,6 +341,7 @@ async function parseSuite(
       failedCount,
       passedCount,
       retriedCount,
+      time,
       annotations,
       globalAnnotations,
       testResults: []
@@ -379,6 +386,7 @@ async function parseSuite(
       failedCount += childSuiteResult.failedCount
       passedCount += childSuiteResult.passedCount
       retriedCount += childSuiteResult.retriedCount
+      time += childSuiteResult.time
     }
 
     // skip out if we reached our annotations limit
@@ -390,6 +398,7 @@ async function parseSuite(
         failedCount,
         passedCount,
         retriedCount,
+        time,
         annotations,
         globalAnnotations,
         testResults: childSuiteResults
@@ -404,6 +413,7 @@ async function parseSuite(
     failedCount,
     passedCount,
     retriedCount,
+    time,
     annotations,
     globalAnnotations,
     testResults: childSuiteResults
@@ -432,8 +442,9 @@ async function parseTestCases(
   let totalCount = 0
   let skippedCount = 0
   let retriedCount = 0
+  let time = 0
   if (checkRetries) {
-    // identify duplicates, in case of flaky tests, and remove them
+    // identify duplicates in case of flaky tests, and remove them
     const testcaseMap = new Map<string, any>()
     for (const testcase of testcases) {
       const key = testcase._attributes.name
@@ -463,6 +474,10 @@ async function parseTestCases(
 
   for (const testcase of testcases) {
     totalCount++
+
+    // fish the time-taken out of the test case attributes, if present
+    const testTime = testcase._attributes.time === undefined ? 0 : parseFloat(testcase._attributes.time)
+    time += testTime
 
     const testFailure = testcase.failure || testcase.error // test failed
     const skip =
@@ -576,10 +591,8 @@ async function parseTestCases(
     // optionally attach the prefix to the path
     resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath
 
-    // fish the time-taken out of the test case attributes, if present
-    const testTime = testcase._attributes.time === undefined ? '' : ` (${testcase._attributes.time}s)`
-
-    core.info(`${resolvedPath}:${pos.line} | ${message.split('\n', 1)[0]}${testTime}`)
+    const testTimeString = testTime > 0 ? `${testTime}s` : ''
+    core.info(`${resolvedPath}:${pos.line} | ${message.split('\n', 1)[0]}${testTimeString}`)
 
     annotations.push({
       path: resolvedPath,
@@ -592,7 +605,8 @@ async function parseTestCases(
       status: skip ? 'skipped' : success ? 'success' : 'failure',
       title: escapeEmoji(title),
       message: escapeEmoji(message),
-      raw_details: escapeEmoji(stackTrace)
+      raw_details: escapeEmoji(stackTrace),
+      time: testTime
     })
 
     if (limit >= 0 && annotations.length >= limit) break
@@ -606,6 +620,7 @@ async function parseTestCases(
     failedCount,
     passedCount,
     retriedCount,
+    time,
     annotations
   }
 }
@@ -645,6 +660,7 @@ export async function parseTestReports(
   let failed = 0
   let passed = 0
   let retried = 0
+  let time = 0
   let foundFiles = 0
   for await (const file of globber.globGenerator()) {
     foundFiles++
@@ -670,12 +686,13 @@ export async function parseTestReports(
     )
 
     if (!testResult) continue
-    const {totalCount: c, skippedCount: s, failedCount: f, passedCount: p, retriedCount: r} = testResult
+    const {totalCount: c, skippedCount: s, failedCount: f, passedCount: p, retriedCount: r, time: t} = testResult
     totalCount += c
     skipped += s
     failed += f
     passed += p
     retried += r
+    time += t
     testResults.push(testResult)
 
     if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
@@ -691,6 +708,7 @@ export async function parseTestReports(
     failed,
     passed,
     retried,
+    time,
     foundFiles,
     globalAnnotations,
     testResults

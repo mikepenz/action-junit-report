@@ -159,6 +159,7 @@ describe('parseFile', () => {
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'CalcUtilsTest.test error handling',
         message:
           'unexpected exception type thrown; expected:<java.lang.IllegalStateException> but was:<java.lang.IllegalArgumentException>',
@@ -174,6 +175,7 @@ describe('parseFile', () => {
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0.001,
         title: 'CalcUtilsTest.test scale',
         message: 'Expected: <100.10>\n     but: was <100.11>',
         raw_details:
@@ -213,6 +215,7 @@ describe('parseFile', () => {
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'CalcUtilsTest.test error handling',
         message:
           'unexpected exception type thrown; expected:<java.lang.IllegalStateException> but was:<java.lang.IllegalArgumentException>',
@@ -241,6 +244,7 @@ describe('parseFile', () => {
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0.001,
         title: 'test_sample.test_which_fails',
         message: "AssertionError: assert 'test' == 'xyz'\n  - xyz\n  + test",
         raw_details:
@@ -255,6 +259,7 @@ describe('parseFile', () => {
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'test_sample.test_with_error',
         message: "AttributeError: 'dict' object has no attribute 'attr'",
         raw_details:
@@ -291,6 +296,7 @@ describe('parseFile', () => {
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0.001,
         title: 'pytest/test_which_fails',
         message: "AssertionError: assert 'test' == 'xyz'\n  - xyz\n  + test",
         raw_details:
@@ -305,6 +311,7 @@ describe('parseFile', () => {
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'pytest/test_with_error',
         message: "AttributeError: 'dict' object has no attribute 'attr'",
         raw_details:
@@ -343,6 +350,7 @@ describe('parseFile', () => {
         start_line: 1,
         retries: 0,
         status: 'failure',
+        time: 4.3,
         title: 'DummyTest3.test_01'
       }
     ])
@@ -369,6 +377,7 @@ describe('parseFile', () => {
         start_line: 1,
         retries: 0,
         status: 'failure',
+        time: 0.014,
         title: 'DummyUtilTest.test_01_dummy'
       }
     ])
@@ -404,6 +413,7 @@ describe('parseFile', () => {
         start_line: 1,
         retries: 0,
         status: 'failure',
+        time: 0.000087,
         title: 'loadFromXMLString_When_Should2Test'
       }
     ])
@@ -453,6 +463,7 @@ describe('parseFile', () => {
         start_line: 154,
         retries: 0,
         status: 'failure',
+        time: 0.774,
         title: 'oxidized_navigation::parry3d.test_failure'
       }
     ])
@@ -499,6 +510,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 50,
         title: 'All tests/tests/packet/A',
         message: 'failure',
         raw_details: ''
@@ -512,6 +524,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 10,
         title: 'All tests/tests/packet/TestA/A',
         message: 'failure',
         raw_details: ''
@@ -525,6 +538,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 40,
         title: 'All tests/tests/packet/TestB/B',
         message: 'failure',
         raw_details: ''
@@ -572,6 +586,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'factorial/factorial_of_value_from_fixture',
         message: 'tests/failed/main.cpp:58: error: check_eq(3628800, 3628801)',
         raw_details: ''
@@ -585,6 +600,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'factorial/factorial_of_value_from_fixture[0]',
         message: 'tests/failed/main.cpp:97: error: condition was false',
         raw_details: ''
@@ -598,6 +614,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'factorial/positive_arguments_must_produce_expected_result',
         message: 'uncaught std::exception: thrown by test',
         raw_details: ''
@@ -611,6 +628,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'factorial/positive_arguments_must_produce_expected_result[2]',
         message: 'tests/failed/main.cpp:73: error: condition was false',
         raw_details: ''
@@ -624,6 +642,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'factorial/test_which_fails_check_eq_with_custom_message',
         message: 'tests/failed/main.cpp:49: error: check_eq(6, 7): hello world!',
         raw_details: ''
@@ -637,6 +656,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'factorial/test_which_throws_unknown_exception',
         message: 'uncaught unknown exception',
         raw_details: ''
@@ -653,6 +673,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'skipped',
+        time: 0,
         title: 'factorial/disabled_fixture_test',
         message: 'disabled_fixture_test',
         raw_details: ''
@@ -666,6 +687,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'skipped',
+        time: 0,
         title: 'factorial/disabled_param_fixture_test[0]',
         message: 'disabled_param_fixture_test[0]',
         raw_details: ''
@@ -679,6 +701,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'skipped',
+        time: 0,
         title: 'factorial/disabled_param_fixture_test[1]',
         message: 'disabled_param_fixture_test[1]',
         raw_details: ''
@@ -692,6 +715,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'skipped',
+        time: 0,
         title: 'factorial/disabled_param_fixture_test[2]',
         message: 'disabled_param_fixture_test[2]',
         raw_details: ''
@@ -705,6 +729,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'skipped',
+        time: 0,
         title: 'factorial/disabled_param_fixture_test[3]',
         message: 'disabled_param_fixture_test[3]',
         raw_details: ''
@@ -718,6 +743,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'skipped',
+        time: 0,
         title: 'factorial/disabled_param_test[0]',
         message: 'disabled_param_test[0]',
         raw_details: ''
@@ -731,6 +757,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'skipped',
+        time: 0,
         title: 'factorial/disabled_param_test[1]',
         message: 'disabled_param_test[1]',
         raw_details: ''
@@ -744,6 +771,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'skipped',
+        time: 0,
         title: 'factorial/disabled_param_test[2]',
         message: 'disabled_param_test[2]',
         raw_details: ''
@@ -757,6 +785,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'skipped',
+        time: 0,
         title: 'factorial/disabled_param_test[3]',
         message: 'disabled_param_test[3]',
         raw_details: ''
@@ -770,6 +799,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'skipped',
+        time: 0,
         title: 'factorial/disabled_test',
         message: 'disabled_test',
         raw_details: ''
@@ -783,6 +813,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0,
         title: 'factorial/factorial_of_value_from_fixture[1]',
         message: 'factorial_of_value_from_fixture[1]',
         raw_details: ''
@@ -796,6 +827,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0,
         title: 'factorial/factorial_of_value_from_fixture[2]',
         message: 'factorial_of_value_from_fixture[2]',
         raw_details: ''
@@ -809,6 +841,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0,
         title: 'factorial/factorial_of_value_from_fixture[3]',
         message: 'factorial_of_value_from_fixture[3]',
         raw_details: ''
@@ -822,6 +855,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0,
         title: 'factorial/positive_arguments_must_produce_expected_result[0]',
         message: 'positive_arguments_must_produce_expected_result[0]',
         raw_details: ''
@@ -835,6 +869,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0,
         title: 'factorial/positive_arguments_must_produce_expected_result[1]',
         message: 'positive_arguments_must_produce_expected_result[1]',
         raw_details: ''
@@ -848,6 +883,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0,
         title: 'factorial/positive_arguments_must_produce_expected_result[3]',
         message: 'positive_arguments_must_produce_expected_result[3]',
         raw_details: ''
@@ -880,6 +916,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0.002,
         title:
           'default config/Config files default config projectUTCOffset should be a callable with current UTC offset',
         message: 'Config files default config projectUTCOffset should be a callable with current UTC offset',
@@ -913,6 +950,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0.002,
         title: 'Config files default config projectUTCOffset should be a callable with current UTC offset',
         message: 'Config files default config projectUTCOffset should be a callable with current UTC offset',
         raw_details: ''
@@ -947,6 +985,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0.002,
         title: 'Config files default config projectUTCOffset should be a callable with current UTC offset',
         message: 'Config files default config projectUTCOffset should be a callable with current UTC offset',
         raw_details: ''
@@ -972,6 +1011,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'main.c.test_my_sum_fail',
         message: 'Expected 2 Was 0',
         raw_details: ''
@@ -997,6 +1037,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'main.c.test_my_sum_fail',
         message: 'Expected 2 Was 0',
         raw_details: ''
@@ -1022,6 +1063,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0.001,
         title: 'packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.asserts error',
         message: 'expected false to be true',
         raw_details:
@@ -1051,6 +1093,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0.001,
         title: 'packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.asserts error',
         message: 'expected false to be true',
         raw_details:
@@ -1077,6 +1120,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0.001,
         title: 'packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.asserts error',
         message: 'expected false to be true',
         raw_details:
@@ -1094,6 +1138,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         start_line: 15,
         retries: 0,
         status: 'failure',
+        time: 0.001,
         title: 'packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.retried flaky test'
       }
     ])
@@ -1117,6 +1162,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         end_column: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0.001,
         title: 'packages/test-runner-junit-reporter/test/fixtures/multiple/simple-test.js.retried flaky test',
         message: 'retried flaky test',
         raw_details: ''
@@ -1144,6 +1190,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         start_column: 0,
         start_line: 1,
         status: 'success',
+        time: 1.86,
         title: 'Class.testFlakyFailure'
       }
     ])
@@ -1188,6 +1235,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0.0000450611114501953,
         title: 'FileName_t.L123: ...',
         message: 'L123: ...',
         raw_details: ''
@@ -1220,6 +1268,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 999638317,
         title: 'Command Test: apt-get upgrade',
         message: 'Command Test: apt-get upgrade',
         raw_details: ''
@@ -1233,6 +1282,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0,
         title: 'File Existence Test: /home/app/app',
         message: 'File Existence Test: /home/app/app',
         raw_details: ''
@@ -1246,6 +1296,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'notice',
         status: 'success',
+        time: 0,
         title: 'Metadata Test',
         message: 'Metadata Test',
         raw_details: ''
@@ -1271,6 +1322,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
         retries: 0,
         annotation_level: 'failure',
         status: 'failure',
+        time: 0,
         title: 'test/unit/detail/utility/is_constant_evaluated.cpp.is constant evaluated',
         message: 'REQUIRE(v == 1) expands to 0 == 10',
         raw_details:
@@ -1311,6 +1363,7 @@ describe('parseTestReports', () => {
         retries: 0,
         annotation_level: 'notice',
         status: 'skipped',
+        time: 0,
         title: 'random suite/testSmemArithmetic',
         message: 'Assert: Boolean true check failed.',
         raw_details: 'Assert: Boolean true check failed.'
@@ -1350,6 +1403,7 @@ describe('parseTestReports', () => {
         retries: 1,
         annotation_level: 'notice',
         status: 'success',
+        time: 7.78,
         title: 'github.com/example/example/server/v8/channels/api4/TestWebSocketReconnectRace',
         message: 'TestWebSocketReconnectRace',
         raw_details: ''
@@ -1365,6 +1419,7 @@ describe('parseTestReports', () => {
         start_column: 0,
         start_line: 1,
         status: 'skipped',
+        time: 0,
         title: 'github.com/example/example/server/v8/channels/api4/TestCreateChannelBookmark'
       },
       {
@@ -1378,6 +1433,7 @@ describe('parseTestReports', () => {
         start_column: 0,
         start_line: 1,
         status: 'success',
+        time: 2.17,
         title: 'github.com/example/example/server/v8/channels/api4/TestWebSocketUpgrade'
       }
     ])
@@ -1404,6 +1460,7 @@ describe('parseTestReports', () => {
     expect(result).toStrictEqual({
       checkName: '',
       summary: '',
+      time: 0,
       totalCount: 0,
       skipped: 0,
       failed: 0,

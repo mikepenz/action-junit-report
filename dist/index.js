@@ -36747,6 +36747,33 @@ function removePrefix(str, prefix) {
     }
     return str;
 }
+/**
+ * Formats a time in seconds into a human-readable string representation.
+ * If the input is 0, returns an empty string.
+ * Otherwise, converts seconds to days, hours, minutes, seconds, and milliseconds,
+ * and includes only non-zero units in the output.
+ *
+ * @param {number} timeS - The time in seconds to format.
+ * @returns {string} A formatted string representation of the time (e.g., "1h 30m 45s").
+ */
+function toFormatedTime(timeS) {
+    if (timeS === 0)
+        return '';
+    let ms = timeS * 1000;
+    if (ms < 0)
+        ms = -ms;
+    const time = {
+        day: Math.floor(ms / 86400000),
+        h: Math.floor(ms / 3600000) % 24,
+        m: Math.floor(ms / 60000) % 60,
+        s: Math.floor(ms / 1000) % 60,
+        ms: Math.floor(ms) % 1000
+    };
+    return Object.entries(time)
+        .filter(val => val[1] !== 0)
+        .map(([key, val]) => `${val}${key}${val > 0 && key === 'day' ? 's' : ''}`)
+        .join(' ');
+}
 
 ;// CONCATENATED MODULE: ./lib/annotator.js
 
@@ -37077,6 +37104,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
     let failedCount = 0;
     let passedCount = 0;
     let retriedCount = 0;
+    let time = 0;
     const annotations = [];
     // parse testCases
     if (suite.testcase) {
@@ -37091,6 +37119,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
         failedCount += parsedTestCases.failedCount;
         passedCount += parsedTestCases.passedCount;
         retriedCount += parsedTestCases.retriedCount;
+        time += parsedTestCases.time;
         annotations.push(...parsedTestCases.annotations);
         globalAnnotations.push(...parsedTestCases.annotations);
     }
@@ -37103,6 +37132,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
             failedCount,
             passedCount,
             retriedCount,
+            time,
             annotations,
             globalAnnotations,
             testResults: []
@@ -37127,6 +37157,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
             failedCount += childSuiteResult.failedCount;
             passedCount += childSuiteResult.passedCount;
             retriedCount += childSuiteResult.retriedCount;
+            time += childSuiteResult.time;
         }
         // skip out if we reached our annotations limit
         if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
@@ -37137,6 +37168,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
                 failedCount,
                 passedCount,
                 retriedCount,
+                time,
                 annotations,
                 globalAnnotations,
                 testResults: childSuiteResults
@@ -37150,6 +37182,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
         failedCount,
         passedCount,
         retriedCount,
+        time,
         annotations,
         globalAnnotations,
         testResults: childSuiteResults
@@ -37160,8 +37193,9 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
     let totalCount = 0;
     let skippedCount = 0;
     let retriedCount = 0;
+    let time = 0;
     if (checkRetries) {
-        // identify duplicates, in case of flaky tests, and remove them
+        // identify duplicates in case of flaky tests, and remove them
         const testcaseMap = new Map();
         for (const testcase of testcases) {
             const key = testcase._attributes.name;
@@ -37192,6 +37226,9 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
     }
     for (const testcase of testcases) {
         totalCount++;
+        // fish the time-taken out of the test case attributes, if present
+        const testTime = testcase._attributes.time === undefined ? 0 : parseFloat(testcase._attributes.time);
+        time += testTime;
         const testFailure = testcase.failure || testcase.error; // test failed
         const skip = testcase.skipped || testcase._attributes.status === 'disabled' || testcase._attributes.status === 'ignored';
         const failed = testFailure && !skip; // test faiure, but was skipped -> don't fail if a ignored test failed
@@ -37284,9 +37321,8 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
         }
         // optionally attach the prefix to the path
         resolvedPath = testFilesPrefix ? external_path_.join(testFilesPrefix, resolvedPath) : resolvedPath;
-        // fish the time-taken out of the test case attributes, if present
-        const testTime = testcase._attributes.time === undefined ? '' : ` (${testcase._attributes.time}s)`;
-        core.info(`${resolvedPath}:${pos.line} | ${message.split('\n', 1)[0]}${testTime}`);
+        const testTimeString = testTime > 0 ? `${testTime}s` : '';
+        core.info(`${resolvedPath}:${pos.line} | ${message.split('\n', 1)[0]}${testTimeString}`);
         annotations.push({
             path: resolvedPath,
             start_line: pos.line,
@@ -37298,7 +37334,8 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
             status: skip ? 'skipped' : success ? 'success' : 'failure',
             title: escapeEmoji(title),
             message: escapeEmoji(message),
-            raw_details: escapeEmoji(stackTrace)
+            raw_details: escapeEmoji(stackTrace),
+            time: testTime
         });
         if (limit >= 0 && annotations.length >= limit)
             break;
@@ -37311,6 +37348,7 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
         failedCount,
         passedCount,
         retriedCount,
+        time,
         annotations
     };
 }
@@ -37332,6 +37370,7 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
     let failed = 0;
     let passed = 0;
     let retried = 0;
+    let time = 0;
     let foundFiles = 0;
     for await (const file of globber.globGenerator()) {
         foundFiles++;
@@ -37339,12 +37378,13 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
         const testResult = await parseFile(file, suiteRegex, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError, globalAnnotations, resolveIgnoreClassname);
         if (!testResult)
             continue;
-        const { totalCount: c, skippedCount: s, failedCount: f, passedCount: p, retriedCount: r } = testResult;
+        const { totalCount: c, skippedCount: s, failedCount: f, passedCount: p, retriedCount: r, time: t } = testResult;
         totalCount += c;
         skipped += s;
         failed += f;
         passed += p;
         retried += r;
+        time += t;
         testResults.push(testResult);
         if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
             break;
@@ -37358,6 +37398,7 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
         failed,
         passed,
         retried,
+        time,
         foundFiles,
         globalAnnotations,
         testResults
@@ -37373,7 +37414,8 @@ function escapeEmoji(input) {
 
 ;// CONCATENATED MODULE: ./lib/table.js
 
-function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite = false, includeEmptyInSummary = true, simplifiedSummary = false) {
+
+function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite = false, includeEmptyInSummary = true, includeTimeInSummary = true, simplifiedSummary = false) {
     // only include a warning icon if there are skipped tests
     const hasPassed = testResults.some(testResult => testResult.passed > 0);
     const hasSkipped = testResults.some(testResult => testResult.skipped > 0);
@@ -37386,6 +37428,7 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
     const passedHeader = hasTests ? (hasPassed ? (hasFailed ? 'Passed ☑️' : 'Passed ✅') : 'Passed') : 'Passed ❌️';
     const skippedHeader = hasSkipped ? 'Skipped ⚠️' : 'Skipped';
     const failedHeader = hasFailed ? 'Failed ❌️' : 'Failed';
+    const timeHeader = 'Time ⏱';
     const passedIcon = simplifiedSummary ? '✅' : 'passed';
     const skippedIcon = simplifiedSummary ? '⚠️' : 'skipped';
     const failedIcon = simplifiedSummary ? '❌' : 'failed';
@@ -37400,6 +37443,9 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
             { data: failedHeader, header: true }
         ]
     ];
+    if (includeTimeInSummary) {
+        table[0].push({ data: timeHeader, header: true });
+    }
     const detailsTable = !detailedSummary
         ? []
         : [
@@ -37408,6 +37454,9 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
                 { data: 'Result', header: true }
             ]
         ];
+    if (detailedSummary && includeTimeInSummary) {
+        detailsTable[0].push({ data: timeHeader, header: true });
+    }
     const flakyTable = !flakySummary
         ? []
         : [
@@ -37416,50 +37465,66 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
                 { data: 'Retries', header: true }
             ]
         ];
+    if (flakySummary && includeTimeInSummary) {
+        flakyTable[0].push({ data: timeHeader, header: true });
+    }
+    const colspan = includeTimeInSummary ? '3' : '2';
     for (const testResult of testResults) {
-        table.push([
+        const row = [
             `${testResult.checkName}`,
             includeEmptyInSummary || testResult.totalCount > 0 ? `${testResult.totalCount} ran` : ``,
             includeEmptyInSummary || testResult.passed > 0 ? `${testResult.passed} ${passedIcon}` : ``,
             includeEmptyInSummary || testResult.skipped > 0 ? `${testResult.skipped} ${skippedIcon}` : ``,
             includeEmptyInSummary || testResult.failed > 0 ? `${testResult.failed} ${failedIcon}` : ``
-        ]);
+        ];
+        if (includeTimeInSummary) {
+            row.push(toFormatedTime(testResult.time));
+        }
+        table.push(row);
         const annotations = testResult.globalAnnotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
         if (annotations.length === 0) {
             if (!includePassed) {
                 core.info(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
             }
             if (verboseSummary) {
-                detailsTable.push([{ data: `No test annotations available`, colspan: '2' }]);
+                detailsTable.push([{ data: `No test annotations available`, colspan }]);
             }
         }
         else {
             if (detailedSummary) {
-                detailsTable.push([{ data: `<strong>${testResult.checkName}</strong>`, colspan: '2' }]);
+                detailsTable.push([{ data: `<strong>${testResult.checkName}</strong>`, colspan }]);
                 if (!groupSuite) {
                     for (const annotation of annotations) {
-                        detailsTable.push([
+                        const detailsRow = [
                             `${annotation.title}`,
                             `${annotation.status === 'success'
                                 ? passedDetailIcon
                                 : annotation.status === 'skipped'
                                     ? skippedDetailIcon
                                     : `❌ ${annotation.annotation_level}`}`
-                        ]);
+                        ];
+                        if (includeTimeInSummary) {
+                            detailsRow.push(toFormatedTime(annotation.time));
+                        }
+                        detailsTable.push(detailsRow);
                     }
                 }
                 else {
                     for (const internalTestResult of testResult.testResults) {
-                        appendDetailsTable(internalTestResult, detailsTable, includePassed, passedDetailIcon, skippedDetailIcon);
+                        appendDetailsTable(internalTestResult, detailsTable, includePassed, includeTimeInSummary, passedDetailIcon, skippedDetailIcon);
                     }
                 }
             }
             if (flakySummary) {
                 const flakyAnnotations = annotations.filter(annotation => annotation.retries > 0);
                 if (flakyAnnotations.length > 0) {
-                    flakyTable.push([{ data: `<strong>${testResult.checkName}</strong>`, colspan: '2' }]);
+                    flakyTable.push([{ data: `<strong>${testResult.checkName}</strong>`, colspan }]);
                     for (const annotation of flakyAnnotations) {
-                        flakyTable.push([`${annotation.title}`, `${annotation.retries}`]);
+                        const flakyRow = [`${annotation.title}`, `${annotation.retries}`];
+                        if (includeTimeInSummary) {
+                            flakyRow.push(toFormatedTime(annotation.time));
+                        }
+                        flakyTable.push(flakyRow);
                     }
                 }
             }
@@ -37467,23 +37532,28 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
     }
     return [table, detailsTable, flakyTable];
 }
-function appendDetailsTable(testResult, detailsTable, includePassed, passedDetailIcon, skippedDetailIcon) {
+function appendDetailsTable(testResult, detailsTable, includePassed, includeTimeInSummary, passedDetailIcon, skippedDetailIcon) {
+    const colspan = includeTimeInSummary ? '3' : '2';
     const annotations = testResult.annotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
     if (annotations.length > 0) {
-        detailsTable.push([{ data: `<em>${testResult.name}</em>`, colspan: '2' }]);
+        detailsTable.push([{ data: `<em>${testResult.name}</em>`, colspan }]);
         for (const annotation of annotations) {
-            detailsTable.push([
+            const row = [
                 `${annotation.title}`,
                 `${annotation.status === 'success'
                     ? passedDetailIcon
                     : annotation.status === 'skipped'
                         ? skippedDetailIcon
                         : `❌ ${annotation.annotation_level}`}`
-            ]);
+            ];
+            if (includeTimeInSummary) {
+                row.push(toFormatedTime(annotation.time));
+            }
+            detailsTable.push(row);
         }
     }
     for (const childTestResult of testResult.testResults) {
-        appendDetailsTable(childTestResult, detailsTable, includePassed, passedDetailIcon, skippedDetailIcon);
+        appendDetailsTable(childTestResult, detailsTable, includePassed, includeTimeInSummary, passedDetailIcon, skippedDetailIcon);
     }
 }
 
@@ -37520,6 +37590,7 @@ async function run() {
         const verboseSummary = core.getInput('verbose_summary') === 'true';
         const skipSuccessSummary = core.getInput('skip_success_summary') === 'true';
         const includeEmptyInSummary = core.getInput('include_empty_in_summary') === 'true';
+        const includeTimeInSummary = core.getInput('include_time_in_summary') === 'true';
         const simplifiedSummary = core.getInput('simplified_summary') === 'true';
         const groupSuite = core.getInput('group_suite') === 'true';
         const comment = core.getInput('comment') === 'true';
@@ -37554,6 +37625,7 @@ async function run() {
             failed: 0,
             passed: 0,
             retried: 0,
+            time: 0,
             foundFiles: 0,
             globalAnnotations: [],
             testResults: []
@@ -37566,6 +37638,7 @@ async function run() {
             mergedResult.failed += testResult.failed;
             mergedResult.passed += testResult.passed;
             mergedResult.retried += testResult.retried;
+            mergedResult.time += testResult.time;
             if (groupReports) {
                 testResults.push(testResult);
             }
@@ -37579,6 +37652,7 @@ async function run() {
                         failed: actualTestResult.failedCount,
                         passed: actualTestResult.passedCount,
                         retried: actualTestResult.retriedCount,
+                        time: actualTestResult.time,
                         foundFiles: 1,
                         globalAnnotations: actualTestResult.annotations,
                         testResults: actualTestResult.testResults
@@ -37591,6 +37665,7 @@ async function run() {
         core.setOutput('skipped', mergedResult.skipped);
         core.setOutput('failed', mergedResult.failed);
         core.setOutput('retried', mergedResult.retried);
+        core.setOutput('time', mergedResult.time);
         if (!(mergedResult.totalCount > 0 || mergedResult.skipped > 0) && requireTests) {
             core.setFailed(`❌ No test results found for ${checkName}`);
             return; // end if we failed due to no tests, but configured to require tests
@@ -37618,7 +37693,7 @@ async function run() {
             }
         }
         const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
-        const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite, includeEmptyInSummary, simplifiedSummary);
+        const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite, includeEmptyInSummary, includeTimeInSummary, simplifiedSummary);
         if (jobSummary && supportsJobSummary) {
             try {
                 await attachSummary(table, detailTable, flakyTable);

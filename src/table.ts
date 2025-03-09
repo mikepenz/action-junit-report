@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 // eslint-disable-next-line import/extensions
 import {SummaryTableRow} from '@actions/core/lib/summary.js'
 import {ActualTestResult, TestResult} from './testParser.js'
+import {toFormatedTime} from './utils.js'
 
 export function buildSummaryTables(
   testResults: TestResult[],
@@ -12,6 +13,7 @@ export function buildSummaryTables(
   skipSuccessSummary: boolean,
   groupSuite = false,
   includeEmptyInSummary = true,
+  includeTimeInSummary = true,
   simplifiedSummary = false
 ): [SummaryTableRow[], SummaryTableRow[], SummaryTableRow[]] {
   // only include a warning icon if there are skipped tests
@@ -28,6 +30,7 @@ export function buildSummaryTables(
   const passedHeader = hasTests ? (hasPassed ? (hasFailed ? 'Passed ☑️' : 'Passed ✅') : 'Passed') : 'Passed ❌️'
   const skippedHeader = hasSkipped ? 'Skipped ⚠️' : 'Skipped'
   const failedHeader = hasFailed ? 'Failed ❌️' : 'Failed'
+  const timeHeader = 'Time ⏱'
 
   const passedIcon = simplifiedSummary ? '✅' : 'passed'
   const skippedIcon = simplifiedSummary ? '⚠️' : 'skipped'
@@ -44,6 +47,9 @@ export function buildSummaryTables(
       {data: failedHeader, header: true}
     ]
   ]
+  if (includeTimeInSummary) {
+    table[0].push({data: timeHeader, header: true})
+  }
 
   const detailsTable: SummaryTableRow[] = !detailedSummary
     ? []
@@ -54,6 +60,10 @@ export function buildSummaryTables(
         ]
       ]
 
+  if (detailedSummary && includeTimeInSummary) {
+    detailsTable[0].push({data: timeHeader, header: true})
+  }
+
   const flakyTable: SummaryTableRow[] = !flakySummary
     ? []
     : [
@@ -63,14 +73,23 @@ export function buildSummaryTables(
         ]
       ]
 
+  if (flakySummary && includeTimeInSummary) {
+    flakyTable[0].push({data: timeHeader, header: true})
+  }
+
+  const colspan = includeTimeInSummary ? '3' : '2'
   for (const testResult of testResults) {
-    table.push([
+    const row = [
       `${testResult.checkName}`,
       includeEmptyInSummary || testResult.totalCount > 0 ? `${testResult.totalCount} ran` : ``,
       includeEmptyInSummary || testResult.passed > 0 ? `${testResult.passed} ${passedIcon}` : ``,
       includeEmptyInSummary || testResult.skipped > 0 ? `${testResult.skipped} ${skippedIcon}` : ``,
       includeEmptyInSummary || testResult.failed > 0 ? `${testResult.failed} ${failedIcon}` : ``
-    ])
+    ]
+    if (includeTimeInSummary) {
+      row.push(toFormatedTime(testResult.time))
+    }
+    table.push(row)
 
     const annotations = testResult.globalAnnotations.filter(
       annotation => includePassed || annotation.annotation_level !== 'notice'
@@ -83,14 +102,14 @@ export function buildSummaryTables(
         )
       }
       if (verboseSummary) {
-        detailsTable.push([{data: `No test annotations available`, colspan: '2'}])
+        detailsTable.push([{data: `No test annotations available`, colspan}])
       }
     } else {
       if (detailedSummary) {
-        detailsTable.push([{data: `<strong>${testResult.checkName}</strong>`, colspan: '2'}])
+        detailsTable.push([{data: `<strong>${testResult.checkName}</strong>`, colspan}])
         if (!groupSuite) {
           for (const annotation of annotations) {
-            detailsTable.push([
+            const detailsRow = [
               `${annotation.title}`,
               `${
                 annotation.status === 'success'
@@ -99,11 +118,22 @@ export function buildSummaryTables(
                     ? skippedDetailIcon
                     : `❌ ${annotation.annotation_level}`
               }`
-            ])
+            ]
+            if (includeTimeInSummary) {
+              detailsRow.push(toFormatedTime(annotation.time))
+            }
+            detailsTable.push(detailsRow)
           }
         } else {
           for (const internalTestResult of testResult.testResults) {
-            appendDetailsTable(internalTestResult, detailsTable, includePassed, passedDetailIcon, skippedDetailIcon)
+            appendDetailsTable(
+              internalTestResult,
+              detailsTable,
+              includePassed,
+              includeTimeInSummary,
+              passedDetailIcon,
+              skippedDetailIcon
+            )
           }
         }
       }
@@ -111,9 +141,13 @@ export function buildSummaryTables(
       if (flakySummary) {
         const flakyAnnotations = annotations.filter(annotation => annotation.retries > 0)
         if (flakyAnnotations.length > 0) {
-          flakyTable.push([{data: `<strong>${testResult.checkName}</strong>`, colspan: '2'}])
+          flakyTable.push([{data: `<strong>${testResult.checkName}</strong>`, colspan}])
           for (const annotation of flakyAnnotations) {
-            flakyTable.push([`${annotation.title}`, `${annotation.retries}`])
+            const flakyRow = [`${annotation.title}`, `${annotation.retries}`]
+            if (includeTimeInSummary) {
+              flakyRow.push(toFormatedTime(annotation.time))
+            }
+            flakyTable.push(flakyRow)
           }
         }
       }
@@ -126,16 +160,18 @@ function appendDetailsTable(
   testResult: ActualTestResult,
   detailsTable: SummaryTableRow[],
   includePassed: boolean,
+  includeTimeInSummary: boolean,
   passedDetailIcon: string,
   skippedDetailIcon: string
 ): void {
+  const colspan = includeTimeInSummary ? '3' : '2'
   const annotations = testResult.annotations.filter(
     annotation => includePassed || annotation.annotation_level !== 'notice'
   )
   if (annotations.length > 0) {
-    detailsTable.push([{data: `<em>${testResult.name}</em>`, colspan: '2'}])
+    detailsTable.push([{data: `<em>${testResult.name}</em>`, colspan}])
     for (const annotation of annotations) {
-      detailsTable.push([
+      const row = [
         `${annotation.title}`,
         `${
           annotation.status === 'success'
@@ -144,10 +180,21 @@ function appendDetailsTable(
               ? skippedDetailIcon
               : `❌ ${annotation.annotation_level}`
         }`
-      ])
+      ]
+      if (includeTimeInSummary) {
+        row.push(toFormatedTime(annotation.time))
+      }
+      detailsTable.push(row)
     }
   }
   for (const childTestResult of testResult.testResults) {
-    appendDetailsTable(childTestResult, detailsTable, includePassed, passedDetailIcon, skippedDetailIcon)
+    appendDetailsTable(
+      childTestResult,
+      detailsTable,
+      includePassed,
+      includeTimeInSummary,
+      passedDetailIcon,
+      skippedDetailIcon
+    )
   }
 }
