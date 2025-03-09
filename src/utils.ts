@@ -149,6 +149,6 @@ export function toFormatedTime(timeS: number): string {
   }
   return Object.entries(time)
     .filter(val => val[1] !== 0)
-    .map(([key, val]) => `${val}${key}`)
+    .map(([key, val]) => `${val}${key}${val > 0 && key === 'day' ? 's' : ''}`)
     .join(' ')
 }
