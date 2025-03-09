@@ -35,6 +35,7 @@ export async function run(): Promise<void> {
     const verboseSummary = core.getInput('verbose_summary') === 'true'
     const skipSuccessSummary = core.getInput('skip_success_summary') === 'true'
     const includeEmptyInSummary = core.getInput('include_empty_in_summary') === 'true'
+    const includeTimeInSummary = core.getInput('include_time_in_summary') === 'true'
     const simplifiedSummary = core.getInput('simplified_summary') === 'true'
     const groupSuite = core.getInput('group_suite') === 'true'
     const comment = core.getInput('comment') === 'true'
@@ -74,6 +75,7 @@ export async function run(): Promise<void> {
       failed: 0,
       passed: 0,
       retried: 0,
+      time: 0,
       foundFiles: 0,
       globalAnnotations: [],
       testResults: []
@@ -106,6 +108,7 @@ export async function run(): Promise<void> {
       mergedResult.failed += testResult.failed
       mergedResult.passed += testResult.passed
       mergedResult.retried += testResult.retried
+      mergedResult.time += testResult.time
 
       if (groupReports) {
         testResults.push(testResult)
@@ -119,6 +122,7 @@ export async function run(): Promise<void> {
             failed: actualTestResult.failedCount,
             passed: actualTestResult.passedCount,
             retried: actualTestResult.retriedCount,
+            time: actualTestResult.time,
             foundFiles: 1,
             globalAnnotations: actualTestResult.annotations,
             testResults: actualTestResult.testResults
@@ -132,6 +136,7 @@ export async function run(): Promise<void> {
     core.setOutput('skipped', mergedResult.skipped)
     core.setOutput('failed', mergedResult.failed)
     core.setOutput('retried', mergedResult.retried)
+    core.setOutput('time', mergedResult.time)
 
     if (!(mergedResult.totalCount > 0 || mergedResult.skipped > 0) && requireTests) {
       core.setFailed(`❌ No test results found for ${checkName}`)
@@ -182,6 +187,7 @@ export async function run(): Promise<void> {
       skipSuccessSummary,
       groupSuite,
       includeEmptyInSummary,
+      includeTimeInSummary,
       simplifiedSummary
     )
     if (jobSummary && supportsJobSummary) {
