@@ -1,5 +1,4 @@
 import * as core from '@actions/core'
-// eslint-disable-next-line import/extensions
 import {SummaryTableRow} from '@actions/core/lib/summary.js'
 import {ActualTestResult, TestResult} from './testParser.js'
 import {toFormatedTime} from './utils.js'

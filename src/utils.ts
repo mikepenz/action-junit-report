@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 import {Transformer} from './testParser.js'
-// eslint-disable-next-line import/extensions
 import {SummaryTableRow} from '@actions/core/lib/summary.js'
 
 export function retrieve(name: string, items: string[], index: number, total: number): string {
