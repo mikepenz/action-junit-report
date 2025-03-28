@@ -37595,6 +37595,7 @@ async function run() {
         const comment = core.getInput('comment') === 'true';
         const updateComment = core.getInput('updateComment') === 'true';
         const jobName = core.getInput('job_name');
+        const skipCommentWithoutTests = core.getInput('skip_comment_without_tests') === 'true';
         const reportPaths = core.getMultilineInput('report_paths');
         const summary = core.getMultilineInput('summary');
         const checkName = core.getMultilineInput('check_name');
@@ -37707,7 +37708,7 @@ async function run() {
         else {
             core.info('⏩ Skipped creation of job summary');
         }
-        if (comment) {
+        if (comment && (!skipCommentWithoutTests || mergedResult.totalCount > 0)) {
             const octokit = github.getOctokit(token);
             await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable);
         }
