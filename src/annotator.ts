@@ -1,9 +1,7 @@
 import * as core from '@actions/core'
 import {Annotation, TestResult} from './testParser.js'
 import * as github from '@actions/github'
-// eslint-disable-next-line import/extensions
 import {SummaryTableRow} from '@actions/core/lib/summary.js'
-// eslint-disable-next-line import/extensions
 import {context, GitHub} from '@actions/github/lib/utils.js'
 import {buildTable} from './utils.js'
 
