@@ -156,6 +156,10 @@ inputs:
     description: 'Force ignore test case classname from the xml report (This can help fix issues with some tools/languages)'
     required: false
     default: 'false'
+  skip_comment_without_tests:
+    description: 'Disable commenting if no tests are detected'
+    required: false
+    default: 'false'
 outputs:
   total:
     description: 'The total count of all checks'
