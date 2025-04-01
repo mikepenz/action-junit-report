@@ -36826,7 +36826,18 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
                 filter: 'latest'
             });
             core.debug(JSON.stringify(checks, null, 2));
-            const check_run_id = checks.data.check_runs[0].id;
+            const runId = Number(process.env.GITHUB_RUN_ID);
+            const check = checks.data.check_runs.find(c => {
+                return c.details_url?.includes(`/runs/${runId}`) || c.external_id === String(runId);
+            });
+            let check_run_id;
+            if (!check) {
+                core.warning(`❌ No matching check_run found for current run ID (${runId}) and check name "${jobName}"`);
+                check_run_id = checks.data.check_runs[0].id; // legacy behavior to not fail
+            }
+            else {
+                check_run_id = check.id;
+            }
             if (checkAnnotations) {
                 core.info(`ℹ️ - ${testResult.checkName} - Updating checks (Annotations: ${annotations.length})`);
                 for (let i = 0; i < annotations.length; i = i + 50) {
@@ -36849,6 +36860,7 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
                 head_sha: headSha,
                 status,
                 conclusion,
+                external_id: process.env.GITHUB_RUN_ID,
                 output: {
                     title,
                     summary: testResult.summary,
