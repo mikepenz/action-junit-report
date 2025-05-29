@@ -609,6 +609,8 @@ async function parseTestCases(
     testcases = Array.from(testcaseMap.values())
   }
 
+  let testCaseFailedCount = 0 // Track number of test cases that failed
+
   for (const testcase of testcases) {
     totalCount++
 
@@ -625,6 +627,11 @@ async function parseTestCases(
 
     if (skip) {
       skippedCount++
+    }
+
+    // Count this test case as failed if it has any failures (regardless of how many)
+    if (failed) {
+      testCaseFailedCount++
     }
 
     // If this isn't reported as a failure and processing all passed tests
@@ -687,7 +694,7 @@ async function parseTestCases(
     if (limit >= 0 && annotations.length >= limit) break
   }
 
-  const failedCount = annotations.filter(a => a.annotation_level === 'failure').length
+  const failedCount = testCaseFailedCount // Use test case count, not annotation count
   const passedCount = totalCount - failedCount - skippedCount
   return {
     totalCount,
