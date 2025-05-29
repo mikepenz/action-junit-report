@@ -420,6 +420,143 @@ async function parseSuite(
   }
 }
 
+/**
+ * Helper function to create an annotation for a test case
+ */
+async function createTestCaseAnnotation(
+  testcase: any,
+  failure: any | null,
+  failureIndex: number,
+  totalFailures: number,
+  suiteName: string,
+  suiteFile: string | null,
+  suiteLine: string | null,
+  breadCrumb: string,
+  testTime: number,
+  skip: boolean,
+  success: boolean,
+  annotationLevel: 'failure' | 'notice' | 'warning',
+  flakyFailuresCount: number,
+  annotateNotice: boolean,
+  failed: boolean,
+  excludeSources: string[],
+  checkTitleTemplate: string | undefined,
+  testFilesPrefix: string,
+  transformer: Transformer[],
+  followSymlink: boolean,
+  truncateStackTraces: boolean,
+  resolveIgnoreClassname: boolean
+): Promise<Annotation> {
+  // Extract stack trace based on whether we have a failure or error
+  const stackTrace: string = (
+    (failure && failure._cdata) ||
+    (failure && failure._text) ||
+    (testcase.error && testcase.error._cdata) ||
+    (testcase.error && testcase.error._text) ||
+    ''
+  )
+    .toString()
+    .trim()
+
+  const stackTraceMessage = truncateStackTraces ? stackTrace.split('\n').slice(0, 2).join('\n') : stackTrace
+
+  // Extract message based on failure or error
+  const message: string = (
+    (failure && failure._attributes && failure._attributes.message) ||
+    (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
+    stackTraceMessage ||
+    testcase._attributes.name
+  ).trim()
+
+  // Determine class name for resolution
+  let resolveClassname = testcase._attributes.name
+  if (!resolveIgnoreClassname && testcase._attributes.classname) {
+    resolveClassname = testcase._attributes.classname
+  }
+
+  // Resolve file and line information
+  const pos = await resolveFileAndLine(
+    testcase._attributes.file || failure?._attributes?.file || suiteFile,
+    testcase._attributes.line || failure?._attributes?.line || suiteLine,
+    resolveClassname,
+    stackTrace
+  )
+
+  // Apply transformations to filename
+  let transformedFileName = pos.fileName
+  for (const r of transformer) {
+    transformedFileName = applyTransformer(r, transformedFileName)
+  }
+
+  // Resolve the full path
+  const githubWorkspacePath = process.env['GITHUB_WORKSPACE']
+  let resolvedPath: string = transformedFileName
+  if (failed || (annotateNotice && success)) {
+    if (fs.existsSync(transformedFileName)) {
+      resolvedPath = transformedFileName
+    } else if (githubWorkspacePath && fs.existsSync(`${githubWorkspacePath}${transformedFileName}`)) {
+      resolvedPath = `${githubWorkspacePath}${transformedFileName}`
+    } else {
+      resolvedPath = await resolvePath(githubWorkspacePath || '', transformedFileName, excludeSources, followSymlink)
+    }
+  }
+
+  core.debug(`Path prior to stripping: ${resolvedPath}`)
+  if (githubWorkspacePath) {
+    resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, '') // strip workspace prefix, make the path relative
+  }
+
+  // Generate title
+  let title = ''
+  if (checkTitleTemplate) {
+    // ensure to not duplicate the test_name if file_name is equal
+    const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : ''
+    const baseClassName = testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name
+    const className = baseClassName.split('.').slice(-1)[0]
+    title = checkTitleTemplate
+      .replace(templateVar('FILE_NAME'), fileName)
+      .replace(templateVar('BREAD_CRUMB'), breadCrumb ?? '')
+      .replace(templateVar('SUITE_NAME'), suiteName ?? '')
+      .replace(templateVar('TEST_NAME'), testcase._attributes.name)
+      .replace(templateVar('CLASS_NAME'), className)
+  } else if (pos.fileName !== testcase._attributes.name) {
+    // special handling to use class name only for title in case class name was ignored for `resolveClassname`
+    if (resolveIgnoreClassname && testcase._attributes.classname) {
+      title = `${testcase._attributes.classname}.${testcase._attributes.name}`
+    } else {
+      title = `${pos.fileName}.${testcase._attributes.name}`
+    }
+  } else {
+    title = `${testcase._attributes.name}`
+  }
+
+  // Add failure index to title if multiple failures exist
+  if (totalFailures > 1) {
+    title = `${title} (failure ${failureIndex + 1}/${totalFailures})`
+  }
+
+  // optionally attach the prefix to the path
+  resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath
+
+  const testTimeString = testTime > 0 ? `${testTime}s` : ''
+  core.info(`${resolvedPath}:${pos.line} | ${message.split('\n', 1)[0]}${testTimeString}`)
+
+  return {
+    path: resolvedPath,
+    start_line: pos.line,
+    end_line: pos.line,
+    start_column: 0,
+    end_column: 0,
+    retries: (testcase.retries || 0) + flakyFailuresCount,
+    annotation_level: annotationLevel,
+    status: skip ? 'skipped' : success ? 'success' : 'failure',
+    title: escapeEmoji(title),
+    message: escapeEmoji(message),
+    raw_details: escapeEmoji(stackTrace),
+    time: testTime
+  }
+}
+
 async function parseTestCases(
   suiteName: string,
   suiteFile: string | null,
@@ -472,6 +609,8 @@ async function parseTestCases(
     testcases = Array.from(testcaseMap.values())
   }
 
+  let testCaseFailedCount = 0 // Track number of test cases that failed
+
   for (const testcase of testcases) {
     totalCount++
 
@@ -482,12 +621,17 @@ async function parseTestCases(
     const testFailure = testcase.failure || testcase.error // test failed
     const skip =
       testcase.skipped || testcase._attributes.status === 'disabled' || testcase._attributes.status === 'ignored'
-    const failed = testFailure && !skip // test faiure, but was skipped -> don't fail if a ignored test failed
+    const failed = testFailure && !skip // test failure, but was skipped -> don't fail if a ignored test failed
     const success = !testFailure // not a failure -> thus a success
     const annotationLevel = success || skip ? 'notice' : 'failure' // a skipped test shall not fail the run
 
     if (skip) {
       skippedCount++
+    }
+
+    // Count this test case as failed if it has any failures (regardless of how many)
+    if (failed) {
+      testCaseFailedCount++
     }
 
     // If this isn't reported as a failure and processing all passed tests
@@ -501,9 +645,7 @@ async function parseTestCases(
       ? Array.isArray(testcase.failure)
         ? testcase.failure
         : [testcase.failure]
-      : undefined
-    // the action only supports 1 failure per testcase
-    const failure = failures ? failures[0] : undefined
+      : []
 
     // identify the number of flaky failures
     const flakyFailuresCount = testcase.flakyFailure
@@ -512,107 +654,47 @@ async function parseTestCases(
         : 1
       : 0
 
-    const stackTrace: string = (
-      (failure && failure._cdata) ||
-      (failure && failure._text) ||
-      (testcase.error && testcase.error._cdata) ||
-      (testcase.error && testcase.error._text) ||
-      ''
-    )
-      .toString()
-      .trim()
+    // Handle multiple failures or single case (success/skip/error)
+    const failuresToProcess = failures.length > 0 ? failures : [null] // Process at least once for non-failure cases
+    
+    for (let failureIndex = 0; failureIndex < failuresToProcess.length; failureIndex++) {
+      const failure = failuresToProcess[failureIndex]
+      
+      const annotation = await createTestCaseAnnotation(
+        testcase,
+        failure,
+        failureIndex,
+        failures.length,
+        suiteName,
+        suiteFile,
+        suiteLine,
+        breadCrumb,
+        testTime,
+        skip,
+        success,
+        annotationLevel,
+        flakyFailuresCount,
+        annotateNotice,
+        failed,
+        excludeSources,
+        checkTitleTemplate,
+        testFilesPrefix,
+        transformer,
+        followSymlink,
+        truncateStackTraces,
+        resolveIgnoreClassname
+      )
 
-    const stackTraceMessage = truncateStackTraces ? stackTrace.split('\n').slice(0, 2).join('\n') : stackTrace
+      annotations.push(annotation)
 
-    const message: string = (
-      (failure && failure._attributes && failure._attributes.message) ||
-      (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
-      stackTraceMessage ||
-      testcase._attributes.name
-    ).trim()
-
-    let resolveClassname = testcase._attributes.name
-    if (!resolveIgnoreClassname && testcase._attributes.classname) {
-      resolveClassname = testcase._attributes.classname
+      if (limit >= 0 && annotations.length >= limit) break
     }
 
-    const pos = await resolveFileAndLine(
-      testcase._attributes.file || failure?._attributes?.file || suiteFile,
-      testcase._attributes.line || failure?._attributes?.line || suiteLine,
-      resolveClassname,
-      stackTrace
-    )
-
-    let transformedFileName = pos.fileName
-    for (const r of transformer) {
-      transformedFileName = applyTransformer(r, transformedFileName)
-    }
-
-    const githubWorkspacePath = process.env['GITHUB_WORKSPACE']
-    let resolvedPath: string = transformedFileName
-    if (failed || (annotateNotice && success)) {
-      if (fs.existsSync(transformedFileName)) {
-        resolvedPath = transformedFileName
-      } else if (githubWorkspacePath && fs.existsSync(`${githubWorkspacePath}${transformedFileName}`)) {
-        resolvedPath = `${githubWorkspacePath}${transformedFileName}`
-      } else {
-        resolvedPath = await resolvePath(githubWorkspacePath || '', transformedFileName, excludeSources, followSymlink)
-      }
-    }
-
-    core.debug(`Path prior to stripping: ${resolvedPath}`)
-    if (githubWorkspacePath) {
-      resolvedPath = resolvedPath.replace(`${githubWorkspacePath}/`, '') // strip workspace prefix, make the path relative
-    }
-
-    let title = ''
-    if (checkTitleTemplate) {
-      // ensure to not duplicate the test_name if file_name is equal
-      const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : ''
-      const baseClassName = testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name
-      const className = baseClassName.split('.').slice(-1)[0]
-      title = checkTitleTemplate
-        .replace(templateVar('FILE_NAME'), fileName)
-        .replace(templateVar('BREAD_CRUMB'), breadCrumb ?? '')
-        .replace(templateVar('SUITE_NAME'), suiteName ?? '')
-        .replace(templateVar('TEST_NAME'), testcase._attributes.name)
-        .replace(templateVar('CLASS_NAME'), className)
-    } else if (pos.fileName !== testcase._attributes.name) {
-      // special handling to use class name only for title in face class name was ignored for `resolveClassname1
-      if (resolveIgnoreClassname && testcase._attributes.classname) {
-        title = `${testcase._attributes.classname}.${testcase._attributes.name}`
-      } else {
-        title = `${pos.fileName}.${testcase._attributes.name}`
-      }
-    } else {
-      title = `${testcase._attributes.name}`
-    }
-
-    // optionally attach the prefix to the path
-    resolvedPath = testFilesPrefix ? pathHelper.join(testFilesPrefix, resolvedPath) : resolvedPath
-
-    const testTimeString = testTime > 0 ? `${testTime}s` : ''
-    core.info(`${resolvedPath}:${pos.line} | ${message.split('\n', 1)[0]}${testTimeString}`)
-
-    annotations.push({
-      path: resolvedPath,
-      start_line: pos.line,
-      end_line: pos.line,
-      start_column: 0,
-      end_column: 0,
-      retries: (testcase.retries || 0) + flakyFailuresCount,
-      annotation_level: annotationLevel,
-      status: skip ? 'skipped' : success ? 'success' : 'failure',
-      title: escapeEmoji(title),
-      message: escapeEmoji(message),
-      raw_details: escapeEmoji(stackTrace),
-      time: testTime
-    })
-
+    // Break from the outer testcase loop if we've reached the limit
     if (limit >= 0 && annotations.length >= limit) break
   }
 
-  const failedCount = annotations.filter(a => a.annotation_level === 'failure').length
+  const failedCount = testCaseFailedCount // Use test case count, not annotation count
   const passedCount = totalCount - failedCount - skippedCount
   return {
     totalCount,

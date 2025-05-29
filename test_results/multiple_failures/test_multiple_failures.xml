@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="MultipleFailuresTest" tests="4" failures="4" errors="0" skipped="1" time="0.05">
+    <!-- Test case with multiple failures -->
+    <testcase name="testWithMultipleFailures" classname="com.example.MultipleFailuresTest" time="0.02">
+      <failure message="First assertion failed" type="AssertionError">
+        <![CDATA[AssertionError: First assertion failed
+        at com.example.MultipleFailuresTest.testWithMultipleFailures(MultipleFailuresTest.java:15)
+        First failure stack trace details]]>
+      </failure>
+      <failure message="Second assertion failed" type="AssertionError">
+        <![CDATA[AssertionError: Second assertion failed
+        at com.example.MultipleFailuresTest.testWithMultipleFailures(MultipleFailuresTest.java:20)
+        Second failure stack trace details]]>
+      </failure>
+      <failure message="Third assertion failed" type="IllegalStateException">
+        <![CDATA[IllegalStateException: Third assertion failed
+        at com.example.MultipleFailuresTest.testWithMultipleFailures(MultipleFailuresTest.java:25)
+        Third failure stack trace details]]>
+      </failure>
+    </testcase>
+    
+    <!-- Test case with single failure for comparison -->
+    <testcase name="testWithSingleFailure" classname="com.example.MultipleFailuresTest" time="0.01">
+      <failure message="Single failure message" type="AssertionError">
+        <![CDATA[AssertionError: Single failure message
+        at com.example.MultipleFailuresTest.testWithSingleFailure(MultipleFailuresTest.java:35)
+        Single failure stack trace]]>
+      </failure>
+    </testcase>
+    
+    <!-- Test case that is skipped -->
+    <testcase name="testSkipped" classname="com.example.MultipleFailuresTest" time="0.00">
+      <skipped message="Test was skipped"/>
+    </testcase>
+    
+    <!-- Test case that passes -->
+    <testcase name="testPassing" classname="com.example.MultipleFailuresTest" time="0.02"/>
+  </testsuite>
+</testsuites>

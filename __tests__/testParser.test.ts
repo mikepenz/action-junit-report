@@ -1439,6 +1439,70 @@ describe('parseTestReports', () => {
     ])
   })
 
+  it('should handle multiple failures per test case correctly', async () => {
+    const testResult = await parseFile('test_results/multiple_failures/test_multiple_failures.xml', '', true)
+    expect(testResult).toBeDefined()
+    const {totalCount, skippedCount, failedCount, passedCount, globalAnnotations} = testResult!!
+
+    // Verify overall counts
+    expect(totalCount).toBe(4) // 4 total test cases
+    expect(skippedCount).toBe(1) // 1 skipped test
+    expect(failedCount).toBe(2) // 2 test cases with failures (testWithMultipleFailures, testWithSingleFailure)
+    expect(passedCount).toBe(1) // 1 passing test
+
+    // Filter to only failure annotations for easier verification
+    const failureAnnotations = globalAnnotations.filter(annotation => annotation.annotation_level === 'failure')
+    
+    // Should have 4 failure annotations total: 3 from testWithMultipleFailures + 1 from testWithSingleFailure
+    expect(failureAnnotations).toHaveLength(4)
+
+    // Verify the multiple failures test case creates separate annotations
+    const multipleFailuresAnnotations = failureAnnotations.filter(annotation => 
+      annotation.title.includes('testWithMultipleFailures')
+    )
+    expect(multipleFailuresAnnotations).toHaveLength(3)
+
+    // Verify each failure has the correct index in the title
+    expect(multipleFailuresAnnotations[0].title).toBe('MultipleFailuresTest.testWithMultipleFailures (failure 1/3)')
+    expect(multipleFailuresAnnotations[0].message).toBe('First assertion failed')
+    expect(multipleFailuresAnnotations[0].raw_details).toContain('First failure stack trace details')
+    expect(multipleFailuresAnnotations[0].start_line).toBe(15)
+
+    expect(multipleFailuresAnnotations[1].title).toBe('MultipleFailuresTest.testWithMultipleFailures (failure 2/3)')
+    expect(multipleFailuresAnnotations[1].message).toBe('Second assertion failed')
+    expect(multipleFailuresAnnotations[1].raw_details).toContain('Second failure stack trace details')
+    expect(multipleFailuresAnnotations[1].start_line).toBe(20)
+
+    expect(multipleFailuresAnnotations[2].title).toBe('MultipleFailuresTest.testWithMultipleFailures (failure 3/3)')
+    expect(multipleFailuresAnnotations[2].message).toBe('Third assertion failed')
+    expect(multipleFailuresAnnotations[2].raw_details).toContain('Third failure stack trace details')
+    expect(multipleFailuresAnnotations[2].start_line).toBe(25)
+
+    // Verify the single failure test case (should not have failure index in title)
+    const singleFailureAnnotations = failureAnnotations.filter(annotation => 
+      annotation.title.includes('testWithSingleFailure')
+    )
+    expect(singleFailureAnnotations).toHaveLength(1)
+    expect(singleFailureAnnotations[0].title).toBe('MultipleFailuresTest.testWithSingleFailure')
+    expect(singleFailureAnnotations[0].message).toBe('Single failure message')
+
+    // Verify all failure annotations have the correct properties
+    failureAnnotations.forEach(annotation => {
+      expect(annotation.annotation_level).toBe('failure')
+      expect(annotation.status).toBe('failure')
+      expect(annotation.retries).toBe(0)
+      expect(annotation.path).toBe('MultipleFailuresTest')
+      expect(annotation.start_column).toBe(0)
+      expect(annotation.end_column).toBe(0)
+    })
+
+    // Verify that success and skipped test cases don't have failure annotations
+    const successAnnotations = globalAnnotations.filter(annotation => annotation.status === 'success')
+    const skippedAnnotations = globalAnnotations.filter(annotation => annotation.status === 'skipped')
+    expect(successAnnotations).toHaveLength(1)
+    expect(skippedAnnotations).toHaveLength(1)
+  })
+
   it('parse corrupt test output', async () => {
     const result = await parseTestReports(
       '',
