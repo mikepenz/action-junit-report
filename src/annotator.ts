@@ -3,7 +3,12 @@ import {Annotation, TestResult} from './testParser.js'
 import * as github from '@actions/github'
 import {SummaryTableRow} from '@actions/core/lib/summary.js'
 import {context, GitHub} from '@actions/github/lib/utils.js'
-import {buildTable} from './utils.js'
+import {buildLink, buildList, buildTable} from './utils.js'
+
+export interface CheckInfo {
+  name: string
+  url: string
+}
 
 export async function annotateTestResult(
   testResult: TestResult,
@@ -14,7 +19,7 @@ export async function annotateTestResult(
   updateCheck: boolean,
   annotateNotice: boolean,
   jobName: string
-): Promise<void> {
+): Promise<CheckInfo | undefined> {
   const annotations = testResult.globalAnnotations.filter(
     annotation => annotateNotice || annotation.annotation_level !== 'notice'
   )
@@ -53,6 +58,7 @@ export async function annotateTestResult(
         core.notice(annotation.message, properties)
       }
     }
+    return undefined // No check created, so no URL to return
   } else {
     // check status is being created, annotations are included in this (if not diasbled by "checkAnnotations")
     if (updateCheck) {
@@ -67,6 +73,7 @@ export async function annotateTestResult(
       core.debug(JSON.stringify(checks, null, 2))
 
       const check_run_id = checks.data.check_runs[0].id
+      const checkUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/runs/${check_run_id}`
 
       if (checkAnnotations) {
         core.info(`ℹ️ - ${testResult.checkName} - Updating checks (Annotations: ${annotations.length})`)
@@ -77,6 +84,11 @@ export async function annotateTestResult(
       } else {
         core.info(`ℹ️ - ${testResult.checkName} - Updating checks (disabled annotations)`)
         await updateChecks(octokit, check_run_id, title, testResult.summary, [])
+      }
+
+      return {
+        name: testResult.checkName,
+        url: checkUrl
       }
     } else {
       const status: 'completed' | 'in_progress' | 'queued' | undefined = 'completed'
@@ -98,7 +110,13 @@ export async function annotateTestResult(
       core.debug(JSON.stringify(createCheckRequest, null, 2))
 
       core.info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjustedAnnotations.length})`)
-      await octokit.rest.checks.create(createCheckRequest)
+      const checkResponse = await octokit.rest.checks.create(createCheckRequest)
+
+      // Return the check URL for use in job summary
+      return {
+        name: testResult.checkName,
+        url: `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/runs/${checkResponse.data.id}`
+      }
     }
   }
 }
@@ -127,7 +145,8 @@ async function updateChecks(
 export async function attachSummary(
   table: SummaryTableRow[],
   detailsTable: SummaryTableRow[],
-  flakySummary: SummaryTableRow[]
+  flakySummary: SummaryTableRow[],
+  checkInfos: CheckInfo[] = []
 ): Promise<void> {
   if (table.length > 0) {
     await core.summary.addTable(table).write()
@@ -138,6 +157,16 @@ export async function attachSummary(
   if (flakySummary.length > 1) {
     await core.summary.addTable(flakySummary).write()
   }
+
+  // Add check links to the job summary if any checks were created
+  if (checkInfos.length > 0) {
+    const links = checkInfos.map(checkInfo => {
+      return buildLink(`View ${checkInfo.name}`, checkInfo.url)
+    })
+    core.summary.addList(links)
+  }
+  core.summary.addSeparator()
+  core.summary.write()
 }
 
 export function buildCommentIdentifier(checkName: string[]): string {
@@ -150,7 +179,8 @@ export async function attachComment(
   updateComment: boolean,
   table: SummaryTableRow[],
   detailsTable: SummaryTableRow[],
-  flakySummary: SummaryTableRow[]
+  flakySummary: SummaryTableRow[],
+  checkInfos: CheckInfo[] = []
 ): Promise<void> {
   if (!context.issue.number) {
     core.warning(`⚠️ Action requires a valid issue number (PR reference) to be able to attach a comment..`)
@@ -173,6 +203,16 @@ export async function attachComment(
     comment += '\n\n'
     comment += buildTable(flakySummary)
   }
+
+  // Add check links to the job summary if any checks were created
+  if (checkInfos.length > 0) {
+    const links = checkInfos.map(checkInfo => {
+      return buildLink(`View ${checkInfo.name}`, checkInfo.url)
+    })
+    comment += buildList(links)
+    comment += `\n\n`
+  }
+
   comment += `\n\n${identifier}`
 
   const priorComment = updateComment ? await findPriorComment(octokit, identifier) : undefined

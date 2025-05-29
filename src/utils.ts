@@ -61,6 +61,23 @@ export function applyTransformer(transformer: Transformer, string: string): stri
 /**
  * Function extracted from: https://github.com/actions/toolkit/blob/main/packages/core/src/summary.ts#L229
  */
+export function buildLink(text: string, href: string): string {
+  return wrap('a', text, {href})
+}
+
+/**
+ * Function extracted from: https://github.com/actions/toolkit/blob/main/packages/core/src/summary.ts#L229
+ */
+export function buildList(items: string[], ordered = false): string {
+  const tag = ordered ? 'ol' : 'ul'
+  const listItems = items.map(item => wrap('li', item)).join('')
+  const element = wrap(tag, listItems)
+  return element
+}
+
+/**
+ * Function extracted from: https://github.com/actions/toolkit/blob/main/packages/core/src/summary.ts#L229
+ */
 export function buildTable(rows: SummaryTableRow[]): string {
   const tableBody = rows
     .map(row => {

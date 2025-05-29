@@ -36692,6 +36692,21 @@ function applyTransformer(transformer, string) {
 /**
  * Function extracted from: https://github.com/actions/toolkit/blob/main/packages/core/src/summary.ts#L229
  */
+function buildLink(text, href) {
+    return wrap('a', text, { href });
+}
+/**
+ * Function extracted from: https://github.com/actions/toolkit/blob/main/packages/core/src/summary.ts#L229
+ */
+function buildList(items, ordered = false) {
+    const tag = ordered ? 'ol' : 'ul';
+    const listItems = items.map(item => wrap('li', item)).join('');
+    const element = wrap(tag, listItems);
+    return element;
+}
+/**
+ * Function extracted from: https://github.com/actions/toolkit/blob/main/packages/core/src/summary.ts#L229
+ */
 function buildTable(rows) {
     const tableBody = rows
         .map(row => {
@@ -36815,6 +36830,7 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
                 core.notice(annotation.message, properties);
             }
         }
+        return undefined; // No check created, so no URL to return
     }
     else {
         // check status is being created, annotations are included in this (if not diasbled by "checkAnnotations")
@@ -36828,6 +36844,7 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
             });
             core.debug(JSON.stringify(checks, null, 2));
             const check_run_id = checks.data.check_runs[0].id;
+            const checkUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/runs/${check_run_id}`;
             if (checkAnnotations) {
                 core.info(`ℹ️ - ${testResult.checkName} - Updating checks (Annotations: ${annotations.length})`);
                 for (let i = 0; i < annotations.length; i = i + 50) {
@@ -36839,6 +36856,10 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
                 core.info(`ℹ️ - ${testResult.checkName} - Updating checks (disabled annotations)`);
                 await updateChecks(octokit, check_run_id, title, testResult.summary, []);
             }
+            return {
+                name: testResult.checkName,
+                url: checkUrl
+            };
         }
         else {
             const status = 'completed';
@@ -36858,7 +36879,12 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
             };
             core.debug(JSON.stringify(createCheckRequest, null, 2));
             core.info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjustedAnnotations.length})`);
-            await octokit.rest.checks.create(createCheckRequest);
+            const checkResponse = await octokit.rest.checks.create(createCheckRequest);
+            // Return the check URL for use in job summary
+            return {
+                name: testResult.checkName,
+                url: `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/runs/${checkResponse.data.id}`
+            };
         }
     }
 }
@@ -36875,7 +36901,7 @@ async function updateChecks(octokit, check_run_id, title, summary, annotations) 
     core.debug(JSON.stringify(updateCheckRequest, null, 2));
     await octokit.rest.checks.update(updateCheckRequest);
 }
-async function attachSummary(table, detailsTable, flakySummary) {
+async function attachSummary(table, detailsTable, flakySummary, checkInfos = []) {
     if (table.length > 0) {
         await core.summary.addTable(table).write();
     }
@@ -36885,11 +36911,20 @@ async function attachSummary(table, detailsTable, flakySummary) {
     if (flakySummary.length > 1) {
         await core.summary.addTable(flakySummary).write();
     }
+    // Add check links to the job summary if any checks were created
+    if (checkInfos.length > 0) {
+        const links = checkInfos.map(checkInfo => {
+            return buildLink(`View ${checkInfo.name}`, checkInfo.url);
+        });
+        core.summary.addList(links);
+    }
+    core.summary.addSeparator();
+    core.summary.write();
 }
 function buildCommentIdentifier(checkName) {
     return `<!-- Summary comment for ${JSON.stringify(checkName)} by mikepenz/action-junit-report -->`;
 }
-async function attachComment(octokit, checkName, updateComment, table, detailsTable, flakySummary) {
+async function attachComment(octokit, checkName, updateComment, table, detailsTable, flakySummary, checkInfos = []) {
     if (!utils.context.issue.number) {
         core.warning(`⚠️ Action requires a valid issue number (PR reference) to be able to attach a comment..`);
         return;
@@ -36907,6 +36942,14 @@ async function attachComment(octokit, checkName, updateComment, table, detailsTa
     if (flakySummary.length > 1) {
         comment += '\n\n';
         comment += buildTable(flakySummary);
+    }
+    // Add check links to the job summary if any checks were created
+    if (checkInfos.length > 0) {
+        const links = checkInfos.map(checkInfo => {
+            return buildLink(`View ${checkInfo.name}`, checkInfo.url);
+        });
+        comment += buildList(links);
+        comment += `\n\n`;
     }
     comment += `\n\n${identifier}`;
     const priorComment = updateComment ? await findPriorComment(octokit, identifier) : undefined;
@@ -37321,6 +37364,7 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
         }
         testcases = Array.from(testcaseMap.values());
     }
+    let testCaseFailedCount = 0; // Track number of test cases that failed
     for (const testcase of testcases) {
         totalCount++;
         // fish the time-taken out of the test case attributes, if present
@@ -37334,17 +37378,17 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
         if (skip) {
             skippedCount++;
         }
+        // Count this test case as failed if it has any failures (regardless of how many)
+        if (failed) {
+            testCaseFailedCount++;
+        }
         // If this isn't reported as a failure and processing all passed tests
         // isn't enabled, then skip the rest of the processing.
         if (annotationLevel !== 'failure' && !includePassed) {
             continue;
         }
         // in some definitions `failure` may be an array
-        const failures = testcase.failure
-            ? Array.isArray(testcase.failure)
-                ? testcase.failure
-                : [testcase.failure]
-            : [];
+        const failures = testcase.failure ? (Array.isArray(testcase.failure) ? testcase.failure : [testcase.failure]) : [];
         // identify the number of flaky failures
         const flakyFailuresCount = testcase.flakyFailure
             ? Array.isArray(testcase.flakyFailure)
@@ -37364,7 +37408,7 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
         if (limit >= 0 && annotations.length >= limit)
             break;
     }
-    const failedCount = annotations.filter(a => a.annotation_level === 'failure').length;
+    const failedCount = testCaseFailedCount; // Use test case count, not annotation count
     const passedCount = totalCount - failedCount - skippedCount;
     return {
         totalCount,
@@ -37706,10 +37750,14 @@ async function run() {
         core.info(`ℹ️ Posting with conclusion '${conclusion}' to ${link} (sha: ${headSha})`);
         core.endGroup();
         core.startGroup(`🚀 Publish results`);
+        const checkInfos = [];
         if (!skipAnnotations) {
             try {
                 for (const testResult of testResults) {
-                    await annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName);
+                    const checkInfo = await annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName);
+                    if (checkInfo) {
+                        checkInfos.push(checkInfo);
+                    }
                 }
             }
             catch (error) {
@@ -37721,7 +37769,7 @@ async function run() {
         const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite, includeEmptyInSummary, includeTimeInSummary, simplifiedSummary);
         if (jobSummary && supportsJobSummary) {
             try {
-                await attachSummary(table, detailTable, flakyTable);
+                await attachSummary(table, detailTable, flakyTable, checkInfos);
             }
             catch (error) {
                 core.error(`❌ Failed to set the summary using the provided token. (${error})`);
@@ -37735,7 +37783,7 @@ async function run() {
         }
         if (comment && (!skipCommentWithoutTests || mergedResult.totalCount > 0)) {
             const octokit = github.getOctokit(token);
-            await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable);
+            await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable, checkInfos);
         }
         core.setOutput('summary', buildTable(table));
         core.setOutput('detailed_summary', buildTable(detailTable));

@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {annotateTestResult, attachComment, attachSummary} from './annotator.js'
+import {annotateTestResult, attachComment, attachSummary, CheckInfo} from './annotator.js'
 import {parseTestReports, TestResult} from './testParser.js'
 import {buildTable, readTransformers, retrieve} from './utils.js'
 import {GitHub} from '@actions/github/lib/utils.js'
@@ -155,10 +155,11 @@ export async function run(): Promise<void> {
     core.endGroup()
     core.startGroup(`🚀 Publish results`)
 
+    const checkInfos: CheckInfo[] = []
     if (!skipAnnotations) {
       try {
         for (const testResult of testResults) {
-          await annotateTestResult(
+          const checkInfo = await annotateTestResult(
             testResult,
             token,
             headSha,
@@ -168,6 +169,9 @@ export async function run(): Promise<void> {
             annotateNotice,
             jobName
           )
+          if (checkInfo) {
+            checkInfos.push(checkInfo)
+          }
         }
       } catch (error) {
         core.error(`❌ Failed to create checks using the provided token. (${error})`)
@@ -192,7 +196,7 @@ export async function run(): Promise<void> {
     )
     if (jobSummary && supportsJobSummary) {
       try {
-        await attachSummary(table, detailTable, flakyTable)
+        await attachSummary(table, detailTable, flakyTable, checkInfos)
       } catch (error) {
         core.error(`❌ Failed to set the summary using the provided token. (${error})`)
       }
@@ -204,7 +208,7 @@ export async function run(): Promise<void> {
 
     if (comment && (!skipCommentWithoutTests || mergedResult.totalCount > 0)) {
       const octokit: InstanceType<typeof GitHub> = github.getOctokit(token)
-      await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable)
+      await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable, checkInfos)
     }
 
     core.setOutput('summary', buildTable(table))
