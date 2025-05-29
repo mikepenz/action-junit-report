@@ -1452,12 +1452,12 @@ describe('parseTestReports', () => {
 
     // Filter to only failure annotations for easier verification
     const failureAnnotations = globalAnnotations.filter(annotation => annotation.annotation_level === 'failure')
-    
+
     // Should have 4 failure annotations total: 3 from testWithMultipleFailures + 1 from testWithSingleFailure
     expect(failureAnnotations).toHaveLength(4)
 
     // Verify the multiple failures test case creates separate annotations
-    const multipleFailuresAnnotations = failureAnnotations.filter(annotation => 
+    const multipleFailuresAnnotations = failureAnnotations.filter(annotation =>
       annotation.title.includes('testWithMultipleFailures')
     )
     expect(multipleFailuresAnnotations).toHaveLength(3)
@@ -1479,7 +1479,7 @@ describe('parseTestReports', () => {
     expect(multipleFailuresAnnotations[2].start_line).toBe(25)
 
     // Verify the single failure test case (should not have failure index in title)
-    const singleFailureAnnotations = failureAnnotations.filter(annotation => 
+    const singleFailureAnnotations = failureAnnotations.filter(annotation =>
       annotation.title.includes('testWithSingleFailure')
     )
     expect(singleFailureAnnotations).toHaveLength(1)

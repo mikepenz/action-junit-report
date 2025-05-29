@@ -641,11 +641,7 @@ async function parseTestCases(
     }
 
     // in some definitions `failure` may be an array
-    const failures = testcase.failure
-      ? Array.isArray(testcase.failure)
-        ? testcase.failure
-        : [testcase.failure]
-      : []
+    const failures = testcase.failure ? (Array.isArray(testcase.failure) ? testcase.failure : [testcase.failure]) : []
 
     // identify the number of flaky failures
     const flakyFailuresCount = testcase.flakyFailure
@@ -656,10 +652,10 @@ async function parseTestCases(
 
     // Handle multiple failures or single case (success/skip/error)
     const failuresToProcess = failures.length > 0 ? failures : [null] // Process at least once for non-failure cases
-    
+
     for (let failureIndex = 0; failureIndex < failuresToProcess.length; failureIndex++) {
       const failure = failuresToProcess[failureIndex]
-      
+
       const annotation = await createTestCaseAnnotation(
         testcase,
         failure,
