@@ -73,7 +73,7 @@ export async function annotateTestResult(
       core.debug(JSON.stringify(checks, null, 2))
 
       const check_run_id = checks.data.check_runs[0].id
-      const checkUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/runs/${check_run_id}`
+      const checkUrl = `${github.context.serverUrl}/${github.context.repo.owner}/${github.context.repo.repo}/runs/${check_run_id}`
 
       if (checkAnnotations) {
         core.info(`ℹ️ - ${testResult.checkName} - Updating checks (Annotations: ${annotations.length})`)
@@ -115,7 +115,7 @@ export async function annotateTestResult(
       // Return the check URL for use in job summary
       return {
         name: testResult.checkName,
-        url: `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/runs/${checkResponse.data.id}`
+        url: `${github.context.serverUrl}/${github.context.repo.owner}/${github.context.repo.repo}/runs/${checkResponse.data.id}`
       }
     }
   }
