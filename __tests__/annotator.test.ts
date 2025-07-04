@@ -24,10 +24,10 @@ describe('attachComment', () => {
     // Import context after mocking
     const {context} = require('@actions/github/lib/utils.js')
     mockContext = context
-    
+
     // Mock core.warning
     mockWarning = jest.spyOn(core, 'warning').mockImplementation(() => {})
-    
+
     // Mock octokit
     mockOctokit = {
       paginate: jest.fn(),
@@ -52,7 +52,10 @@ describe('attachComment', () => {
     mockOctokit.paginate.mockResolvedValue([])
 
     const checkName = ['Test Check']
-    const table = [['Test', 'Result'], ['Example Test', 'Passed']]
+    const table = [
+      ['Test', 'Result'],
+      ['Example Test', 'Passed']
+    ]
     const prId = '123'
 
     await attachComment(mockOctokit, checkName, false, table, [], [], [], prId)
@@ -75,7 +78,10 @@ describe('attachComment', () => {
     mockOctokit.paginate.mockResolvedValue([])
 
     const checkName = ['Test Check']
-    const table = [['Test', 'Result'], ['Example Test', 'Passed']]
+    const table = [
+      ['Test', 'Result'],
+      ['Example Test', 'Passed']
+    ]
 
     await attachComment(mockOctokit, checkName, false, table, [], [], [])
 
@@ -95,7 +101,10 @@ describe('attachComment', () => {
     mockContext.issue.number = undefined
 
     const checkName = ['Test Check']
-    const table = [['Test', 'Result'], ['Example Test', 'Passed']]
+    const table = [
+      ['Test', 'Result'],
+      ['Example Test', 'Passed']
+    ]
 
     await attachComment(mockOctokit, checkName, false, table, [], [], [])
 
@@ -117,7 +126,10 @@ describe('attachComment', () => {
     mockOctokit.paginate.mockResolvedValue([existingComment])
 
     const checkName = ['Test Check']
-    const table = [['Test', 'Result'], ['Example Test', 'Updated']]
+    const table = [
+      ['Test', 'Result'],
+      ['Example Test', 'Updated']
+    ]
 
     await attachComment(mockOctokit, checkName, true, table, [], [], [])
 
@@ -135,7 +147,10 @@ describe('attachComment', () => {
     mockContext.issue.number = undefined
 
     const checkName = ['Test Check']
-    const table = [['Test', 'Result'], ['Example Test', 'Passed']]
+    const table = [
+      ['Test', 'Result'],
+      ['Example Test', 'Passed']
+    ]
     const prId = 'invalid-number'
 
     await attachComment(mockOctokit, checkName, false, table, [], [], [], prId)
@@ -154,7 +169,10 @@ describe('attachComment', () => {
     mockOctokit.paginate.mockResolvedValue([])
 
     const checkName = ['Test Check']
-    const table = [['Test', 'Result'], ['Example Test', 'Passed']]
+    const table = [
+      ['Test', 'Result'],
+      ['Example Test', 'Passed']
+    ]
     const prId = '  123  '
 
     await attachComment(mockOctokit, checkName, false, table, [], [], [], prId)
@@ -181,20 +199,20 @@ describe('attachComment', () => {
     mockOctokit.paginate.mockResolvedValue([existingComment])
 
     const checkName = ['Test Check']
-    const table = [['Test', 'Result'], ['Example Test', 'Updated']]
+    const table = [
+      ['Test', 'Result'],
+      ['Example Test', 'Updated']
+    ]
     const prId = '789'
 
     await attachComment(mockOctokit, checkName, true, table, [], [], [], prId)
 
     // Verify paginate was called with correct issue number
-    expect(mockOctokit.paginate).toHaveBeenCalledWith(
-      mockOctokit.rest.issues.listComments,
-      {
-        owner: 'test-owner',
-        repo: 'test-repo',
-        issue_number: 789
-      }
-    )
+    expect(mockOctokit.paginate).toHaveBeenCalledWith(mockOctokit.rest.issues.listComments, {
+      owner: 'test-owner',
+      repo: 'test-repo',
+      issue_number: 789
+    })
 
     // Verify comment was updated
     expect(mockOctokit.rest.issues.updateComment).toHaveBeenCalledWith({
@@ -205,7 +223,6 @@ describe('attachComment', () => {
     })
     expect(mockOctokit.rest.issues.createComment).not.toHaveBeenCalled()
   })
-
 })
 
 describe('buildCommentIdentifier', () => {
