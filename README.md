@@ -114,6 +114,7 @@ jobs:
 | `truncate_stack_traces`      | Optional. Truncate stack traces from test output to 2 lines in annotations. Defaults to `true`.                                                                                                     |
 | `resolve_ignore_classname`   | Optional. Force ignore test case classname from the xml report (This can help fix issues with some tools/languages). Defaults to `false`.                                                           |
 | `skip_comment_without_tests` | Optional. Disable commenting if no tests are detected. Defaults to `false`.                                                                                                                         |
+| `pr_id`                      | Optional. PR number to comment on (useful for workflow_run contexts where the action runs outside the PR context). When provided, overrides the automatic PR detection.                            |
 
 ### Common Configurations
 
@@ -247,9 +248,15 @@ jobs:
         with:
           commit: ${{github.event.workflow_run.head_sha}}
           report_paths: '**/build/test-results/test/TEST-*.xml'
+          # Optional: if you want to add PR comments from workflow_run context  
+          # comment: true
+          # pr_id: ${{ github.event.workflow_run.pull_requests[0].number }}
 ```
 
 This will securely post the check results from the privileged workflow onto the PR's checks report.
+
+> [!TIP]
+> When running from `workflow_run` context, use the `pr_id` parameter to enable PR comments: `pr_id: ${{ github.event.workflow_run.pull_requests[0].number }}`
 
 </p>
 </details>

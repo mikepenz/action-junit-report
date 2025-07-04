@@ -130,6 +130,82 @@ describe('attachComment', () => {
     })
     expect(mockOctokit.rest.issues.createComment).not.toHaveBeenCalled()
   })
+  it('should warn and return early when pr_id is invalid', async () => {
+    // Setup: no context issue number and invalid pr_id
+    mockContext.issue.number = undefined
+
+    const checkName = ['Test Check']
+    const table = [['Test', 'Result'], ['Example Test', 'Passed']]
+    const prId = 'invalid-number'
+
+    await attachComment(mockOctokit, checkName, false, table, [], [], [], prId)
+
+    // Verify warning was called and no comment was created
+    expect(mockWarning).toHaveBeenCalledWith(
+      expect.stringContaining('Action requires a valid issue number (PR reference) or pr_id input')
+    )
+    expect(mockOctokit.rest.issues.createComment).not.toHaveBeenCalled()
+  })
+
+  it('should handle pr_id with leading/trailing whitespace', async () => {
+    // Setup: no context issue number
+    mockContext.issue.number = undefined
+
+    mockOctokit.paginate.mockResolvedValue([])
+
+    const checkName = ['Test Check']
+    const table = [['Test', 'Result'], ['Example Test', 'Passed']]
+    const prId = '  123  '
+
+    await attachComment(mockOctokit, checkName, false, table, [], [], [], prId)
+
+    // Verify comment was created with correct issue number (whitespace trimmed)
+    expect(mockOctokit.rest.issues.createComment).toHaveBeenCalledWith({
+      owner: 'test-owner',
+      repo: 'test-repo',
+      issue_number: 123,
+      body: expect.stringContaining('Example Test')
+    })
+
+    expect(mockWarning).not.toHaveBeenCalled()
+  })
+
+  it('should update existing comment when pr_id is provided and updateComment is true', async () => {
+    // Setup: no context issue number but pr_id provided
+    mockContext.issue.number = undefined
+
+    const existingComment = {
+      id: 888,
+      body: 'Existing comment <!-- Summary comment for ["Test Check"] by mikepenz/action-junit-report -->'
+    }
+    mockOctokit.paginate.mockResolvedValue([existingComment])
+
+    const checkName = ['Test Check']
+    const table = [['Test', 'Result'], ['Example Test', 'Updated']]
+    const prId = '789'
+
+    await attachComment(mockOctokit, checkName, true, table, [], [], [], prId)
+
+    // Verify paginate was called with correct issue number
+    expect(mockOctokit.paginate).toHaveBeenCalledWith(
+      mockOctokit.rest.issues.listComments,
+      {
+        owner: 'test-owner',
+        repo: 'test-repo',
+        issue_number: 789
+      }
+    )
+
+    // Verify comment was updated
+    expect(mockOctokit.rest.issues.updateComment).toHaveBeenCalledWith({
+      owner: 'test-owner',
+      repo: 'test-repo',
+      comment_id: 888,
+      body: expect.stringContaining('Example Test')
+    })
+    expect(mockOctokit.rest.issues.createComment).not.toHaveBeenCalled()
+  })
+
 })
 
 describe('buildCommentIdentifier', () => {

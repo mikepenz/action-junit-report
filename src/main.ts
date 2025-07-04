@@ -41,7 +41,7 @@ export async function run(): Promise<void> {
     const updateComment = core.getInput('updateComment') === 'true'
     const jobName = core.getInput('job_name')
     const skipCommentWithoutTests = core.getInput('skip_comment_without_tests') === 'true'
-    const prId = core.getInput('pr_id')
+    const prId = core.getInput('pr_id').trim() || undefined
 
     const reportPaths = core.getMultilineInput('report_paths')
     const summary = core.getMultilineInput('summary')
