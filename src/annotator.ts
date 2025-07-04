@@ -185,9 +185,11 @@ export async function attachComment(
 ): Promise<void> {
   // Use provided prId or fall back to context issue number
   const issueNumber = prId ? parseInt(prId, 10) : context.issue.number
-  
+
   if (!issueNumber) {
-    core.warning(`⚠️ Action requires a valid issue number (PR reference) or pr_id input to be able to attach a comment..`)
+    core.warning(
+      `⚠️ Action requires a valid issue number (PR reference) or pr_id input to be able to attach a comment..`
+    )
     return
   }
 
@@ -237,7 +239,11 @@ export async function attachComment(
   }
 }
 
-async function findPriorComment(octokit: InstanceType<typeof GitHub>, identifier: string, issueNumber: number): Promise<number | undefined> {
+async function findPriorComment(
+  octokit: InstanceType<typeof GitHub>,
+  identifier: string,
+  issueNumber: number
+): Promise<number | undefined> {
   const comments = await octokit.paginate(octokit.rest.issues.listComments, {
     owner: context.repo.owner,
     repo: context.repo.repo,
