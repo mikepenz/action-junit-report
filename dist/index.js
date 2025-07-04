@@ -36924,9 +36924,11 @@ async function attachSummary(table, detailsTable, flakySummary, checkInfos = [])
 function buildCommentIdentifier(checkName) {
     return `<!-- Summary comment for ${JSON.stringify(checkName)} by mikepenz/action-junit-report -->`;
 }
-async function attachComment(octokit, checkName, updateComment, table, detailsTable, flakySummary, checkInfos = []) {
-    if (!utils.context.issue.number) {
-        core.warning(`⚠️ Action requires a valid issue number (PR reference) to be able to attach a comment..`);
+async function attachComment(octokit, checkName, updateComment, table, detailsTable, flakySummary, checkInfos = [], prId) {
+    // Use provided prId or fall back to context issue number
+    const issueNumber = prId ? parseInt(prId, 10) : utils.context.issue.number;
+    if (!issueNumber) {
+        core.warning(`⚠️ Action requires a valid issue number (PR reference) or pr_id input to be able to attach a comment..`);
         return;
     }
     if (table.length === 0 && detailsTable.length === 0 && flakySummary.length === 0) {
@@ -36952,7 +36954,7 @@ async function attachComment(octokit, checkName, updateComment, table, detailsTa
         comment += `\n\n`;
     }
     comment += `\n\n${identifier}`;
-    const priorComment = updateComment ? await findPriorComment(octokit, identifier) : undefined;
+    const priorComment = updateComment ? await findPriorComment(octokit, identifier, issueNumber) : undefined;
     if (priorComment) {
         await octokit.rest.issues.updateComment({
             owner: utils.context.repo.owner,
@@ -36965,16 +36967,16 @@ async function attachComment(octokit, checkName, updateComment, table, detailsTa
         await octokit.rest.issues.createComment({
             owner: utils.context.repo.owner,
             repo: utils.context.repo.repo,
-            issue_number: utils.context.issue.number,
+            issue_number: issueNumber,
             body: comment
         });
     }
 }
-async function findPriorComment(octokit, identifier) {
+async function findPriorComment(octokit, identifier, issueNumber) {
     const comments = await octokit.paginate(octokit.rest.issues.listComments, {
         owner: utils.context.repo.owner,
         repo: utils.context.repo.repo,
-        issue_number: utils.context.issue.number
+        issue_number: issueNumber
     });
     const foundComment = comments.find(comment => comment.body?.endsWith(identifier));
     return foundComment?.id;
@@ -37665,6 +37667,7 @@ async function run() {
         const updateComment = core.getInput('updateComment') === 'true';
         const jobName = core.getInput('job_name');
         const skipCommentWithoutTests = core.getInput('skip_comment_without_tests') === 'true';
+        const prId = core.getInput('pr_id');
         const reportPaths = core.getMultilineInput('report_paths');
         const summary = core.getMultilineInput('summary');
         const checkName = core.getMultilineInput('check_name');
@@ -37783,7 +37786,7 @@ async function run() {
         }
         if (comment && (!skipCommentWithoutTests || mergedResult.totalCount > 0)) {
             const octokit = github.getOctokit(token);
-            await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable, checkInfos);
+            await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable, checkInfos, prId);
         }
         core.setOutput('summary', buildTable(table));
         core.setOutput('detailed_summary', buildTable(detailTable));

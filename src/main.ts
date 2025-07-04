@@ -41,6 +41,7 @@ export async function run(): Promise<void> {
     const updateComment = core.getInput('updateComment') === 'true'
     const jobName = core.getInput('job_name')
     const skipCommentWithoutTests = core.getInput('skip_comment_without_tests') === 'true'
+    const prId = core.getInput('pr_id')
 
     const reportPaths = core.getMultilineInput('report_paths')
     const summary = core.getMultilineInput('summary')
@@ -208,7 +209,7 @@ export async function run(): Promise<void> {
 
     if (comment && (!skipCommentWithoutTests || mergedResult.totalCount > 0)) {
       const octokit: InstanceType<typeof GitHub> = github.getOctokit(token)
-      await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable, checkInfos)
+      await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable, checkInfos, prId)
     }
 
     core.setOutput('summary', buildTable(table))
