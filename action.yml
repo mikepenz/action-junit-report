@@ -160,6 +160,9 @@ inputs:
     description: 'Disable commenting if no tests are detected'
     required: false
     default: 'false'
+  pr_id:
+    description: 'PR number to comment on (useful for workflow_run contexts)'
+    required: false
 outputs:
   total:
     description: 'The total count of all checks'

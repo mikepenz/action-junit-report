@@ -180,10 +180,14 @@ export async function attachComment(
   table: SummaryTableRow[],
   detailsTable: SummaryTableRow[],
   flakySummary: SummaryTableRow[],
-  checkInfos: CheckInfo[] = []
+  checkInfos: CheckInfo[] = [],
+  prId?: string
 ): Promise<void> {
-  if (!context.issue.number) {
-    core.warning(`⚠️ Action requires a valid issue number (PR reference) to be able to attach a comment..`)
+  // Use provided prId or fall back to context issue number
+  const issueNumber = prId ? parseInt(prId, 10) : context.issue.number
+  
+  if (!issueNumber) {
+    core.warning(`⚠️ Action requires a valid issue number (PR reference) or pr_id input to be able to attach a comment..`)
     return
   }
 
@@ -215,7 +219,7 @@ export async function attachComment(
 
   comment += `\n\n${identifier}`
 
-  const priorComment = updateComment ? await findPriorComment(octokit, identifier) : undefined
+  const priorComment = updateComment ? await findPriorComment(octokit, identifier, issueNumber) : undefined
   if (priorComment) {
     await octokit.rest.issues.updateComment({
       owner: context.repo.owner,
@@ -227,17 +231,17 @@ export async function attachComment(
     await octokit.rest.issues.createComment({
       owner: context.repo.owner,
       repo: context.repo.repo,
-      issue_number: context.issue.number,
+      issue_number: issueNumber,
       body: comment
     })
   }
 }
 
-async function findPriorComment(octokit: InstanceType<typeof GitHub>, identifier: string): Promise<number | undefined> {
+async function findPriorComment(octokit: InstanceType<typeof GitHub>, identifier: string, issueNumber: number): Promise<number | undefined> {
   const comments = await octokit.paginate(octokit.rest.issues.listComments, {
     owner: context.repo.owner,
     repo: context.repo.repo,
-    issue_number: context.issue.number
+    issue_number: issueNumber
   })
 
   const foundComment = comments.find(comment => comment.body?.endsWith(identifier))
