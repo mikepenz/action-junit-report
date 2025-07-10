@@ -149,7 +149,7 @@ you can increase the memory allocation by setting an environment variable
 - name: Publish Test Report
   uses: mikepenz/action-junit-report@v5
   env:
-    NODE_OPTIONS: "--max_old_space_size=4096"
+    NODE_OPTIONS: "--max-old-space-size=4096"
   if: success() || failure() # always run even if the previous step fails
   with:
     report_paths: '**/build/test-results/test/TEST-*.xml'
