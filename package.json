@@ -55,7 +55,7 @@
     "jest": "^30.0.4",
     "jest-circus": "^30.0.4",
     "js-yaml": "^4.1.0",
-    "nock": "^14.0.5",
+    "nock": "^14.0.9",
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.0",
     "typescript": "^5.8.3",
