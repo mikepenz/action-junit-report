@@ -181,5 +181,5 @@ outputs:
   flaky_summary:
     description: 'The full table with all flaky results in a summary. In html format (as also constructed by GitHub for the summary).'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
