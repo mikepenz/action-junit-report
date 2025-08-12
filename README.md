@@ -114,7 +114,7 @@ jobs:
 | `truncate_stack_traces`      | Optional. Truncate stack traces from test output to 2 lines in annotations. Defaults to `true`.                                                                                                     |
 | `resolve_ignore_classname`   | Optional. Force ignore test case classname from the xml report (This can help fix issues with some tools/languages). Defaults to `false`.                                                           |
 | `skip_comment_without_tests` | Optional. Disable commenting if no tests are detected. Defaults to `false`.                                                                                                                         |
-| `pr_id`                      | Optional. PR number to comment on (useful for workflow_run contexts where the action runs outside the PR context). When provided, overrides the automatic PR detection.                            |
+| `pr_id`                      | Optional. PR number to comment on (useful for workflow_run contexts where the action runs outside the PR context). When provided, overrides the automatic PR detection.                             |
 
 ### Common Configurations
 
