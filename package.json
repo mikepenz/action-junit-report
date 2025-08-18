@@ -59,7 +59,7 @@
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.1",
     "typescript": "^5.9.2",
-    "webpack": "^5.101.0"
+    "webpack": "^5.101.2"
   },
   "overrides": {
     "glob": "11.0.1"
