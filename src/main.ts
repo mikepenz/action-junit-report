@@ -26,6 +26,7 @@ export async function run(): Promise<void> {
     const requireTests = core.getInput('require_tests') === 'true'
     const requirePassedTests = core.getInput('require_passed_tests') === 'true'
     const includePassed = core.getInput('include_passed') === 'true'
+    const includeSkipped = core.getInput('include_skipped') === 'true'
     const checkRetries = core.getInput('check_retries') === 'true'
     const annotateNotice = core.getInput('annotate_notice') === 'true'
     const jobSummary = core.getInput('job_summary') === 'true'
@@ -187,6 +188,7 @@ export async function run(): Promise<void> {
     const [table, detailTable, flakyTable] = buildSummaryTables(
       testResults,
       includePassed,
+      includeSkipped,
       detailedSummary,
       flakySummary,
       verboseSummary,
