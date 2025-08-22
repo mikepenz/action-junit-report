@@ -6,6 +6,7 @@ import {toFormatedTime} from './utils.js'
 export function buildSummaryTables(
   testResults: TestResult[],
   includePassed: boolean,
+  includeSkipped: boolean,
   detailedSummary: boolean,
   flakySummary: boolean,
   verboseSummary: boolean,
@@ -91,7 +92,9 @@ export function buildSummaryTables(
     table.push(row)
 
     const annotations = testResult.globalAnnotations.filter(
-      annotation => includePassed || annotation.annotation_level !== 'notice'
+      annotation => 
+        (includePassed || annotation.annotation_level !== 'notice' || annotation.status !== 'success') &&
+        (includeSkipped || annotation.status !== 'skipped')
     )
 
     if (annotations.length === 0) {
@@ -129,6 +132,7 @@ export function buildSummaryTables(
               internalTestResult,
               detailsTable,
               includePassed,
+              includeSkipped,
               includeTimeInSummary,
               passedDetailIcon,
               skippedDetailIcon
@@ -138,7 +142,11 @@ export function buildSummaryTables(
       }
 
       if (flakySummary) {
-        const flakyAnnotations = annotations.filter(annotation => annotation.retries > 0)
+        const flakyAnnotations = annotations.filter(
+          annotation => 
+            annotation.retries > 0 &&
+            (includeSkipped || annotation.status !== 'skipped')
+        )
         if (flakyAnnotations.length > 0) {
           flakyTable.push([{data: `<strong>${testResult.checkName}</strong>`, colspan}])
           for (const annotation of flakyAnnotations) {
@@ -159,13 +167,16 @@ function appendDetailsTable(
   testResult: ActualTestResult,
   detailsTable: SummaryTableRow[],
   includePassed: boolean,
+  includeSkipped: boolean,
   includeTimeInSummary: boolean,
   passedDetailIcon: string,
   skippedDetailIcon: string
 ): void {
   const colspan = includeTimeInSummary ? '3' : '2'
   const annotations = testResult.annotations.filter(
-    annotation => includePassed || annotation.annotation_level !== 'notice'
+    annotation => 
+      (includePassed || annotation.annotation_level !== 'notice' || annotation.status !== 'success') &&
+      (includeSkipped || annotation.status !== 'skipped')
   )
   if (annotations.length > 0) {
     detailsTable.push([{data: `<em>${testResult.name}</em>`, colspan}])
@@ -191,6 +202,7 @@ function appendDetailsTable(
       childTestResult,
       detailsTable,
       includePassed,
+      includeSkipped,
       includeTimeInSummary,
       passedDetailIcon,
       skippedDetailIcon

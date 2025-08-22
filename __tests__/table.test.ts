@@ -67,7 +67,7 @@ describe('buildSummaryTables', () => {
       '/'
     )
 
-    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true, false)
+    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true, true, false)
 
     expect(table).toStrictEqual(NORMAL_TABLE)
     expect(detailTable).toStrictEqual([
@@ -116,10 +116,45 @@ describe('buildSummaryTables', () => {
       '/'
     )
 
-    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true, true)
+    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true, true, true)
     expect(table).toStrictEqual([])
     expect(detailTable).toStrictEqual([])
     expect(flakyTable).toStrictEqual([])
+  })
+
+  it('should exclude skipped tests when includeSkipped is false', async () => {
+    const testResult = await parseTestReports(
+      'checkName',
+      'summary',
+      'test_results/tests/utils/target/surefire-reports/TEST-action.surefire.report.calc.StringUtilsTest.xml', // This file has skipped tests
+      '*',
+      true,
+      true,
+      true,
+      [],
+      '{{SUITE_NAME}}/{{TEST_NAME}}',
+      '/'
+    )
+
+    // Test with includeSkipped = false (should exclude skipped tests from detailed table)
+    const [, detailTable] = buildSummaryTables([testResult], true, false, true, false, false, false)
+
+    // Check that the detail table doesn't include skipped tests
+    const flatResults = detailTable.flat()
+    const hasSkippedTests = flatResults.some(
+      cell => typeof cell === 'string' && cell.includes('⚠️ skipped')
+    )
+    expect(hasSkippedTests).toBe(false)
+
+    // Test with includeSkipped = true (should include skipped tests in detailed table)
+    const [, detailTableWithSkipped] = buildSummaryTables([testResult], true, true, true, false, false, false)
+
+    // Check that the detail table includes skipped tests
+    const flatResultsWithSkipped = detailTableWithSkipped.flat()
+    const hasSkippedTestsIncluded = flatResultsWithSkipped.some(
+      cell => typeof cell === 'string' && cell.includes('⚠️ skipped')
+    )
+    expect(hasSkippedTestsIncluded).toBe(true)
   })
 
   it('should group detail tables', async () => {
@@ -136,7 +171,7 @@ describe('buildSummaryTables', () => {
       '/'
     )
 
-    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true, false, true)
+    const [table, detailTable, flakyTable] = buildSummaryTables([testResult], true, true, true, true, true, false, true)
 
     expect(table).toStrictEqual(NORMAL_TABLE)
     expect(detailTable).toStrictEqual([
