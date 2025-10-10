@@ -36908,15 +36908,19 @@ async function updateChecks(octokit, check_run_id, title, summary, annotations) 
     core.debug(JSON.stringify(updateCheckRequest, null, 2));
     await octokit.rest.checks.update(updateCheckRequest);
 }
-async function attachSummary(table, detailsTable, flakySummary, checkInfos = []) {
+async function attachSummary(table, detailsTable, flakySummary, checkInfos = [], summaryText) {
+    // Add summary text if provided
+    if (summaryText) {
+        core.summary.addRaw(summaryText);
+    }
     if (table.length > 0) {
-        await core.summary.addTable(table).write();
+        core.summary.addTable(table);
     }
     if (detailsTable.length > 1) {
-        await core.summary.addTable(detailsTable).write();
+        core.summary.addTable(detailsTable);
     }
     if (flakySummary.length > 1) {
-        await core.summary.addTable(flakySummary).write();
+        core.summary.addTable(flakySummary);
     }
     // Add check links to the job summary if any checks were created
     if (checkInfos.length > 0) {
@@ -36926,7 +36930,7 @@ async function attachSummary(table, detailsTable, flakySummary, checkInfos = [])
         core.summary.addList(links);
     }
     core.summary.addSeparator();
-    core.summary.write();
+    await core.summary.write();
 }
 function buildCommentIdentifier(checkName) {
     return `<!-- Summary comment for ${JSON.stringify(checkName)} by mikepenz/action-junit-report -->`;
@@ -37662,6 +37666,7 @@ async function run() {
         const checkRetries = core.getInput('check_retries') === 'true';
         const annotateNotice = core.getInput('annotate_notice') === 'true';
         const jobSummary = core.getInput('job_summary') === 'true';
+        const jobSummaryText = core.getInput('job_summary_text');
         const detailedSummary = core.getInput('detailed_summary') === 'true';
         const flakySummary = core.getInput('flaky_summary') === 'true';
         const verboseSummary = core.getInput('verbose_summary') === 'true';
@@ -37779,7 +37784,7 @@ async function run() {
         const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite, includeEmptyInSummary, includeTimeInSummary, simplifiedSummary);
         if (jobSummary && supportsJobSummary) {
             try {
-                await attachSummary(table, detailTable, flakyTable, checkInfos);
+                await attachSummary(table, detailTable, flakyTable, checkInfos, jobSummaryText);
             }
             catch (error) {
                 core.error(`❌ Failed to set the summary using the provided token. (${error})`);

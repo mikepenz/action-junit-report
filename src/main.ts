@@ -29,6 +29,7 @@ export async function run(): Promise<void> {
     const checkRetries = core.getInput('check_retries') === 'true'
     const annotateNotice = core.getInput('annotate_notice') === 'true'
     const jobSummary = core.getInput('job_summary') === 'true'
+    const jobSummaryText = core.getInput('job_summary_text')
     const detailedSummary = core.getInput('detailed_summary') === 'true'
     const flakySummary = core.getInput('flaky_summary') === 'true'
     const verboseSummary = core.getInput('verbose_summary') === 'true'
@@ -197,7 +198,7 @@ export async function run(): Promise<void> {
     )
     if (jobSummary && supportsJobSummary) {
       try {
-        await attachSummary(table, detailTable, flakyTable, checkInfos)
+        await attachSummary(table, detailTable, flakyTable, checkInfos, jobSummaryText)
       } catch (error) {
         core.error(`❌ Failed to set the summary using the provided token. (${error})`)
       }

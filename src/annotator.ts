@@ -146,16 +146,22 @@ export async function attachSummary(
   table: SummaryTableRow[],
   detailsTable: SummaryTableRow[],
   flakySummary: SummaryTableRow[],
-  checkInfos: CheckInfo[] = []
+  checkInfos: CheckInfo[] = [],
+  summaryText?: string
 ): Promise<void> {
+  // Add summary text if provided
+  if (summaryText) {
+    core.summary.addRaw(summaryText)
+  }
+
   if (table.length > 0) {
-    await core.summary.addTable(table).write()
+    core.summary.addTable(table)
   }
   if (detailsTable.length > 1) {
-    await core.summary.addTable(detailsTable).write()
+    core.summary.addTable(detailsTable)
   }
   if (flakySummary.length > 1) {
-    await core.summary.addTable(flakySummary).write()
+    core.summary.addTable(flakySummary)
   }
 
   // Add check links to the job summary if any checks were created
@@ -166,7 +172,7 @@ export async function attachSummary(
     core.summary.addList(links)
   }
   core.summary.addSeparator()
-  core.summary.write()
+  await core.summary.write()
 }
 
 export function buildCommentIdentifier(checkName: string[]): string {
