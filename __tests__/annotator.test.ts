@@ -1,53 +1,54 @@
-import {jest} from '@jest/globals'
+import {vi, describe, it, expect, beforeEach, afterEach} from 'vitest'
 import {attachComment, buildCommentIdentifier} from '../src/annotator.js'
 import * as core from '@actions/core'
 
 /**
  *   Copyright 2024 Mike Penz
  */
-jest.setTimeout(30000)
 
-// Mock the context object
-jest.mock('@actions/github/lib/utils.js', () => ({
-  context: {
-    issue: {number: undefined},
-    repo: {owner: 'test-owner', repo: 'test-repo'}
-  }
+// Mock the context object with a mutable reference
+const mockContextData = vi.hoisted(() => ({
+  issue: {number: undefined as number | undefined},
+  repo: {owner: 'test-owner', repo: 'test-repo'}
+}))
+
+vi.mock('@actions/github/lib/utils.js', () => ({
+  context: mockContextData
 }))
 
 describe('attachComment', () => {
   let mockOctokit: any
-  let mockWarning: jest.SpiedFunction<typeof core.warning>
-  let mockContext: any
+  let mockWarning: any
 
   beforeEach(() => {
-    // Import context after mocking
-    const {context} = require('@actions/github/lib/utils.js')
-    mockContext = context
+    // Reset mock context
+    mockContextData.issue.number = undefined
+    mockContextData.repo.owner = 'test-owner'
+    mockContextData.repo.repo = 'test-repo'
 
     // Mock core.warning
-    mockWarning = jest.spyOn(core, 'warning').mockImplementation(() => {})
+    mockWarning = vi.spyOn(core, 'warning').mockImplementation(() => {})
 
     // Mock octokit
     mockOctokit = {
-      paginate: jest.fn(),
+      paginate: vi.fn(),
       rest: {
         issues: {
-          listComments: jest.fn(),
-          createComment: jest.fn(),
-          updateComment: jest.fn()
+          listComments: vi.fn(),
+          createComment: vi.fn(),
+          updateComment: vi.fn()
         }
       }
     }
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   it('should use pr_id when provided and context.issue.number is not available', async () => {
     // Setup: no context issue number
-    mockContext.issue.number = undefined
+    mockContextData.issue.number = undefined
 
     mockOctokit.paginate.mockResolvedValue([])
 
@@ -73,7 +74,7 @@ describe('attachComment', () => {
 
   it('should fall back to context.issue.number when pr_id is not provided', async () => {
     // Setup: context issue number available
-    mockContext.issue.number = 456
+    mockContextData.issue.number = 456
 
     mockOctokit.paginate.mockResolvedValue([])
 
@@ -98,7 +99,7 @@ describe('attachComment', () => {
 
   it('should warn and return early when no issue number is available', async () => {
     // Setup: no context issue number and no pr_id
-    mockContext.issue.number = undefined
+    mockContextData.issue.number = undefined
 
     const checkName = ['Test Check']
     const table = [
@@ -117,7 +118,7 @@ describe('attachComment', () => {
 
   it('should update existing comment when updateComment is true', async () => {
     // Setup: context issue number available
-    mockContext.issue.number = 456
+    mockContextData.issue.number = 456
 
     const existingComment = {
       id: 999,
@@ -144,7 +145,7 @@ describe('attachComment', () => {
   })
   it('should warn and return early when pr_id is invalid', async () => {
     // Setup: no context issue number and invalid pr_id
-    mockContext.issue.number = undefined
+    mockContextData.issue.number = undefined
 
     const checkName = ['Test Check']
     const table = [
@@ -164,7 +165,7 @@ describe('attachComment', () => {
 
   it('should handle pr_id with leading/trailing whitespace', async () => {
     // Setup: no context issue number
-    mockContext.issue.number = undefined
+    mockContextData.issue.number = undefined
 
     mockOctokit.paginate.mockResolvedValue([])
 
@@ -190,7 +191,7 @@ describe('attachComment', () => {
 
   it('should update existing comment when pr_id is provided and updateComment is true', async () => {
     // Setup: no context issue number but pr_id provided
-    mockContext.issue.number = undefined
+    mockContextData.issue.number = undefined
 
     const existingComment = {
       id: 888,
