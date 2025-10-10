@@ -37714,6 +37714,7 @@ async function run() {
             testResults: []
         };
         core.info(`Preparing ${reportsCount} report as configured.`);
+        core.info(`Configured summary is: ${summary}`);
         for (let i = 0; i < reportsCount; i++) {
             const testResult = await parseTestReports(retrieve('checkName', checkName, i, reportsCount), retrieve('summary', summary, i, reportsCount), retrieve('reportPaths', reportPaths, i, reportsCount), retrieve('suiteRegex', suiteRegex, i, reportsCount), includePassed, annotateNotice, checkRetries, excludeSources, retrieve('checkTitleTemplate', checkTitleTemplate, i, reportsCount), breadCrumbDelimiter, retrieve('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError, resolveIgnoreClassname);
             mergedResult.totalCount += testResult.totalCount;

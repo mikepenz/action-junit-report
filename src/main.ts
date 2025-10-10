@@ -84,6 +84,8 @@ export async function run(): Promise<void> {
 
     core.info(`Preparing ${reportsCount} report as configured.`)
 
+    core.info(`Configured summary is: ${summary}`)
+
     for (let i = 0; i < reportsCount; i++) {
       const testResult = await parseTestReports(
         retrieve('checkName', checkName, i, reportsCount),

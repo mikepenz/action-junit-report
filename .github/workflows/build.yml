@@ -44,8 +44,8 @@ jobs:
           include_passed: true
           detailed_summary: true
           summary: |-
-            This is some custom text followed by a table.
             <table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> test </td></tr></tbody></table>
+            This is some custom text followed by a table.
           check_title_template: '{{SUITE_NAME}} | {{TEST_NAME}}'
           annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
 
