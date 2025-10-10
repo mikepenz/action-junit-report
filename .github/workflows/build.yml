@@ -42,6 +42,7 @@ jobs:
           check_name: Example JUnit Test Report
           report_paths: '**/surefire-reports/TEST-*.xml'
           include_passed: true
+          include_skipped: false
           detailed_summary: true
           summary: '<table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> test </td></tr></tbody></table>'
           job_summary_text: |

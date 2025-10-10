@@ -6,6 +6,7 @@ import {toFormatedTime} from './utils.js'
 export function buildSummaryTables(
   testResults: TestResult[],
   includePassed: boolean,
+  includeSkipped: boolean,
   detailedSummary: boolean,
   flakySummary: boolean,
   verboseSummary: boolean,
@@ -91,7 +92,9 @@ export function buildSummaryTables(
     table.push(row)
 
     const annotations = testResult.globalAnnotations.filter(
-      annotation => includePassed || annotation.annotation_level !== 'notice'
+      annotation => 
+        (includePassed || annotation.annotation_level !== 'notice') &&
+        (includeSkipped || annotation.status !== 'skipped')
     )
 
     if (annotations.length === 0) {
@@ -129,6 +132,7 @@ export function buildSummaryTables(
               internalTestResult,
               detailsTable,
               includePassed,
+              includeSkipped,
               includeTimeInSummary,
               passedDetailIcon,
               skippedDetailIcon
@@ -159,13 +163,16 @@ function appendDetailsTable(
   testResult: ActualTestResult,
   detailsTable: SummaryTableRow[],
   includePassed: boolean,
+  includeSkipped: boolean,
   includeTimeInSummary: boolean,
   passedDetailIcon: string,
   skippedDetailIcon: string
 ): void {
   const colspan = includeTimeInSummary ? '3' : '2'
   const annotations = testResult.annotations.filter(
-    annotation => includePassed || annotation.annotation_level !== 'notice'
+    annotation => 
+      (includePassed || annotation.annotation_level !== 'notice') &&
+      (includeSkipped || annotation.status !== 'skipped')
   )
   if (annotations.length > 0) {
     detailsTable.push([{data: `<em>${testResult.name}</em>`, colspan}])
@@ -191,6 +198,7 @@ function appendDetailsTable(
       childTestResult,
       detailsTable,
       includePassed,
+      includeSkipped,
       includeTimeInSummary,
       passedDetailIcon,
       skippedDetailIcon
