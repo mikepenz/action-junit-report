@@ -36908,7 +36908,11 @@ async function updateChecks(octokit, check_run_id, title, summary, annotations) 
     core.debug(JSON.stringify(updateCheckRequest, null, 2));
     await octokit.rest.checks.update(updateCheckRequest);
 }
-async function attachSummary(table, detailsTable, flakySummary, checkInfos = []) {
+async function attachSummary(table, detailsTable, flakySummary, checkInfos = [], summaryText) {
+    // Add summary text if provided
+    if (summaryText) {
+        await core.summary.addRaw(summaryText).write();
+    }
     if (table.length > 0) {
         await core.summary.addTable(table).write();
     }
@@ -37779,7 +37783,10 @@ async function run() {
         const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite, includeEmptyInSummary, includeTimeInSummary, simplifiedSummary);
         if (jobSummary && supportsJobSummary) {
             try {
-                await attachSummary(table, detailTable, flakyTable, checkInfos);
+                // Collect all unique summaries from test results
+                const summaries = [...new Set(testResults.map(tr => tr.summary).filter(s => s && s.trim()))];
+                const summaryText = summaries.length > 0 ? summaries.join('\n\n') : undefined;
+                await attachSummary(table, detailTable, flakyTable, checkInfos, summaryText);
             }
             catch (error) {
                 core.error(`❌ Failed to set the summary using the provided token. (${error})`);
