@@ -146,8 +146,14 @@ export async function attachSummary(
   table: SummaryTableRow[],
   detailsTable: SummaryTableRow[],
   flakySummary: SummaryTableRow[],
-  checkInfos: CheckInfo[] = []
+  checkInfos: CheckInfo[] = [],
+  summaryText?: string
 ): Promise<void> {
+  // Add summary text if provided
+  if (summaryText) {
+    await core.summary.addRaw(summaryText).write()
+  }
+
   if (table.length > 0) {
     await core.summary.addTable(table).write()
   }

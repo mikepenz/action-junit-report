@@ -197,7 +197,13 @@ export async function run(): Promise<void> {
     )
     if (jobSummary && supportsJobSummary) {
       try {
-        await attachSummary(table, detailTable, flakyTable, checkInfos)
+        // Collect all unique summaries from test results
+        const summaries = testResults
+          .map(tr => tr.summary)
+          .filter((s, index, self) => s && s.trim() && self.indexOf(s) === index)
+        const summaryText = summaries.length > 0 ? summaries.join('\n\n') : undefined
+
+        await attachSummary(table, detailTable, flakyTable, checkInfos, summaryText)
       } catch (error) {
         core.error(`❌ Failed to set the summary using the provided token. (${error})`)
       }
