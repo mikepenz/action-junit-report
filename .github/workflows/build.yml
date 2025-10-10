@@ -43,7 +43,10 @@ jobs:
           report_paths: '**/surefire-reports/TEST-*.xml'
           include_passed: true
           detailed_summary: true
-          summary: '<table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> test </td></tr></tbody></table>'
+          summary: |
+            # Markdown Summary Header for Junit Test Report
+            This is some custom text followed by a table.
+            <table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> test </td></tr></tbody></table>
           check_title_template: '{{SUITE_NAME}} | {{TEST_NAME}}'
           annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
 
