@@ -93,7 +93,7 @@ export function buildSummaryTables(
 
     const annotations = testResult.globalAnnotations.filter(
       annotation => 
-        (includePassed || annotation.annotation_level !== 'notice' || annotation.status !== 'success') &&
+        (includePassed || annotation.annotation_level !== 'notice') &&
         (includeSkipped || annotation.status !== 'skipped')
     )
 
@@ -142,11 +142,7 @@ export function buildSummaryTables(
       }
 
       if (flakySummary) {
-        const flakyAnnotations = annotations.filter(
-          annotation => 
-            annotation.retries > 0 &&
-            (includeSkipped || annotation.status !== 'skipped')
-        )
+        const flakyAnnotations = annotations.filter(annotation => annotation.retries > 0)
         if (flakyAnnotations.length > 0) {
           flakyTable.push([{data: `<strong>${testResult.checkName}</strong>`, colspan}])
           for (const annotation of flakyAnnotations) {
@@ -175,7 +171,7 @@ function appendDetailsTable(
   const colspan = includeTimeInSummary ? '3' : '2'
   const annotations = testResult.annotations.filter(
     annotation => 
-      (includePassed || annotation.annotation_level !== 'notice' || annotation.status !== 'success') &&
+      (includePassed || annotation.annotation_level !== 'notice') &&
       (includeSkipped || annotation.status !== 'skipped')
   )
   if (annotations.length > 0) {

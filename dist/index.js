@@ -37496,7 +37496,7 @@ function escapeEmoji(input) {
 ;// CONCATENATED MODULE: ./lib/table.js
 
 
-function buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite = false, includeEmptyInSummary = true, includeTimeInSummary = true, simplifiedSummary = false) {
+function buildSummaryTables(testResults, includePassed, includeSkipped, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite = false, includeEmptyInSummary = true, includeTimeInSummary = true, simplifiedSummary = false) {
     // only include a warning icon if there are skipped tests
     const hasPassed = testResults.some(testResult => testResult.passed > 0);
     const hasSkipped = testResults.some(testResult => testResult.skipped > 0);
@@ -37562,7 +37562,8 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
             row.push(toFormatedTime(testResult.time));
         }
         table.push(row);
-        const annotations = testResult.globalAnnotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
+        const annotations = testResult.globalAnnotations.filter(annotation => (includePassed || annotation.annotation_level !== 'notice') &&
+            (includeSkipped || annotation.status !== 'skipped'));
         if (annotations.length === 0) {
             if (!includePassed) {
                 core.info(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
@@ -37592,7 +37593,7 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
                 }
                 else {
                     for (const internalTestResult of testResult.testResults) {
-                        appendDetailsTable(internalTestResult, detailsTable, includePassed, includeTimeInSummary, passedDetailIcon, skippedDetailIcon);
+                        appendDetailsTable(internalTestResult, detailsTable, includePassed, includeSkipped, includeTimeInSummary, passedDetailIcon, skippedDetailIcon);
                     }
                 }
             }
@@ -37613,9 +37614,10 @@ function buildSummaryTables(testResults, includePassed, detailedSummary, flakySu
     }
     return [table, detailsTable, flakyTable];
 }
-function appendDetailsTable(testResult, detailsTable, includePassed, includeTimeInSummary, passedDetailIcon, skippedDetailIcon) {
+function appendDetailsTable(testResult, detailsTable, includePassed, includeSkipped, includeTimeInSummary, passedDetailIcon, skippedDetailIcon) {
     const colspan = includeTimeInSummary ? '3' : '2';
-    const annotations = testResult.annotations.filter(annotation => includePassed || annotation.annotation_level !== 'notice');
+    const annotations = testResult.annotations.filter(annotation => (includePassed || annotation.annotation_level !== 'notice') &&
+        (includeSkipped || annotation.status !== 'skipped'));
     if (annotations.length > 0) {
         detailsTable.push([{ data: `<em>${testResult.name}</em>`, colspan }]);
         for (const annotation of annotations) {
@@ -37634,7 +37636,7 @@ function appendDetailsTable(testResult, detailsTable, includePassed, includeTime
         }
     }
     for (const childTestResult of testResult.testResults) {
-        appendDetailsTable(childTestResult, detailsTable, includePassed, includeTimeInSummary, passedDetailIcon, skippedDetailIcon);
+        appendDetailsTable(childTestResult, detailsTable, includePassed, includeSkipped, includeTimeInSummary, passedDetailIcon, skippedDetailIcon);
     }
 }
 
@@ -37663,6 +37665,7 @@ async function run() {
         const requireTests = core.getInput('require_tests') === 'true';
         const requirePassedTests = core.getInput('require_passed_tests') === 'true';
         const includePassed = core.getInput('include_passed') === 'true';
+        const includeSkipped = core.getInput('include_skipped') === 'true';
         const checkRetries = core.getInput('check_retries') === 'true';
         const annotateNotice = core.getInput('annotate_notice') === 'true';
         const jobSummary = core.getInput('job_summary') === 'true';
@@ -37781,7 +37784,7 @@ async function run() {
             }
         }
         const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
-        const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite, includeEmptyInSummary, includeTimeInSummary, simplifiedSummary);
+        const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, includeSkipped, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite, includeEmptyInSummary, includeTimeInSummary, simplifiedSummary);
         if (jobSummary && supportsJobSummary) {
             try {
                 await attachSummary(table, detailTable, flakyTable, checkInfos, jobSummaryText);
