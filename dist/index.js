@@ -36911,16 +36911,16 @@ async function updateChecks(octokit, check_run_id, title, summary, annotations) 
 async function attachSummary(table, detailsTable, flakySummary, checkInfos = [], summaryText) {
     // Add summary text if provided
     if (summaryText) {
-        await core.summary.addRaw(summaryText).write();
+        core.summary.addRaw(summaryText);
     }
     if (table.length > 0) {
-        await core.summary.addTable(table).write();
+        core.summary.addTable(table);
     }
     if (detailsTable.length > 1) {
-        await core.summary.addTable(detailsTable).write();
+        core.summary.addTable(detailsTable);
     }
     if (flakySummary.length > 1) {
-        await core.summary.addTable(flakySummary).write();
+        core.summary.addTable(flakySummary);
     }
     // Add check links to the job summary if any checks were created
     if (checkInfos.length > 0) {
@@ -36930,7 +36930,7 @@ async function attachSummary(table, detailsTable, flakySummary, checkInfos = [],
         core.summary.addList(links);
     }
     core.summary.addSeparator();
-    core.summary.write();
+    await core.summary.write();
 }
 function buildCommentIdentifier(checkName) {
     return `<!-- Summary comment for ${JSON.stringify(checkName)} by mikepenz/action-junit-report -->`;
