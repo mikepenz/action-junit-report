@@ -1,4 +1,5 @@
 import {parseFile, parseTestReports, resolveFileAndLine, resolvePath, Transformer} from '../src/testParser.js'
+import {describe, expect, it} from 'vitest'
 
 /**
  * Original test cases:
@@ -8,7 +9,6 @@ import {parseFile, parseTestReports, resolveFileAndLine, resolvePath, Transforme
  * New test cases:
  *   Copyright Mike Penz
  */
-jest.setTimeout(30000)
 
 describe('resolveFileAndLine', () => {
   it('should default to 1 if no line found', async () => {

@@ -1,10 +1,10 @@
 import {parseTestReports} from '../src/testParser.js'
 import {buildSummaryTables} from '../src/table.js'
+import {describe, expect, it} from 'vitest'
 
 /**
  *   Copyright Mike Penz
  */
-jest.setTimeout(30000)
 
 const NORMAL_TABLE = [
   [

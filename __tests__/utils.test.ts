@@ -1,9 +1,9 @@
 import {readTransformers} from '../src/utils.js'
+import {describe, expect, it} from 'vitest'
 
 /**
  *   Copyright 2024 Mike Penz
  */
-jest.setTimeout(30000)
 
 describe('readTransformers', () => {
   it('should successfully parse default transformer', async () => {
