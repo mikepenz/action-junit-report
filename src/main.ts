@@ -198,9 +198,7 @@ export async function run(): Promise<void> {
     if (jobSummary && supportsJobSummary) {
       try {
         // Collect all unique summaries from test results
-        const summaries = testResults
-          .map(tr => tr.summary)
-          .filter((s, index, self) => s && s.trim() && self.indexOf(s) === index)
+        const summaries = [...new Set(testResults.map(tr => tr.summary).filter(s => s && s.trim()))]
         const summaryText = summaries.length > 0 ? summaries.join('\n\n') : undefined
 
         await attachSummary(table, detailTable, flakyTable, checkInfos, summaryText)
