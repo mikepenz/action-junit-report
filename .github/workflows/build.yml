@@ -36,85 +36,15 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Test JUnit test import
+      - name: Test Example 1394
         uses: ./
         with:
-          check_name: Example JUnit Test Report
-          report_paths: '**/surefire-reports/TEST-*.xml'
+          check_name: Example 1394
+          report_paths: '**/1394/*.xml'
           include_passed: true
           include_skipped: false
           detailed_summary: true
-          summary: '<table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> test </td></tr></tbody></table>'
-          job_summary_text: |
-            # Test Header for Example Junit Test Report
-            
-            This is some custom body to show in the summary.
-          check_title_template: '{{SUITE_NAME}} | {{TEST_NAME}}'
-          annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
-
-      - name: Test PyTest test import
-        uses: ./
-        with:
-          check_name: Example Pytest Report
-          report_paths: test_results/python/report_flaky.xml
-          include_passed: true
-          detailed_summary: true
-          comment: true
-          annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
-
-      - name: Test Ungrouped test import
-        uses: ./
-        with:
-          check_name: Example Ungrouped Test Report
-          report_paths: test_results/multiple/*.xml
-          verbose_summary: false
-          include_passed: true
-          detailed_summary: false
-          group_reports: false
-          comment: true
-
-      - name: Test JUnit flaky test import
-        uses: ./
-        with:
-          check_name: Example JUnit Flaky Report
-          report_paths: test_results/junit-web-test/expectedRetries.xml
-          include_passed: true
-          check_retries: true
-          job_summary: true
-          detailed_summary: true
           flaky_summary: true
-          annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
-
-      - name: Test Multi test import
-        uses: ./
-        with:
-          check_name: |-
-            Example Multi JUnit Test Report
-            Example Multi Pytest Report
-          report_paths: |-
-            **/surefire-reports/TEST-*.xml
-            test_results/python/report.xml
-          summary: |-
-            <table><thead><tr><th> Application (src/applications) </th></tr></thead><tbody><tr><td> multi test </td></tr></tbody></table>
-            Custom Summary
-          check_title_template: |-
-            {{SUITE_NAME}} | {{TEST_NAME}}
-            \n
-          transformers: |
-            [{"searchValue":"::","replaceValue":"/"}]
-          annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
-
-      - name: Test Nested JUnit test import
-        uses: ./
-        with:
-          check_name: Example Nested JUnit Test Report
-          report_paths: 'test_results/nested/multi-level.xml'
-          include_passed: true
-          detailed_summary: true
-          group_suite: true
-          comment: true
-          skip_annotations: true
-          check_title_template: '{{TEST_NAME}}'
           annotate_only: ${{ github.event_name == 'workflow_dispatch' }}
 
   release:
