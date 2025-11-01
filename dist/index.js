@@ -37616,8 +37616,7 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
 }
 function appendDetailsTable(testResult, detailsTable, includePassed, includeSkipped, includeTimeInSummary, passedDetailIcon, skippedDetailIcon) {
     const colspan = includeTimeInSummary ? '3' : '2';
-    const annotations = testResult.annotations.filter(annotation => (includePassed || annotation.annotation_level !== 'notice') &&
-        (includeSkipped || annotation.status !== 'skipped'));
+    const annotations = testResult.annotations.filter(annotation => (includePassed || annotation.annotation_level !== 'notice') && (includeSkipped || annotation.status !== 'skipped'));
     if (annotations.length > 0) {
         detailsTable.push([{ data: `<em>${testResult.name}</em>`, colspan }]);
         for (const annotation of annotations) {
@@ -37806,6 +37805,9 @@ async function run() {
         core.setOutput('summary', buildTable(table));
         core.setOutput('detailed_summary', buildTable(detailTable));
         core.setOutput('flaky_summary', buildTable(flakyTable));
+        // Set report URLs as output (newline-separated for multiple reports)
+        const reportUrls = checkInfos.map(info => info.url).join('\n');
+        core.setOutput('report_url', reportUrls);
         if (failOnFailure && conclusion === 'failure') {
             core.setFailed(`❌ Tests reported ${mergedResult.failed} failures`);
         }
