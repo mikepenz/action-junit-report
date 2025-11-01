@@ -37088,6 +37088,23 @@ async function resolvePath(workspace, transformedFileName, excludeSources, follo
     }
     core.debug(`Resolving path for ${fileName} in ${workspacePath}`);
     const normalizedFilename = fileName.replace(/^\.\//, ''); // strip relative prefix (./)
+    // Try common file extensions for the transformed filename directly
+    // This helps with pytest where classname "app.tests.test_util" becomes "app/tests/test_util"
+    const commonExtensions = ['.py', '.java', '.kt', '.js', '.ts', '.rs', '.cpp', '.c', '.cs', '.go'];
+    for (const ext of commonExtensions) {
+        const directPath = `${workspacePath}${normalizedFilename}${ext}`;
+        if (external_fs_.existsSync(directPath)) {
+            // Check if this path should be excluded
+            const shouldExclude = excludeSources.some(v => directPath.includes(v));
+            if (!shouldExclude) {
+                const path = directPath.slice(workspacePath.length);
+                core.debug(`Resolved path directly: ${path}`);
+                resolvePathCache[fileName] = path;
+                return path;
+            }
+        }
+    }
+    // Fallback to glob pattern search
     const globber = await glob.create(`${workspacePath}**/${normalizedFilename}.*`, {
         followSymbolicLinks: followSymlink
     });
@@ -37274,18 +37291,70 @@ async function createTestCaseAnnotation(testcase, failure, failureIndex, totalFa
     for (const r of transformer) {
         transformedFileName = applyTransformer(r, transformedFileName);
     }
+    // Also try transforming the full classname to get a potential file path (for pytest support)
+    // This allows classnames like "app.app_one.tests.test_util" to become "app/app_one/tests/test_util"
+    let transformedClassnamePath = resolveClassname;
+    for (const r of transformer) {
+        transformedClassnamePath = applyTransformer(r, transformedClassnamePath);
+    }
     // Resolve the full path
     const githubWorkspacePath = process.env['GITHUB_WORKSPACE'];
     let resolvedPath = transformedFileName;
     if (failed || (annotateNotice && success)) {
-        if (external_fs_.existsSync(transformedFileName)) {
-            resolvedPath = transformedFileName;
+        // First, try the transformed classname path directly (for pytest support)
+        // This handles cases like "app.app_one.tests.test_util" -> "app/app_one/tests/test_util.py"
+        let foundPath = false;
+        if (transformedClassnamePath !== resolveClassname) {
+            // Only try this if transformers actually changed the classname
+            const commonExtensions = ['.py', '.java', '.kt', '.js', '.ts', '.rs', '.cpp', '.c', '.cs', '.go'];
+            const workspacePath = githubWorkspacePath || '';
+            for (const ext of commonExtensions) {
+                const classnameAsPath = `${transformedClassnamePath}${ext}`;
+                // Try as absolute path
+                if (external_fs_.existsSync(classnameAsPath)) {
+                    resolvedPath = classnameAsPath;
+                    foundPath = true;
+                    core.debug(`Resolved path from transformed classname: ${resolvedPath}`);
+                    break;
+                }
+                // Try with workspace prefix
+                if (workspacePath) {
+                    const workspaceClassnamePath = `${workspacePath}/${classnameAsPath}`;
+                    if (external_fs_.existsSync(workspaceClassnamePath)) {
+                        resolvedPath = workspaceClassnamePath;
+                        foundPath = true;
+                        core.debug(`Resolved path from transformed classname with workspace: ${resolvedPath}`);
+                        break;
+                    }
+                }
+            }
+            // If still not found, try using resolvePath with the transformed classname
+            // This will do a glob search which can find files in subdirectories
+            if (!foundPath) {
+                try {
+                    const resolved = await resolvePath(workspacePath, transformedClassnamePath, excludeSources, followSymlink);
+                    if (resolved && resolved !== transformedClassnamePath) {
+                        resolvedPath = resolved;
+                        foundPath = true;
+                        core.debug(`Resolved path from transformed classname via glob: ${resolvedPath}`);
+                    }
+                }
+                catch (error) {
+                    core.debug(`Failed to resolve transformed classname path: ${error}`);
+                }
+            }
         }
-        else if (githubWorkspacePath && external_fs_.existsSync(`${githubWorkspacePath}${transformedFileName}`)) {
-            resolvedPath = `${githubWorkspacePath}${transformedFileName}`;
-        }
-        else {
-            resolvedPath = await resolvePath(githubWorkspacePath || '', transformedFileName, excludeSources, followSymlink);
+        // If not found via transformed classname, try the traditional filename approach
+        if (!foundPath) {
+            if (external_fs_.existsSync(transformedFileName)) {
+                resolvedPath = transformedFileName;
+            }
+            else if (githubWorkspacePath && external_fs_.existsSync(`${githubWorkspacePath}${transformedFileName}`)) {
+                resolvedPath = `${githubWorkspacePath}${transformedFileName}`;
+            }
+            else {
+                resolvedPath = await resolvePath(githubWorkspacePath || '', transformedFileName, excludeSources, followSymlink);
+            }
         }
     }
     core.debug(`Path prior to stripping: ${resolvedPath}`);
