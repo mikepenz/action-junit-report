@@ -92,7 +92,7 @@ export function buildSummaryTables(
     table.push(row)
 
     const annotations = testResult.globalAnnotations.filter(
-      annotation => 
+      annotation =>
         (includePassed || annotation.annotation_level !== 'notice') &&
         (includeSkipped || annotation.status !== 'skipped')
     )
@@ -170,9 +170,8 @@ function appendDetailsTable(
 ): void {
   const colspan = includeTimeInSummary ? '3' : '2'
   const annotations = testResult.annotations.filter(
-    annotation => 
-      (includePassed || annotation.annotation_level !== 'notice') &&
-      (includeSkipped || annotation.status !== 'skipped')
+    annotation =>
+      (includePassed || annotation.annotation_level !== 'notice') && (includeSkipped || annotation.status !== 'skipped')
   )
   if (annotations.length > 0) {
     detailsTable.push([{data: `<em>${testResult.name}</em>`, colspan}])

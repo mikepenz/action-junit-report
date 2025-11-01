@@ -141,9 +141,7 @@ describe('buildSummaryTables', () => {
 
     // Check that the detail table doesn't include skipped tests
     const flatResults = detailTable.flat()
-    const hasSkippedTests = flatResults.some(
-      cell => typeof cell === 'string' && cell.includes('⚠️ skipped')
-    )
+    const hasSkippedTests = flatResults.some(cell => typeof cell === 'string' && cell.includes('⚠️ skipped'))
     expect(hasSkippedTests).toBe(false)
 
     // Test with includeSkipped = true (should include skipped tests in detailed table)

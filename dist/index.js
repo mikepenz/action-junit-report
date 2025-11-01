@@ -37806,6 +37806,9 @@ async function run() {
         core.setOutput('summary', buildTable(table));
         core.setOutput('detailed_summary', buildTable(detailTable));
         core.setOutput('flaky_summary', buildTable(flakyTable));
+        // Set report URLs as output (newline-separated for multiple reports)
+        const reportUrls = checkInfos.map(info => info.url).join('\n');
+        core.setOutput('report_url', reportUrls);
         if (failOnFailure && conclusion === 'failure') {
             core.setFailed(`❌ Tests reported ${mergedResult.failed} failures`);
         }
