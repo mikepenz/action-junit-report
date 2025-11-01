@@ -37009,6 +37009,10 @@ var external_path_ = __nccwpck_require__(6928);
 
 
 /**
+ * Common file extensions to check when resolving file paths from classnames
+ */
+const COMMON_FILE_EXTENSIONS = ['.py', '.java', '.kt', '.js', '.ts', '.rs', '.cpp', '.c', '.cs', '.go'];
+/**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
  *
@@ -37090,8 +37094,7 @@ async function resolvePath(workspace, transformedFileName, excludeSources, follo
     const normalizedFilename = fileName.replace(/^\.\//, ''); // strip relative prefix (./)
     // Try common file extensions for the transformed filename directly
     // This helps with pytest where classname "app.tests.test_util" becomes "app/tests/test_util"
-    const commonExtensions = ['.py', '.java', '.kt', '.js', '.ts', '.rs', '.cpp', '.c', '.cs', '.go'];
-    for (const ext of commonExtensions) {
+    for (const ext of COMMON_FILE_EXTENSIONS) {
         const directPath = `${workspacePath}${normalizedFilename}${ext}`;
         if (external_fs_.existsSync(directPath)) {
             // Check if this path should be excluded
@@ -37306,9 +37309,8 @@ async function createTestCaseAnnotation(testcase, failure, failureIndex, totalFa
         let foundPath = false;
         if (transformedClassnamePath !== resolveClassname) {
             // Only try this if transformers actually changed the classname
-            const commonExtensions = ['.py', '.java', '.kt', '.js', '.ts', '.rs', '.cpp', '.c', '.cs', '.go'];
             const workspacePath = githubWorkspacePath || '';
-            for (const ext of commonExtensions) {
+            for (const ext of COMMON_FILE_EXTENSIONS) {
                 const classnameAsPath = `${transformedClassnamePath}${ext}`;
                 // Try as absolute path
                 if (external_fs_.existsSync(classnameAsPath)) {
@@ -37317,9 +37319,9 @@ async function createTestCaseAnnotation(testcase, failure, failureIndex, totalFa
                     core.debug(`Resolved path from transformed classname: ${resolvedPath}`);
                     break;
                 }
-                // Try with workspace prefix
+                // Try with workspace prefix using pathHelper.join to avoid double slashes
                 if (workspacePath) {
-                    const workspaceClassnamePath = `${workspacePath}/${classnameAsPath}`;
+                    const workspaceClassnamePath = external_path_.join(workspacePath, classnameAsPath);
                     if (external_fs_.existsSync(workspaceClassnamePath)) {
                         resolvedPath = workspaceClassnamePath;
                         foundPath = true;
@@ -37333,7 +37335,10 @@ async function createTestCaseAnnotation(testcase, failure, failureIndex, totalFa
             if (!foundPath) {
                 try {
                     const resolved = await resolvePath(workspacePath, transformedClassnamePath, excludeSources, followSymlink);
-                    if (resolved && resolved !== transformedClassnamePath) {
+                    // Check if resolution was successful by verifying the file exists
+                    // resolvePath returns the input filename if not found, so we verify with fs.existsSync
+                    const absoluteResolved = workspacePath ? external_path_.join(workspacePath, resolved) : resolved;
+                    if (external_fs_.existsSync(absoluteResolved) && resolved !== transformedClassnamePath) {
                         resolvedPath = resolved;
                         foundPath = true;
                         core.debug(`Resolved path from transformed classname via glob: ${resolvedPath}`);

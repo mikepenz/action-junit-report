@@ -5,6 +5,11 @@ import * as parser from 'xml-js'
 import * as pathHelper from 'path'
 import {applyTransformer, removePrefix} from './utils.js'
 
+/**
+ * Common file extensions to check when resolving file paths from classnames
+ */
+const COMMON_FILE_EXTENSIONS = ['.py', '.java', '.kt', '.js', '.ts', '.rs', '.cpp', '.c', '.cs', '.go']
+
 export interface ActualTestResult {
   name: string
   totalCount: number
@@ -167,8 +172,7 @@ export async function resolvePath(
   
   // Try common file extensions for the transformed filename directly
   // This helps with pytest where classname "app.tests.test_util" becomes "app/tests/test_util"
-  const commonExtensions = ['.py', '.java', '.kt', '.js', '.ts', '.rs', '.cpp', '.c', '.cs', '.go']
-  for (const ext of commonExtensions) {
+  for (const ext of COMMON_FILE_EXTENSIONS) {
     const directPath = `${workspacePath}${normalizedFilename}${ext}`
     if (fs.existsSync(directPath)) {
       // Check if this path should be excluded
@@ -523,10 +527,9 @@ async function createTestCaseAnnotation(
     let foundPath = false
     if (transformedClassnamePath !== resolveClassname) {
       // Only try this if transformers actually changed the classname
-      const commonExtensions = ['.py', '.java', '.kt', '.js', '.ts', '.rs', '.cpp', '.c', '.cs', '.go']
       const workspacePath = githubWorkspacePath || ''
       
-      for (const ext of commonExtensions) {
+      for (const ext of COMMON_FILE_EXTENSIONS) {
         const classnameAsPath = `${transformedClassnamePath}${ext}`
         
         // Try as absolute path
@@ -537,9 +540,9 @@ async function createTestCaseAnnotation(
           break
         }
         
-        // Try with workspace prefix
+        // Try with workspace prefix using pathHelper.join to avoid double slashes
         if (workspacePath) {
-          const workspaceClassnamePath = `${workspacePath}/${classnameAsPath}`
+          const workspaceClassnamePath = pathHelper.join(workspacePath, classnameAsPath)
           if (fs.existsSync(workspaceClassnamePath)) {
             resolvedPath = workspaceClassnamePath
             foundPath = true
@@ -554,7 +557,10 @@ async function createTestCaseAnnotation(
       if (!foundPath) {
         try {
           const resolved = await resolvePath(workspacePath, transformedClassnamePath, excludeSources, followSymlink)
-          if (resolved && resolved !== transformedClassnamePath) {
+          // Check if resolution was successful by verifying the file exists
+          // resolvePath returns the input filename if not found, so we verify with fs.existsSync
+          const absoluteResolved = workspacePath ? pathHelper.join(workspacePath, resolved) : resolved
+          if (fs.existsSync(absoluteResolved) && resolved !== transformedClassnamePath) {
             resolvedPath = resolved
             foundPath = true
             core.debug(`Resolved path from transformed classname via glob: ${resolvedPath}`)
