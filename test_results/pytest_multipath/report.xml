@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites name="pytest tests">
+    <testsuite name="pytest" errors="0" failures="3" skipped="0" tests="6" time="0.026"
+        timestamp="2025-10-16T19:36:31.143313-04:00" hostname="testhost">
+        <testcase classname="app.app_one.tests.test_util" name="test_util_app_one_good" time="0.001" />
+        <testcase classname="app.app_one.tests.test_util" name="test_util_app_one_bad" time="0.002">
+            <failure message="assert False">def test_util_app_one_bad() -&gt; None:
+    &gt; assert False
+    E assert False
+
+    app/app_one/tests/test_util.py:11: AssertionError</failure>
+        </testcase>
+        <testcase classname="app.app_two.tests.test_util" name="test_util_app_two_good" time="0.002" />
+        <testcase classname="app.app_two.tests.test_util" name="test_util_app_two_bad" time="0.001">
+            <failure message="assert False">def test_util_app_two_bad() -&gt; None:
+    &gt; assert False
+    E assert False
+
+    app/app_two/tests/test_util.py:14: AssertionError</failure>
+        </testcase>
+        <testcase classname="libs.common.tests.test_common" name="test_common_lib_good" time="0.003" />
+        <testcase classname="libs.common.tests.test_common" name="test_common_lib_bad" time="0.001">
+            <failure message="assert False">def test_common_lib_bad() -&gt; None:
+    &gt; assert False
+    E assert False
+
+    libs/common/tests/test_common.py:11: AssertionError</failure>
+        </testcase>
+    </testsuite>
+</testsuites>

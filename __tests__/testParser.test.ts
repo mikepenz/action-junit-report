@@ -320,6 +320,50 @@ describe('parseFile', () => {
     ])
   })
 
+  it('should parse pytest results with transformed classnames for correct file resolution', async () => {
+    // This test verifies that pytest reports with dot-separated classnames
+    // can be correctly resolved to file paths using transformers
+    const transformer: Transformer[] = [
+      {
+        searchValue: '\\.',
+        replaceValue: '/',
+        regex: new RegExp('\\.', 'g')
+      }
+    ]
+    const testResult = await parseFile(
+      'test_results/pytest_multipath/report.xml',
+      '',
+      false,
+      false,
+      false,
+      ['/build/', '/__pycache__/', '/.venv/'],
+      undefined,
+      '/',
+      '',
+      transformer
+    )
+    expect(testResult).toBeDefined()
+    const {totalCount, skippedCount, globalAnnotations} = testResult!!
+    const filtered = globalAnnotations.filter(annotation => annotation.annotation_level !== 'notice')
+
+    expect(totalCount).toBe(6)
+    expect(skippedCount).toBe(0)
+    expect(filtered.length).toBe(3)
+
+    // Verify that the file paths are correctly resolved
+    expect(filtered[0].path).toBe('test_results/pytest_multipath/app/app_one/tests/test_util.py')
+    expect(filtered[0].start_line).toBe(11)
+    expect(filtered[0].title).toContain('test_util_app_one_bad')
+
+    expect(filtered[1].path).toBe('test_results/pytest_multipath/app/app_two/tests/test_util.py')
+    expect(filtered[1].start_line).toBe(14)
+    expect(filtered[1].title).toContain('test_util_app_two_bad')
+
+    expect(filtered[2].path).toBe('test_results/pytest_multipath/libs/common/tests/test_common.py')
+    expect(filtered[2].start_line).toBe(11)
+    expect(filtered[2].title).toContain('test_common_lib_bad')
+  })
+
   it('should parse marathon results', async () => {
     const testResult = await parseFile('test_results/marathon_tests/com.mikepenz.DummyTest#test_02_dummy.xml')
     expect(testResult).toBeDefined()
