@@ -173,7 +173,7 @@ export async function resolvePath(
   // Try common file extensions for the transformed filename directly
   // This helps with pytest where classname "app.tests.test_util" becomes "app/tests/test_util"
   for (const ext of COMMON_FILE_EXTENSIONS) {
-    const directPath = `${workspacePath}${normalizedFilename}${ext}`
+    const directPath = pathHelper.join(workspacePath, `${normalizedFilename}${ext}`)
     if (fs.existsSync(directPath)) {
       // Check if this path should be excluded
       const shouldExclude = excludeSources.some(v => directPath.includes(v))
@@ -558,9 +558,8 @@ async function createTestCaseAnnotation(
         try {
           const resolved = await resolvePath(workspacePath, transformedClassnamePath, excludeSources, followSymlink)
           // Check if resolution was successful by verifying the file exists
-          // resolvePath returns the input filename if not found, so we verify with fs.existsSync
           const absoluteResolved = workspacePath ? pathHelper.join(workspacePath, resolved) : resolved
-          if (fs.existsSync(absoluteResolved) && resolved !== transformedClassnamePath) {
+          if (fs.existsSync(absoluteResolved)) {
             resolvedPath = resolved
             foundPath = true
             core.debug(`Resolved path from transformed classname via glob: ${resolvedPath}`)
