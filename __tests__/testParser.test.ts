@@ -1196,6 +1196,89 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     ])
   })
 
+  it('flaky tests should be detected even without includePassed', async () => {
+    // This test verifies that tests with flakyFailure elements are processed
+    // even when includePassed is false
+    const testResult = await parseFile('test_results/junit_flaky_failure/marathon_junit_report.xml', '', false, false)
+    expect(testResult).toBeDefined()
+    const {totalCount, skippedCount, globalAnnotations} = testResult!!
+    const filtered = globalAnnotations.filter(annotation => annotation.retries > 0)
+
+    expect(totalCount).toBe(1)
+    expect(skippedCount).toBe(0)
+    // Should still detect the flaky test even though includePassed is false
+    expect(filtered).toStrictEqual([
+      {
+        annotation_level: 'notice',
+        end_column: 0,
+        end_line: 1,
+        message: 'testFlakyFailure',
+        path: 'Class',
+        raw_details: '',
+        retries: 1,
+        start_column: 0,
+        start_line: 1,
+        status: 'success',
+        time: 1.86,
+        title: 'Class.testFlakyFailure'
+      }
+    ])
+  })
+
+  it('flaky tests should be included but regular passed tests excluded when includePassed=false', async () => {
+    // This test verifies that:
+    // 1. Tests with flakyFailure elements ARE included even when includePassed=false
+    // 2. Regular passed tests are still excluded when includePassed=false
+    const testResult = await parseFile(
+      'test_results/junit_flaky_failure/mixed_flaky_and_passed.xml',
+      '',
+      false,  // includePassed = false
+      false   // annotateNotice = false
+    )
+    expect(testResult).toBeDefined()
+    const {totalCount, skippedCount, passedCount, failedCount, globalAnnotations} = testResult!!
+    
+    // Total count should include all tests (3 total)
+    expect(totalCount).toBe(3)
+    expect(skippedCount).toBe(0)
+    expect(failedCount).toBe(0)
+    expect(passedCount).toBe(3)
+    
+    // But annotations should ONLY include the flaky test, not the regular passed tests
+    expect(globalAnnotations.length).toBe(1)
+    expect(globalAnnotations[0].title).toBe('FlakyTest.testFlaky')
+    expect(globalAnnotations[0].retries).toBe(1)
+    expect(globalAnnotations[0].status).toBe('success')
+  })
+
+  it('all passed tests should be included when includePassed=true including flaky', async () => {
+    // This test verifies that when includePassed=true, both flaky and regular passed tests are included
+    const testResult = await parseFile(
+      'test_results/junit_flaky_failure/mixed_flaky_and_passed.xml',
+      '',
+      true,   // includePassed = true
+      true    // annotateNotice = true
+    )
+    expect(testResult).toBeDefined()
+    const {totalCount, globalAnnotations} = testResult!!
+    
+    expect(totalCount).toBe(3)
+    
+    // All 3 tests should be in annotations when includePassed=true
+    expect(globalAnnotations.length).toBe(3)
+    
+    // Find the flaky test
+    const flakyTest = globalAnnotations.find(a => a.title === 'FlakyTest.testFlaky')
+    expect(flakyTest).toBeDefined()
+    expect(flakyTest!.retries).toBe(1)
+    
+    // Find the regular passed tests
+    const passedTests = globalAnnotations.filter(a => a.title.includes('PassedTest'))
+    expect(passedTests.length).toBe(2)
+    expect(passedTests[0].retries).toBe(0)
+    expect(passedTests[1].retries).toBe(0)
+  })
+
   it('should parse and transform perl results', async () => {
     const transformer: Transformer[] = [
       {

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="MixedTestSuite" tests="3" failures="0" errors="0" time="5.5" skipped="0">
+  <!-- Test with flakyFailure - should be included even with includePassed=false -->
+  <testcase name="testFlaky" time="1.5" classname="com.example.FlakyTest">
+    <flakyFailure type="java.lang.AssertionError">
+      <stackTrace>java.lang.AssertionError: Flaky failure</stackTrace>
+    </flakyFailure>
+  </testcase>
+  
+  <!-- Regular passed test - should NOT be included when includePassed=false -->
+  <testcase name="testPassed" time="2.0" classname="com.example.PassedTest">
+  </testcase>
+  
+  <!-- Another regular passed test - should NOT be included when includePassed=false -->
+  <testcase name="testAnotherPassed" time="2.0" classname="com.example.PassedTest">
+  </testcase>
+</testsuite>
