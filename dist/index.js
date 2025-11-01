@@ -37616,8 +37616,7 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
 }
 function appendDetailsTable(testResult, detailsTable, includePassed, includeSkipped, includeTimeInSummary, passedDetailIcon, skippedDetailIcon) {
     const colspan = includeTimeInSummary ? '3' : '2';
-    const annotations = testResult.annotations.filter(annotation => (includePassed || annotation.annotation_level !== 'notice') &&
-        (includeSkipped || annotation.status !== 'skipped'));
+    const annotations = testResult.annotations.filter(annotation => (includePassed || annotation.annotation_level !== 'notice') && (includeSkipped || annotation.status !== 'skipped'));
     if (annotations.length > 0) {
         detailsTable.push([{ data: `<em>${testResult.name}</em>`, colspan }]);
         for (const annotation of annotations) {
