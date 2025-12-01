@@ -52,7 +52,7 @@
     "globals": "^16.5.0",
     "js-yaml": "^4.1.1",
     "nock": "^14.0.10",
-    "prettier": "^3.6.2",
+    "prettier": "^3.7.3",
     "typescript": "^5.9.3",
     "vitest": "^4.0.8",
     "webpack": "^5.103.0"
