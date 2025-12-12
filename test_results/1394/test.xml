@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/jenkinsci/xunit-plugin/ae25da5089d4f94ac6c4669bf736e4d416cc4665/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="omni" tests="1" failures="0" errors="0" time="9.56"
+        skipped="0" timestamp="2024-01-21T08:17:32">
+    <testcase name="createWebhook" classname="io.sodadata.dependson.soda.integrations.msteams.MicrosoftTeamsCrudTest" time="0.683">
+        <flakyFailure message="&#10;Expected: &lt;false&gt;&#10;     but: was &lt;true&gt;" type="java.lang.AssertionError">
+            <stackTrace>java.lang.AssertionError:
+
+                Expected: &lt;false&gt;
+                but: was &lt;true&gt;
+                at org.hamcrest.MatcherAssert.assertThat(MatcherAssert.java:20)
+                at org.hamcrest.MatcherAssert.assertThat(MatcherAssert.java:6)
+                at io.sodadata.dependson.soda.integrations.msteams.MicrosoftTeamsCrudTest.createWebhook(MicrosoftTeamsCrudTest.java:58)
+                at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+                at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+                at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+            </stackTrace>
+            <system-err>
+                ...
+            </system-err>
+        </flakyFailure>
+    </testcase>
+</testsuite>
