@@ -93,7 +93,7 @@ export function buildSummaryTables(
 
     const annotations = testResult.globalAnnotations.filter(
       annotation =>
-        (includePassed || annotation.annotation_level !== 'notice' || annotation.retries > 0) &&
+        (includePassed || annotation.status !== 'success' || annotation.retries > 0) &&
         (includeSkipped || annotation.status !== 'skipped')
     )
 
@@ -112,7 +112,8 @@ export function buildSummaryTables(
         if (!groupSuite) {
           for (const annotation of annotations) {
             // Skip passed tests (including flaky ones) in details table when includePassed is false
-            if (!includePassed && annotation.annotation_level === 'notice') {
+            // Note: skipped tests have status='skipped' and are handled separately by includeSkipped
+            if (!includePassed && annotation.status === 'success') {
               continue
             }
             const detailsRow = [
@@ -174,9 +175,10 @@ function appendDetailsTable(
 ): void {
   const colspan = includeTimeInSummary ? '3' : '2'
   // For details table, don't include passed tests when includePassed is false (even if flaky)
+  // Note: skipped tests have status='skipped' and are handled separately by includeSkipped
   const annotations = testResult.annotations.filter(
     annotation =>
-      (includePassed || annotation.annotation_level !== 'notice') &&
+      (includePassed || annotation.status !== 'success') &&
       (includeSkipped || annotation.status !== 'skipped')
   )
   if (annotations.length > 0) {
