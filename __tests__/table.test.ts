@@ -266,10 +266,10 @@ describe('buildSummaryTables', () => {
       ['FlakyTest.testFlaky', '1', '1s 500ms']
     ])
 
-    // The detail table should only include the flaky test, not the regular passed tests
-    expect(detailTable.length).toBe(3) // Header + suite header + 1 flaky test
+    // The detail table should not include passed tests, even flaky ones (they appear in flakyTable)
+    expect(detailTable.length).toBe(2) // Header + suite header only, no passed tests
     const detailTableFlat = detailTable.flat()
-    expect(detailTableFlat.some(cell => typeof cell === 'string' && cell.includes('testFlaky'))).toBe(true)
+    expect(detailTableFlat.some(cell => typeof cell === 'string' && cell.includes('testFlaky'))).toBe(false)
     expect(detailTableFlat.some(cell => typeof cell === 'string' && cell.includes('testPassed'))).toBe(false)
     expect(detailTableFlat.some(cell => typeof cell === 'string' && cell.includes('testAnotherPassed'))).toBe(false)
   })
