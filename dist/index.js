@@ -41674,19 +41674,20 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
         if (failed) {
             testCaseFailedCount++;
         }
-        // If this isn't reported as a failure and processing all passed tests
-        // isn't enabled, then skip the rest of the processing.
-        if (annotationLevel !== 'failure' && !includePassed) {
-            continue;
-        }
-        // in some definitions `failure` may be an array
-        const failures = testcase.failure ? (Array.isArray(testcase.failure) ? testcase.failure : [testcase.failure]) : [];
-        // identify the number of flaky failures
+        // identify the number of flaky failures (check this early to allow flaky tests through)
         const flakyFailuresCount = testcase.flakyFailure
             ? Array.isArray(testcase.flakyFailure)
                 ? testcase.flakyFailure.length
                 : 1
             : 0;
+        // If this isn't reported as a failure and processing all passed tests
+        // isn't enabled, then skip the rest of the processing.
+        // Exception: if the test has flaky failures, always process it to track retries
+        if (annotationLevel !== 'failure' && !includePassed && flakyFailuresCount === 0) {
+            continue;
+        }
+        // in some definitions `failure` may be an array
+        const failures = testcase.failure ? (Array.isArray(testcase.failure) ? testcase.failure : [testcase.failure]) : [];
         // Handle multiple failures or single case (success/skip/error)
         const failuresToProcess = failures.length > 0 ? failures : [null]; // Process at least once for non-failure cases
         for (let failureIndex = 0; failureIndex < failuresToProcess.length; failureIndex++) {
@@ -41841,7 +41842,7 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
             row.push(toFormatedTime(testResult.time));
         }
         table.push(row);
-        const annotations = testResult.globalAnnotations.filter(annotation => (includePassed || annotation.annotation_level !== 'notice') &&
+        const annotations = testResult.globalAnnotations.filter(annotation => (includePassed || annotation.annotation_level !== 'notice' || annotation.retries > 0) &&
             (includeSkipped || annotation.status !== 'skipped'));
         if (annotations.length === 0) {
             if (!includePassed) {
@@ -41895,7 +41896,8 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
 }
 function appendDetailsTable(testResult, detailsTable, includePassed, includeSkipped, includeTimeInSummary, passedDetailIcon, skippedDetailIcon) {
     const colspan = includeTimeInSummary ? '3' : '2';
-    const annotations = testResult.annotations.filter(annotation => (includePassed || annotation.annotation_level !== 'notice') && (includeSkipped || annotation.status !== 'skipped'));
+    const annotations = testResult.annotations.filter(annotation => (includePassed || annotation.annotation_level !== 'notice' || annotation.retries > 0) &&
+        (includeSkipped || annotation.status !== 'skipped'));
     if (annotations.length > 0) {
         detailsTable.push([{ data: `<em>${testResult.name}</em>`, colspan }]);
         for (const annotation of annotations) {
