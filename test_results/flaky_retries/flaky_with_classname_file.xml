@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite errors="2" failures="1" name="FlakyTestSuite" skips="0" time="5.526" tests="5">
+    <!-- Flaky test: fails with failure first, then error, then passes -->
+    <testcase classname="test_foo.TestFoo"
+        file="/home/runner/work/foo/bar/test_foo.py"
+        line="42" name="test_foo" time="1.842">
+        <failure message="it failed">'NoneType' object is not iterable</failure>
+    </testcase>
+    <testcase classname="test_foo.TestFoo"
+        file="/home/runner/work/foo/bar/test_foo.py"
+        line="42" name="test_foo" time="1.842">
+        <error message="it broke">oh no</error>
+    </testcase>
+    <testcase classname="test_foo.TestFoo"
+        file="/home/runner/work/foo/bar/test_foo.py"
+        line="42" name="test_foo" time="1.842" />
+
+    <!-- Regular passing test with same name but different classname - should NOT be merged -->
+    <testcase classname="test_bar.TestBar"
+        file="/home/runner/work/foo/bar/test_bar.py"
+        line="10" name="test_foo" time="0.5" />
+
+    <!-- Another regular test -->
+    <testcase classname="test_baz.TestBaz"
+        file="/home/runner/work/foo/bar/test_baz.py"
+        line="20" name="test_baz" time="0.5" />
+</testsuite>
