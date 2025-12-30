@@ -1413,6 +1413,129 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
       }
     ])
   })
+
+  it('flaky test with classname and file: multiple failures then success should pass with retries', async () => {
+    // Test that flaky tests are correctly identified using classname and file as part of the key
+    // The test_foo test appears 3 times: failure, error, then success
+    // It should be marked as success with 2 retries
+    const testResult = await parseFile(
+      'test_results/flaky_retries/flaky_with_classname_file.xml',
+      '',
+      true,   // includePassed
+      true,   // annotateNotice
+      true    // checkRetries
+    )
+    expect(testResult).toBeDefined()
+    const {totalCount, skippedCount, failedCount, passedCount, retriedCount, globalAnnotations} = testResult!!
+
+    // Should have 3 unique tests (test_foo appears once due to deduplication, plus test_bar.test_foo and test_baz)
+    expect(totalCount).toBe(3)
+    expect(skippedCount).toBe(0)
+    expect(failedCount).toBe(0)
+    expect(passedCount).toBe(3)
+    expect(retriedCount).toBe(2)  // 2 retries for the flaky test (3 occurrences - 1)
+
+    // Find the flaky test annotation
+    const flakyTest = globalAnnotations.find(a =>
+      a.title.includes('test_foo.TestFoo') || a.path.includes('test_foo.py')
+    )
+    expect(flakyTest).toBeDefined()
+    expect(flakyTest!.status).toBe('success')
+    expect(flakyTest!.retries).toBe(2)
+    expect(flakyTest!.annotation_level).toBe('notice')
+
+    // Verify that test_bar.test_foo is NOT merged with test_foo.test_foo (different classname/file)
+    const testBarFoo = globalAnnotations.find(a => a.path.includes('test_bar.py'))
+    expect(testBarFoo).toBeDefined()
+    expect(testBarFoo!.retries).toBe(0)  // Not retried, it's a separate test
+  })
+
+  it('flaky test with all failures should still be marked as failure with retries', async () => {
+    // Test that when all executions of a flaky test fail, it remains a failure but tracks retries
+    const testResult = await parseFile(
+      'test_results/flaky_retries/flaky_all_failures.xml',
+      '',
+      false,   // includePassed
+      false,   // annotateNotice
+      true     // checkRetries
+    )
+    expect(testResult).toBeDefined()
+    const {totalCount, skippedCount, failedCount, passedCount, retriedCount, globalAnnotations} = testResult!!
+
+    // Should have 1 unique test after deduplication
+    expect(totalCount).toBe(1)
+    expect(skippedCount).toBe(0)
+    expect(failedCount).toBe(1)
+    expect(passedCount).toBe(0)
+    expect(retriedCount).toBe(2)  // 2 retries (3 occurrences - 1)
+
+    // Should still have a failure annotation
+    expect(globalAnnotations).toHaveLength(1)
+    expect(globalAnnotations[0].status).toBe('failure')
+    expect(globalAnnotations[0].retries).toBe(2)
+    expect(globalAnnotations[0].annotation_level).toBe('failure')
+  })
+
+  it('flaky test with success first should still pass with retries tracked', async () => {
+    // Test that even if success comes first and failures come later,
+    // the test is still marked as success with proper retry count
+    const testResult = await parseFile(
+      'test_results/flaky_retries/flaky_success_first.xml',
+      '',
+      true,   // includePassed
+      true,   // annotateNotice
+      true    // checkRetries
+    )
+    expect(testResult).toBeDefined()
+    const {totalCount, skippedCount, failedCount, passedCount, retriedCount, globalAnnotations} = testResult!!
+
+    // Should have 1 unique test after deduplication
+    expect(totalCount).toBe(1)
+    expect(skippedCount).toBe(0)
+    expect(failedCount).toBe(0)
+    expect(passedCount).toBe(1)
+    expect(retriedCount).toBe(2)  // 2 retries (3 occurrences - 1)
+
+    // Should be marked as success
+    expect(globalAnnotations).toHaveLength(1)
+    expect(globalAnnotations[0].status).toBe('success')
+    expect(globalAnnotations[0].retries).toBe(2)
+    expect(globalAnnotations[0].annotation_level).toBe('notice')
+  })
+
+  it('same test name but different classname/file should NOT be merged', async () => {
+    // Verify that tests with the same name but different classname or file are treated as separate tests
+    const testResult = await parseFile(
+      'test_results/flaky_retries/flaky_with_classname_file.xml',
+      '',
+      true,   // includePassed
+      true,   // annotateNotice
+      true    // checkRetries
+    )
+    expect(testResult).toBeDefined()
+    const {totalCount, globalAnnotations} = testResult!!
+
+    // Should have 3 unique tests:
+    // 1. test_foo from test_foo.TestFoo (flaky, merged)
+    // 2. test_foo from test_bar.TestBar (separate)
+    // 3. test_baz from test_baz.TestBaz
+    expect(totalCount).toBe(3)
+    expect(globalAnnotations).toHaveLength(3)
+
+    // Verify we have two different test_foo entries (one from each classname)
+    const testFooAnnotations = globalAnnotations.filter(a => a.title.includes('test_foo'))
+    expect(testFooAnnotations).toHaveLength(2)
+
+    // The one from TestFoo should have retries, the one from TestBar should not
+    const testFooFromTestFoo = testFooAnnotations.find(a => a.path.includes('test_foo.py'))
+    const testFooFromTestBar = testFooAnnotations.find(a => a.path.includes('test_bar.py'))
+
+    expect(testFooFromTestFoo).toBeDefined()
+    expect(testFooFromTestFoo!.retries).toBe(2)
+
+    expect(testFooFromTestBar).toBeDefined()
+    expect(testFooFromTestBar!.retries).toBe(0)
+  })
 })
 
 describe('parseTestReports', () => {

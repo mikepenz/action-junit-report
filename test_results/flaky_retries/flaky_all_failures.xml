@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite errors="1" failures="2" name="FlakyAllFailures" skips="0" time="3.0" tests="3">
+    <!-- Flaky test: fails multiple times and never passes -->
+    <testcase classname="test_always_fails.TestAlwaysFails"
+        file="/home/runner/work/tests/test_always_fails.py"
+        line="10" name="test_always_fails" time="1.0">
+        <failure message="first failure">First attempt failed</failure>
+    </testcase>
+    <testcase classname="test_always_fails.TestAlwaysFails"
+        file="/home/runner/work/tests/test_always_fails.py"
+        line="10" name="test_always_fails" time="1.0">
+        <failure message="second failure">Second attempt failed</failure>
+    </testcase>
+    <testcase classname="test_always_fails.TestAlwaysFails"
+        file="/home/runner/work/tests/test_always_fails.py"
+        line="10" name="test_always_fails" time="1.0">
+        <error message="third error">Third attempt errored</error>
+    </testcase>
+</testsuite>

@@ -41628,26 +41628,40 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
     let time = 0;
     if (checkRetries) {
         // identify duplicates in case of flaky tests, and remove them
+        // Use a compound key including name, classname (if available), and file (if available)
+        // to prevent accidental duplicate matches across different test classes/files
         const testcaseMap = new Map();
         for (const testcase of testcases) {
-            const key = testcase._attributes.name;
+            const name = testcase._attributes.name;
+            const classname = testcase._attributes.classname || '';
+            const file = testcase._attributes.file || '';
+            const key = `${name}|${classname}|${file}`;
             if (testcaseMap.get(key) !== undefined) {
-                // testcase with matching name exists
+                // testcase with matching key exists - this is a flaky test
                 const failed = testcase.failure || testcase.error;
                 const previous = testcaseMap.get(key);
                 const previousFailed = previous.failure || previous.error;
-                if (failed && !previousFailed) {
-                    // previous is a success, drop failure
-                    previous.retries = (previous.retries || 0) + 1;
-                    retriedCount += 1;
-                    core.debug(`Drop flaky test failure for (1): ${key}`);
-                }
-                else if (!failed && previousFailed) {
-                    // previous failed, new one not, replace
-                    testcase.retries = (previous.retries || 0) + 1;
+                // Increment retry count for each additional occurrence
+                const currentRetries = (previous.retries || 0) + 1;
+                if (!failed) {
+                    // Current execution is successful - use this as the final result
+                    // The test is flaky but ultimately passed
+                    testcase.retries = currentRetries;
                     testcaseMap.set(key, testcase);
                     retriedCount += 1;
-                    core.debug(`Drop flaky test failure for (2): ${JSON.stringify(testcase)}`);
+                    core.debug(`Flaky test succeeded after retry for: ${key}`);
+                }
+                else if (!previousFailed) {
+                    // Previous was successful, current failed - keep the successful one
+                    previous.retries = currentRetries;
+                    retriedCount += 1;
+                    core.debug(`Flaky test: keeping success, dropping failure for: ${key}`);
+                }
+                else {
+                    // Both failed - keep tracking retries but keep the previous
+                    previous.retries = currentRetries;
+                    retriedCount += 1;
+                    core.debug(`Flaky test: multiple failures for: ${key}`);
                 }
             }
             else {
