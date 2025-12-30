@@ -216,6 +216,127 @@ describe('buildSummaryTables', () => {
     expect(flakyTable).toStrictEqual(FLAKY_TABLE)
   })
 
+  it('should show skipped tests when includeSkipped=true but includePassed=false', async () => {
+    // This tests the key use case: showing only failed and skipped tests, without passed tests
+    const testResult = await parseTestReports(
+      'checkName',
+      'summary',
+      'test_results/tests/utils/target/surefire-reports/TEST-action.surefire.report.calc.StringUtilsTest.xml',
+      '*',
+      true, // Parse all tests
+      true,
+      true,
+      [],
+      undefined,
+      '/'
+    )
+
+    // Build with includePassed=false but includeSkipped=true
+    const [, detailTable] = buildSummaryTables(
+      [testResult],
+      false, // includePassed - don't show passed tests
+      true,  // includeSkipped - but DO show skipped tests
+      true,  // detailedSummary
+      false, // flakySummary
+      false, // verboseSummary
+      false  // skipSuccessSummary
+    )
+
+    const flatResults = detailTable.flat()
+
+    // Should include skipped tests
+    const hasSkippedTests = flatResults.some(cell => typeof cell === 'string' && cell.includes('⚠️ skipped'))
+    expect(hasSkippedTests).toBe(true)
+
+    // Should include failed tests
+    const hasFailedTests = flatResults.some(cell => typeof cell === 'string' && cell.includes('❌ failure'))
+    expect(hasFailedTests).toBe(true)
+
+    // Should NOT include passed tests
+    const hasPassedTests = flatResults.some(cell => typeof cell === 'string' && cell.includes('✅ passed'))
+    expect(hasPassedTests).toBe(false)
+  })
+
+  it('should hide both passed and skipped when both include flags are false', async () => {
+    const testResult = await parseTestReports(
+      'checkName',
+      'summary',
+      'test_results/tests/utils/target/surefire-reports/TEST-action.surefire.report.calc.StringUtilsTest.xml',
+      '*',
+      true, // Parse all tests
+      true,
+      true,
+      [],
+      undefined,
+      '/'
+    )
+
+    // Build with both includePassed=false and includeSkipped=false
+    const [, detailTable] = buildSummaryTables(
+      [testResult],
+      false, // includePassed - don't show passed tests
+      false, // includeSkipped - don't show skipped tests either
+      true,  // detailedSummary
+      false, // flakySummary
+      false, // verboseSummary
+      false  // skipSuccessSummary
+    )
+
+    const flatResults = detailTable.flat()
+
+    // Should NOT include skipped tests
+    const hasSkippedTests = flatResults.some(cell => typeof cell === 'string' && cell.includes('⚠️ skipped'))
+    expect(hasSkippedTests).toBe(false)
+
+    // Should include failed tests
+    const hasFailedTests = flatResults.some(cell => typeof cell === 'string' && cell.includes('❌ failure'))
+    expect(hasFailedTests).toBe(true)
+
+    // Should NOT include passed tests
+    const hasPassedTests = flatResults.some(cell => typeof cell === 'string' && cell.includes('✅ passed'))
+    expect(hasPassedTests).toBe(false)
+  })
+
+  it('should show both passed and skipped when both include flags are true', async () => {
+    const testResult = await parseTestReports(
+      'checkName',
+      'summary',
+      'test_results/tests/utils/target/surefire-reports/TEST-action.surefire.report.calc.StringUtilsTest.xml',
+      '*',
+      true, // Parse all tests
+      true,
+      true,
+      [],
+      undefined,
+      '/'
+    )
+
+    // Build with both includePassed=true and includeSkipped=true
+    const [, detailTable] = buildSummaryTables(
+      [testResult],
+      true,  // includePassed - show passed tests
+      true,  // includeSkipped - show skipped tests
+      true,  // detailedSummary
+      false, // flakySummary
+      false, // verboseSummary
+      false  // skipSuccessSummary
+    )
+
+    const flatResults = detailTable.flat()
+
+    // Should include skipped tests
+    const hasSkippedTests = flatResults.some(cell => typeof cell === 'string' && cell.includes('⚠️ skipped'))
+    expect(hasSkippedTests).toBe(true)
+
+    // Should include failed tests
+    const hasFailedTests = flatResults.some(cell => typeof cell === 'string' && cell.includes('❌ failure'))
+    expect(hasFailedTests).toBe(true)
+
+    // Should include passed tests
+    const hasPassedTests = flatResults.some(cell => typeof cell === 'string' && cell.includes('✅ passed'))
+    expect(hasPassedTests).toBe(true)
+  })
+
   it('should include flaky tests in summary even when includePassed is false', async () => {
     const testResult = await parseTestReports(
       'checkName',
