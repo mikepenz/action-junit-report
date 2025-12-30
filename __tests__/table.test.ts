@@ -215,4 +215,62 @@ describe('buildSummaryTables', () => {
     ])
     expect(flakyTable).toStrictEqual(FLAKY_TABLE)
   })
+
+  it('should include flaky tests in summary even when includePassed is false', async () => {
+    const testResult = await parseTestReports(
+      'checkName',
+      'summary',
+      'test_results/junit_flaky_failure/mixed_flaky_and_passed.xml',
+      '*',
+      false, // includePassed = false
+      false, // annotateNotice = false
+      false, // checkRetries = false
+      [],
+      undefined,
+      '/'
+    )
+
+    // Build tables with includePassed=false and flakySummary=true
+    const [table, detailTable, flakyTable] = buildSummaryTables(
+      [testResult],
+      false, // includePassed
+      false, // includeSkipped
+      true,  // detailedSummary
+      true,  // flakySummary
+      true,  // includeTimeInSummary
+      false  // onlyShowFailures
+    )
+
+    // The main table should show 1 passed test (the flaky one), not all 3
+    expect(table).toStrictEqual([
+      [
+        {data: '', header: true},
+        {data: 'Tests', header: true},
+        {data: 'Passed ✅', header: true},
+        {data: 'Skipped', header: true},
+        {data: 'Failed', header: true},
+        {data: 'Time ⏱', header: true}
+      ],
+      ['checkName', '3 ran', '3 passed', '0 skipped', '0 failed', '5s 500ms']
+    ])
+
+    // The flaky table should include the flaky test even though includePassed=false
+    expect(flakyTable.length).toBeGreaterThan(1) // Header + at least one row
+    expect(flakyTable).toStrictEqual([
+      [
+        {data: 'Test', header: true},
+        {data: 'Retries', header: true},
+        {data: 'Time ⏱', header: true}
+      ],
+      [{data: '<strong>checkName</strong>', colspan: '3'}],
+      ['FlakyTest.testFlaky', '1', '1s 500ms']
+    ])
+
+    // The detail table should not include passed tests, even flaky ones (they appear in flakyTable)
+    expect(detailTable.length).toBe(2) // Header + suite header only, no passed tests
+    const detailTableFlat = detailTable.flat()
+    expect(detailTableFlat.some(cell => typeof cell === 'string' && cell.includes('testFlaky'))).toBe(false)
+    expect(detailTableFlat.some(cell => typeof cell === 'string' && cell.includes('testPassed'))).toBe(false)
+    expect(detailTableFlat.some(cell => typeof cell === 'string' && cell.includes('testAnotherPassed'))).toBe(false)
+  })
 })

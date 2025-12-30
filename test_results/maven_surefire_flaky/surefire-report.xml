@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.sodadata.dependson.soda.integrations.msteams.MicrosoftTeamsCrudTest" tests="1" failures="0" errors="0" time="0.683">
+  <testcase name="createWebhook" classname="io.sodadata.dependson.soda.integrations.msteams.MicrosoftTeamsCrudTest" time="0.683">
+    <flakyFailure message="&#10;Expected: &lt;false&gt;&#10;     but: was &lt;true&gt;" type="java.lang.AssertionError">
+      <stackTrace>java.lang.AssertionError: 
+
+Expected: &lt;false&gt;
+     but: was &lt;true&gt;
+	at org.hamcrest.MatcherAssert.assertThat(MatcherAssert.java:20)
+	at org.hamcrest.MatcherAssert.assertThat(MatcherAssert.java:6)
+	at io.sodadata.dependson.soda.integrations.msteams.MicrosoftTeamsCrudTest.createWebhook(MicrosoftTeamsCrudTest.java:58)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+</stackTrace>
+      <system-err>Some error output here</system-err>
+    </flakyFailure>
+  </testcase>
+</testsuite>
