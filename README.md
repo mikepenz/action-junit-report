@@ -64,7 +64,7 @@ jobs:
       - name: Build and Run Tests
         run: # execute your tests generating test results
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         if: success() || failure() # always run even if the previous step fails
         with:
           report_paths: '**/build/test-results/test/TEST-*.xml'
@@ -149,7 +149,7 @@ you can increase the memory allocation by setting an environment variable
 
 ```yaml
 - name: Publish Test Report
-  uses: mikepenz/action-junit-report@v5
+  uses: mikepenz/action-junit-report@v6
   env:
     NODE_OPTIONS: "--max-old-space-size=4096"
   if: success() || failure() # always run even if the previous step fails
@@ -247,7 +247,7 @@ jobs:
           workflow: ${{ github.event.workflow.id }}
           run_id: ${{ github.event.workflow_run.id }}
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         with:
           commit: ${{github.event.workflow_run.head_sha}}
           report_paths: '**/build/test-results/test/TEST-*.xml'
@@ -287,7 +287,7 @@ jobs:
 
       - name: Write out Unit Test report annotation for forked repo
         if: ${{ failure() &&  (github.event.pull_request.head.repo.full_name != github.repository) }}
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         with:
           annotate_only: true # forked repo cannot write to checks so just do annotations
 ```
