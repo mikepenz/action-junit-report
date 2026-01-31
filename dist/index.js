@@ -40850,7 +40850,7 @@ function toFormatedTime(timeS) {
 
 
 
-
+const annotator_context = github_context;
 async function annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName) {
     const annotations = testResult.globalAnnotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
     const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
@@ -40985,7 +40985,7 @@ function buildCommentIdentifier(checkName) {
 }
 async function attachComment(octokit, checkName, updateComment, table, detailsTable, flakySummary, checkInfos = [], prId) {
     // Use provided prId or fall back to context issue number
-    const issueNumber = prId ? parseInt(prId, 10) : context.issue.number;
+    const issueNumber = prId ? parseInt(prId, 10) : annotator_context.issue.number;
     if (!issueNumber) {
         core.warning(`⚠️ Action requires a valid issue number (PR reference) or pr_id input to be able to attach a comment..`);
         return;
@@ -41016,16 +41016,16 @@ async function attachComment(octokit, checkName, updateComment, table, detailsTa
     const priorComment = updateComment ? await findPriorComment(octokit, identifier, issueNumber) : undefined;
     if (priorComment) {
         await octokit.rest.issues.updateComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
+            owner: annotator_context.repo.owner,
+            repo: annotator_context.repo.repo,
             comment_id: priorComment,
             body: comment
         });
     }
     else {
         await octokit.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
+            owner: annotator_context.repo.owner,
+            repo: annotator_context.repo.repo,
             issue_number: issueNumber,
             body: comment
         });
@@ -41033,8 +41033,8 @@ async function attachComment(octokit, checkName, updateComment, table, detailsTa
 }
 async function findPriorComment(octokit, identifier, issueNumber) {
     const comments = await octokit.paginate(octokit.rest.issues.listComments, {
-        owner: context.repo.owner,
-        repo: context.repo.repo,
+        owner: annotator_context.repo.owner,
+        repo: annotator_context.repo.repo,
         issue_number: issueNumber
     });
     const foundComment = comments.find(comment => comment.body?.endsWith(identifier));
@@ -41684,8 +41684,7 @@ function appendDetailsTable(testResult, detailsTable, includePassed, includeSkip
     const colspan = includeTimeInSummary ? '3' : '2';
     // For details table, don't include passed tests when includePassed is false (even if flaky)
     // Note: skipped tests have status='skipped' and are handled separately by includeSkipped
-    const annotations = testResult.annotations.filter(annotation => (includePassed || annotation.status !== 'success') &&
-        (includeSkipped || annotation.status !== 'skipped'));
+    const annotations = testResult.annotations.filter(annotation => (includePassed || annotation.status !== 'success') && (includeSkipped || annotation.status !== 'skipped'));
     if (annotations.length > 0) {
         detailsTable.push([{ data: `<em>${testResult.name}</em>`, colspan }]);
         for (const annotation of annotations) {
