@@ -12,9 +12,13 @@ const mockContextData = vi.hoisted(() => ({
   repo: {owner: 'test-owner', repo: 'test-repo'}
 }))
 
-vi.mock('@actions/github/lib/utils.js', () => ({
-  context: mockContextData
-}))
+vi.mock('@actions/github', async () => {
+  const actual = await vi.importActual('@actions/github')
+  return {
+    ...actual,
+    context: mockContextData
+  }
+})
 
 describe('attachComment', () => {
   let mockOctokit: any

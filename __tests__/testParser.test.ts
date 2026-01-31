@@ -1232,18 +1232,18 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const testResult = await parseFile(
       'test_results/junit_flaky_failure/mixed_flaky_and_passed.xml',
       '',
-      false,  // includePassed = false
-      false   // annotateNotice = false
+      false, // includePassed = false
+      false // annotateNotice = false
     )
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, passedCount, failedCount, globalAnnotations} = testResult!!
-    
+
     // Total count should include all tests (3 total)
     expect(totalCount).toBe(3)
     expect(skippedCount).toBe(0)
     expect(failedCount).toBe(0)
     expect(passedCount).toBe(3)
-    
+
     // But annotations should ONLY include the flaky test, not the regular passed tests
     expect(globalAnnotations.length).toBe(1)
     expect(globalAnnotations[0].title).toBe('FlakyTest.testFlaky')
@@ -1256,22 +1256,22 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const testResult = await parseFile(
       'test_results/junit_flaky_failure/mixed_flaky_and_passed.xml',
       '',
-      true,   // includePassed = true
-      true    // annotateNotice = true
+      true, // includePassed = true
+      true // annotateNotice = true
     )
     expect(testResult).toBeDefined()
     const {totalCount, globalAnnotations} = testResult!!
-    
+
     expect(totalCount).toBe(3)
-    
+
     // All 3 tests should be in annotations when includePassed=true
     expect(globalAnnotations.length).toBe(3)
-    
+
     // Find the flaky test
     const flakyTest = globalAnnotations.find(a => a.title === 'FlakyTest.testFlaky')
     expect(flakyTest).toBeDefined()
     expect(flakyTest!.retries).toBe(1)
-    
+
     // Find the regular passed tests
     const passedTests = globalAnnotations.filter(a => a.title.includes('PassedTest'))
     expect(passedTests.length).toBe(2)
@@ -1421,9 +1421,9 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const testResult = await parseFile(
       'test_results/flaky_retries/flaky_with_classname_file.xml',
       '',
-      true,   // includePassed
-      true,   // annotateNotice
-      true    // checkRetries
+      true, // includePassed
+      true, // annotateNotice
+      true // checkRetries
     )
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, failedCount, passedCount, retriedCount, globalAnnotations} = testResult!!
@@ -1433,11 +1433,11 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     expect(skippedCount).toBe(0)
     expect(failedCount).toBe(0)
     expect(passedCount).toBe(3)
-    expect(retriedCount).toBe(2)  // 2 retries for the flaky test (3 occurrences - 1)
+    expect(retriedCount).toBe(2) // 2 retries for the flaky test (3 occurrences - 1)
 
     // Find the flaky test annotation
-    const flakyTest = globalAnnotations.find(a =>
-      a.title.includes('test_foo.TestFoo') || a.path.includes('test_foo.py')
+    const flakyTest = globalAnnotations.find(
+      a => a.title.includes('test_foo.TestFoo') || a.path.includes('test_foo.py')
     )
     expect(flakyTest).toBeDefined()
     expect(flakyTest!.status).toBe('success')
@@ -1447,7 +1447,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     // Verify that test_bar.test_foo is NOT merged with test_foo.test_foo (different classname/file)
     const testBarFoo = globalAnnotations.find(a => a.path.includes('test_bar.py'))
     expect(testBarFoo).toBeDefined()
-    expect(testBarFoo!.retries).toBe(0)  // Not retried, it's a separate test
+    expect(testBarFoo!.retries).toBe(0) // Not retried, it's a separate test
   })
 
   it('flaky test with all failures should still be marked as failure with retries', async () => {
@@ -1455,9 +1455,9 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const testResult = await parseFile(
       'test_results/flaky_retries/flaky_all_failures.xml',
       '',
-      false,   // includePassed
-      false,   // annotateNotice
-      true     // checkRetries
+      false, // includePassed
+      false, // annotateNotice
+      true // checkRetries
     )
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, failedCount, passedCount, retriedCount, globalAnnotations} = testResult!!
@@ -1467,7 +1467,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     expect(skippedCount).toBe(0)
     expect(failedCount).toBe(1)
     expect(passedCount).toBe(0)
-    expect(retriedCount).toBe(2)  // 2 retries (3 occurrences - 1)
+    expect(retriedCount).toBe(2) // 2 retries (3 occurrences - 1)
 
     // Should still have a failure annotation
     expect(globalAnnotations).toHaveLength(1)
@@ -1482,9 +1482,9 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const testResult = await parseFile(
       'test_results/flaky_retries/flaky_success_first.xml',
       '',
-      true,   // includePassed
-      true,   // annotateNotice
-      true    // checkRetries
+      true, // includePassed
+      true, // annotateNotice
+      true // checkRetries
     )
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, failedCount, passedCount, retriedCount, globalAnnotations} = testResult!!
@@ -1494,7 +1494,7 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     expect(skippedCount).toBe(0)
     expect(failedCount).toBe(0)
     expect(passedCount).toBe(1)
-    expect(retriedCount).toBe(2)  // 2 retries (3 occurrences - 1)
+    expect(retriedCount).toBe(2) // 2 retries (3 occurrences - 1)
 
     // Should be marked as success
     expect(globalAnnotations).toHaveLength(1)
@@ -1508,9 +1508,9 @@ action.surefire.report.email.InvalidEmailAddressException: Invalid email address
     const testResult = await parseFile(
       'test_results/flaky_retries/flaky_with_classname_file.xml',
       '',
-      true,   // includePassed
-      true,   // annotateNotice
-      true    // checkRetries
+      true, // includePassed
+      true, // annotateNotice
+      true // checkRetries
     )
     expect(testResult).toBeDefined()
     const {totalCount, globalAnnotations} = testResult!!

@@ -2,8 +2,10 @@ import * as core from '@actions/core'
 import {Annotation, TestResult} from './testParser.js'
 import * as github from '@actions/github'
 import {SummaryTableRow} from '@actions/core/lib/summary.js'
-import {context, GitHub} from '@actions/github/lib/utils.js'
 import {buildLink, buildList, buildTable} from './utils.js'
+
+type GitHub = ReturnType<typeof github.getOctokit>
+const context = github.context
 
 export interface CheckInfo {
   name: string
@@ -122,7 +124,7 @@ export async function annotateTestResult(
 }
 
 async function updateChecks(
-  octokit: InstanceType<typeof GitHub>,
+  octokit: GitHub,
   check_run_id: number,
   title: string,
   summary: string,
@@ -180,7 +182,7 @@ export function buildCommentIdentifier(checkName: string[]): string {
 }
 
 export async function attachComment(
-  octokit: InstanceType<typeof GitHub>,
+  octokit: GitHub,
   checkName: string[],
   updateComment: boolean,
   table: SummaryTableRow[],
@@ -245,11 +247,7 @@ export async function attachComment(
   }
 }
 
-async function findPriorComment(
-  octokit: InstanceType<typeof GitHub>,
-  identifier: string,
-  issueNumber: number
-): Promise<number | undefined> {
+async function findPriorComment(octokit: GitHub, identifier: string, issueNumber: number): Promise<number | undefined> {
   const comments = await octokit.paginate(octokit.rest.issues.listComments, {
     owner: context.repo.owner,
     repo: context.repo.repo,

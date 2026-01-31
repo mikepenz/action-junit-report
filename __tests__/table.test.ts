@@ -235,11 +235,11 @@ describe('buildSummaryTables', () => {
     const [, detailTable] = buildSummaryTables(
       [testResult],
       false, // includePassed - don't show passed tests
-      true,  // includeSkipped - but DO show skipped tests
-      true,  // detailedSummary
+      true, // includeSkipped - but DO show skipped tests
+      true, // detailedSummary
       false, // flakySummary
       false, // verboseSummary
-      false  // skipSuccessSummary
+      false // skipSuccessSummary
     )
 
     const flatResults = detailTable.flat()
@@ -276,10 +276,10 @@ describe('buildSummaryTables', () => {
       [testResult],
       false, // includePassed - don't show passed tests
       false, // includeSkipped - don't show skipped tests either
-      true,  // detailedSummary
+      true, // detailedSummary
       false, // flakySummary
       false, // verboseSummary
-      false  // skipSuccessSummary
+      false // skipSuccessSummary
     )
 
     const flatResults = detailTable.flat()
@@ -314,12 +314,12 @@ describe('buildSummaryTables', () => {
     // Build with both includePassed=true and includeSkipped=true
     const [, detailTable] = buildSummaryTables(
       [testResult],
-      true,  // includePassed - show passed tests
-      true,  // includeSkipped - show skipped tests
-      true,  // detailedSummary
+      true, // includePassed - show passed tests
+      true, // includeSkipped - show skipped tests
+      true, // detailedSummary
       false, // flakySummary
       false, // verboseSummary
-      false  // skipSuccessSummary
+      false // skipSuccessSummary
     )
 
     const flatResults = detailTable.flat()
@@ -356,10 +356,10 @@ describe('buildSummaryTables', () => {
       [testResult],
       false, // includePassed
       false, // includeSkipped
-      true,  // detailedSummary
-      true,  // flakySummary
-      true,  // includeTimeInSummary
-      false  // onlyShowFailures
+      true, // detailedSummary
+      true, // flakySummary
+      true, // includeTimeInSummary
+      false // onlyShowFailures
     )
 
     // The main table should show 1 passed test (the flaky one), not all 3
