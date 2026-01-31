@@ -41603,7 +41603,7 @@ async function createTestCaseAnnotation(testcase, failure, failureIndex, totalFa
     }
     // optionally attach the prefix to the path
     resolvedPath = testFilesPrefix ? external_path_.join(testFilesPrefix, resolvedPath) : resolvedPath;
-    const testTimeString = testTime > 0 ? `${testTime}s` : '';
+    const testTimeString = testTime > 0 ? ` ${testTime}s` : '';
     core.info(`${resolvedPath}:${pos.line} | ${message.split('\n', 1)[0]}${testTimeString}`);
     return {
         path: resolvedPath,
