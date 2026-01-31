@@ -510,7 +510,7 @@ async function createTestCaseAnnotation(
   let title = ''
   if (checkTitleTemplate) {
     // ensure to not duplicate the test_name if file_name is equal
-    const fileName = pos.fileName !== testcase._attributes.name ? pos.fileName : ''
+    const fileName = pos.fileName !== testcase._attributes.name ? transformedFileName : ''
     const baseClassName = testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name
     const className = baseClassName.split('.').slice(-1)[0]
     title = checkTitleTemplate

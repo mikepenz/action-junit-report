@@ -1741,4 +1741,74 @@ describe('parseTestReports', () => {
       testResults: []
     })
   })
+
+  it('should apply transformers to FILE_NAME in check_title_template', async () => {
+    // Simulates the user's scenario where transformers remove workspace path
+    // and check_title_template uses {{FILE_NAME}}
+    const transformer: Transformer[] = [
+      {
+        searchValue: 'python/',
+        replaceValue: '',
+        regex: new RegExp('python/', 'gu')
+      }
+    ]
+    const testResult = await parseFile(
+      'test_results/python/report.xml',
+      '',
+      false,
+      false,
+      false,
+      ['/build/', '/__pycache__/'],
+      '{{FILE_NAME}} | {{TEST_NAME}}',
+      '/',
+      '',
+      transformer
+    )
+    expect(testResult).toBeDefined()
+    const {totalCount, skippedCount, globalAnnotations} = testResult!!
+    const filtered = globalAnnotations.filter(annotation => annotation.annotation_level !== 'notice')
+
+    expect(totalCount).toBe(3)
+    expect(skippedCount).toBe(0)
+    // The key assertion: FILE_NAME should have transformers applied
+    // Original fileName would be "python/test_sample", but transformer removes "python/"
+    expect(filtered[0].title).toBe('test_sample | test_which_fails')
+    expect(filtered[1].title).toBe('test_sample | test_with_error')
+  })
+
+  it('should apply transformers to FILE_NAME with multiple transformers in check_title_template', async () => {
+    // Test with multiple transformers to ensure all are applied in order
+    const transformer: Transformer[] = [
+      {
+        searchValue: 'python/',
+        replaceValue: '',
+        regex: new RegExp('python/', 'gu')
+      },
+      {
+        searchValue: 'test_',
+        replaceValue: '',
+        regex: new RegExp('test_', 'gu')
+      }
+    ]
+    const testResult = await parseFile(
+      'test_results/python/report.xml',
+      '',
+      false,
+      false,
+      false,
+      ['/build/', '/__pycache__/'],
+      '{{FILE_NAME}} | {{TEST_NAME}}',
+      '/',
+      '',
+      transformer
+    )
+    expect(testResult).toBeDefined()
+    const {totalCount, globalAnnotations} = testResult!!
+    const filtered = globalAnnotations.filter(annotation => annotation.annotation_level !== 'notice')
+
+    expect(totalCount).toBe(3)
+    // Both transformers should be applied: "python/test_sample" -> "test_sample" -> "sample"
+    expect(filtered[0].title).toBe('sample | test_which_fails')
+    expect(filtered[1].title).toBe('sample | test_with_error')
+  })
 })
