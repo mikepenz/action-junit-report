@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import {Annotation, TestResult} from './testParser.js'
 import * as github from '@actions/github'
 import {SummaryTableRow} from '@actions/core/lib/summary.js'
-import {context, GitHub} from '@actions/github/lib/utils.js'
+import {context, GitHub} from '@actions/github/lib/utils'
 import {buildLink, buildList, buildTable} from './utils.js'
 
 export interface CheckInfo {

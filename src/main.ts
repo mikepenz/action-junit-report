@@ -3,7 +3,7 @@ import * as github from '@actions/github'
 import {annotateTestResult, attachComment, attachSummary, CheckInfo} from './annotator.js'
 import {parseTestReports, TestResult} from './testParser.js'
 import {buildTable, readTransformers, retrieve} from './utils.js'
-import {GitHub} from '@actions/github/lib/utils.js'
+import {GitHub} from '@actions/github/lib/utils'
 import {buildSummaryTables} from './table.js'
 
 export async function run(): Promise<void> {
