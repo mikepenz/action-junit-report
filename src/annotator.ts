@@ -1,8 +1,8 @@
 import * as core from '@actions/core'
 import {Annotation, TestResult} from './testParser.js'
 import * as github from '@actions/github'
-import {SummaryTableRow} from '@actions/core/lib/summary.js'
 import {buildLink, buildList, buildTable} from './utils.js'
+import {SummaryTableRow} from './types.js'
 
 type GitHub = ReturnType<typeof github.getOctokit>
 const context = github.context

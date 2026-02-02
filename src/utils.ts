@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import {Transformer} from './testParser.js'
-import {SummaryTableRow} from '@actions/core/lib/summary.js'
+import {SummaryTableRow} from './types.js'
 
 export function retrieve(name: string, items: string[], index: number, total: number): string {
   if (total > 1) {
