@@ -394,4 +394,50 @@ describe('buildSummaryTables', () => {
     expect(detailTableFlat.some(cell => typeof cell === 'string' && cell.includes('testPassed'))).toBe(false)
     expect(detailTableFlat.some(cell => typeof cell === 'string' && cell.includes('testAnotherPassed'))).toBe(false)
   })
+
+  it('should render error-only test failures in summary and details', async () => {
+    const testResult = await parseTestReports(
+      'errors-check',
+      'summary',
+      'test_results/multiple_failures/test_multiple_errors.xml',
+      '*',
+      true,
+      true,
+      false,
+      [],
+      undefined,
+      '/'
+    )
+
+    const [table, detailTable] = buildSummaryTables(
+      [testResult],
+      true, // includePassed
+      true, // includeSkipped
+      true, // detailedSummary
+      false, // flakySummary
+      false, // verboseSummary
+      false // skipSuccessSummary
+    )
+
+    expect(table).toStrictEqual([
+      [
+        {data: '', header: true},
+        {data: 'Tests', header: true},
+        {data: 'Passed ✅', header: true},
+        {data: 'Skipped', header: true},
+        {data: 'Failed ❌️', header: true},
+        {data: 'Time ⏱', header: true}
+      ],
+      ['errors-check', '3 ran', '1 passed', '0 skipped', '2 failed', '40ms']
+    ])
+
+    const detailFlat = detailTable.flat()
+    expect(detailFlat).toContain('src/test.ts.testWithMultipleErrors (failure 1/2)')
+    expect(detailFlat).toContain('src/test.ts.testWithMultipleErrors (failure 2/2)')
+    expect(detailFlat).toContain('src/assertion.ts.testWithFailureAndError (failure 1/2)')
+    expect(detailFlat).toContain('src/runtime.ts.testWithFailureAndError (failure 2/2)')
+
+    const failureEntries = detailFlat.filter(cell => typeof cell === 'string' && cell === '❌ failure')
+    expect(failureEntries).toHaveLength(4)
+  })
 })

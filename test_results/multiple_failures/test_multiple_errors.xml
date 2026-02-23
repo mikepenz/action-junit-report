@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="MultipleErrorsTest" tests="3" failures="1" errors="3" skipped="0" time="0.04">
+    <testcase name="testWithMultipleErrors" classname="com.example.MultipleErrorsTest" time="0.02">
+      <error message="First timeout" type="TimeoutError" file="src/test.ts" line="101">
+        <![CDATA[TimeoutError: First timeout
+        at com.example.MultipleErrorsTest.testWithMultipleErrors(MultipleErrorsTest.java:101)]]
+      </error>
+      <error message="Second timeout" type="TimeoutError" file="src/test.ts" line="102">
+        <![CDATA[TimeoutError: Second timeout
+        at com.example.MultipleErrorsTest.testWithMultipleErrors(MultipleErrorsTest.java:102)]]
+      </error>
+    </testcase>
+    <testcase name="testWithFailureAndError" classname="com.example.MultipleErrorsTest" time="0.01">
+      <failure message="Assertion failed" type="AssertionError" file="src/assertion.ts" line="55">
+        <![CDATA[AssertionError: assertion failed]]>
+      </failure>
+      <error message="Unhandled error" type="TypeError" file="src/runtime.ts" line="88">
+        <![CDATA[TypeError: cannot read properties of undefined]]>
+      </error>
+    </testcase>
+    <testcase name="testPassing" classname="com.example.MultipleErrorsTest" time="0.01" />
+  </testsuite>
+</testsuites>

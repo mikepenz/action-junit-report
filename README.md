@@ -35,6 +35,7 @@
 ### What's included 🚀
 
 - Flexible JUnit parser with wide support
+- Supports both `<failure>` and `<error>` test case results
 - Supports nested test suites
 - Blazingly fast execution
 - Lighweight
