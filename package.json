@@ -40,8 +40,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.4",
     "@eslint/js": "^10.0.1",
-    "@types/node": "^25.3.0",
     "@types/eslint-scope": "^9.1.0",
+    "@types/node": "^25.3.0",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
     "@vercel/ncc": "^0.38.4",
@@ -50,6 +50,7 @@
     "eslint-plugin-github": "^6.0.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.5",
+    "glob": "^13.0.6",
     "js-yaml": "^4.1.1",
     "nock": "^14.0.11",
     "prettier": "^3.8.1",
@@ -57,7 +58,5 @@
     "vitest": "^4.0.18",
     "webpack": "^5.105.2"
   },
-  "overrides": {
-    "glob": "11.0.1"
-  }
+  "overrides": {}
 }
