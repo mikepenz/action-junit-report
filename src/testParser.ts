@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import * as glob from '@actions/glob'
+import {glob} from 'glob'
 import * as fs from 'fs'
 import * as parser from 'xml-js'
 import * as pathHelper from 'path'
@@ -164,16 +164,19 @@ export async function resolvePath(
 
   core.debug(`Resolving path for ${fileName} in ${workspacePath}`)
   const normalizedFilename = fileName.replace(/^\.\//, '') // strip relative prefix (./)
-  const globber = await glob.create(`${workspacePath}**/${normalizedFilename}.*`, {
-    followSymbolicLinks: followSymlink
+  const globPattern = `${workspacePath}**/${normalizedFilename}.*`
+  const results = await glob(globPattern, {
+    follow: followSymlink
   })
-  const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : ''
-  for await (const result of globber.globGenerator()) {
-    core.debug(`Matched file: ${result}`)
 
-    const found = excludeSources.find(v => result.includes(v))
+  for (const result of results) {
+    const absolutePath = pathHelper.resolve(result)
+    core.debug(`Matched file: ${absolutePath}`)
+
+    const found = excludeSources.find(v => absolutePath.includes(v))
     if (!found) {
-      const path = result.slice(searchPath.length + 1)
+      const searchPath = pathHelper.resolve(workspacePath || '.')
+      const path = pathHelper.relative(searchPath, absolutePath)
       core.debug(`Resolved path: ${path}`)
       resolvePathCache[fileName] = path
       return path
@@ -196,7 +199,7 @@ export async function parseFile(
   includePassed = false,
   annotateNotice = false,
   checkRetries = false,
-  excludeSources: string[] = ['/build/', '/__pycache__/'],
+  excludeSources: string[] = ['/build/', '/__pycache__/', '/node_modules/'],
   checkTitleTemplate: string | undefined = undefined,
   breadCrumbDelimiter = '/',
   testFilesPrefix = '',
@@ -747,7 +750,7 @@ export async function parseTestReports(
   resolveIgnoreClassname = false
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
-  const globber = await glob.create(reportPaths, {followSymbolicLinks: followSymlink})
+  const files = await glob(reportPaths, {follow: followSymlink})
   const globalAnnotations: Annotation[] = []
   const testResults: ActualTestResult[] = []
   let totalCount = 0
@@ -757,7 +760,7 @@ export async function parseTestReports(
   let retried = 0
   let time = 0
   let foundFiles = 0
-  for await (const file of globber.globGenerator()) {
+  for (const file of files) {
     foundFiles++
     core.debug(`Parsing report file: ${file}`)
 

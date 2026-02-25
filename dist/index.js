@@ -1,7 +1,7 @@
 import './sourcemap-register.cjs';import { createRequire as __WEBPACK_EXTERNAL_createRequire } from "module";
 /******/ var __webpack_modules__ = ({
 
-/***/ 4844:
+/***/ 9659:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 
@@ -54,7 +54,7 @@ exports.getProxyUrl = getProxyUrl;
 exports.isHttps = isHttps;
 const http = __importStar(__nccwpck_require__(8611));
 const https = __importStar(__nccwpck_require__(5692));
-const pm = __importStar(__nccwpck_require__(4988));
+const pm = __importStar(__nccwpck_require__(3335));
 const tunnel = __importStar(__nccwpck_require__(770));
 const undici_1 = __nccwpck_require__(6752);
 var HttpCodes;
@@ -744,7 +744,7 @@ const lowercaseKeys = (obj) => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCa
 
 /***/ }),
 
-/***/ 4988:
+/***/ 3335:
 /***/ ((__unused_webpack_module, exports) => {
 
 
@@ -841,1257 +841,6 @@ class DecodedURL extends URL {
     }
 }
 //# sourceMappingURL=proxy.js.map
-
-/***/ }),
-
-/***/ 9380:
-/***/ ((module) => {
-
-
-module.exports = balanced;
-function balanced(a, b, str) {
-  if (a instanceof RegExp) a = maybeMatch(a, str);
-  if (b instanceof RegExp) b = maybeMatch(b, str);
-
-  var r = range(a, b, str);
-
-  return r && {
-    start: r[0],
-    end: r[1],
-    pre: str.slice(0, r[0]),
-    body: str.slice(r[0] + a.length, r[1]),
-    post: str.slice(r[1] + b.length)
-  };
-}
-
-function maybeMatch(reg, str) {
-  var m = str.match(reg);
-  return m ? m[0] : null;
-}
-
-balanced.range = range;
-function range(a, b, str) {
-  var begs, beg, left, right, result;
-  var ai = str.indexOf(a);
-  var bi = str.indexOf(b, ai + 1);
-  var i = ai;
-
-  if (ai >= 0 && bi > 0) {
-    if(a===b) {
-      return [ai, bi];
-    }
-    begs = [];
-    left = str.length;
-
-    while (i >= 0 && !result) {
-      if (i == ai) {
-        begs.push(i);
-        ai = str.indexOf(a, i + 1);
-      } else if (begs.length == 1) {
-        result = [ begs.pop(), bi ];
-      } else {
-        beg = begs.pop();
-        if (beg < left) {
-          left = beg;
-          right = bi;
-        }
-
-        bi = str.indexOf(b, i + 1);
-      }
-
-      i = ai < bi && ai >= 0 ? ai : bi;
-    }
-
-    if (begs.length) {
-      result = [ left, right ];
-    }
-  }
-
-  return result;
-}
-
-
-/***/ }),
-
-/***/ 4691:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var concatMap = __nccwpck_require__(7087);
-var balanced = __nccwpck_require__(9380);
-
-module.exports = expandTop;
-
-var escSlash = '\0SLASH'+Math.random()+'\0';
-var escOpen = '\0OPEN'+Math.random()+'\0';
-var escClose = '\0CLOSE'+Math.random()+'\0';
-var escComma = '\0COMMA'+Math.random()+'\0';
-var escPeriod = '\0PERIOD'+Math.random()+'\0';
-
-function numeric(str) {
-  return parseInt(str, 10) == str
-    ? parseInt(str, 10)
-    : str.charCodeAt(0);
-}
-
-function escapeBraces(str) {
-  return str.split('\\\\').join(escSlash)
-            .split('\\{').join(escOpen)
-            .split('\\}').join(escClose)
-            .split('\\,').join(escComma)
-            .split('\\.').join(escPeriod);
-}
-
-function unescapeBraces(str) {
-  return str.split(escSlash).join('\\')
-            .split(escOpen).join('{')
-            .split(escClose).join('}')
-            .split(escComma).join(',')
-            .split(escPeriod).join('.');
-}
-
-
-// Basically just str.split(","), but handling cases
-// where we have nested braced sections, which should be
-// treated as individual members, like {a,{b,c},d}
-function parseCommaParts(str) {
-  if (!str)
-    return [''];
-
-  var parts = [];
-  var m = balanced('{', '}', str);
-
-  if (!m)
-    return str.split(',');
-
-  var pre = m.pre;
-  var body = m.body;
-  var post = m.post;
-  var p = pre.split(',');
-
-  p[p.length-1] += '{' + body + '}';
-  var postParts = parseCommaParts(post);
-  if (post.length) {
-    p[p.length-1] += postParts.shift();
-    p.push.apply(p, postParts);
-  }
-
-  parts.push.apply(parts, p);
-
-  return parts;
-}
-
-function expandTop(str) {
-  if (!str)
-    return [];
-
-  // I don't know why Bash 4.3 does this, but it does.
-  // Anything starting with {} will have the first two bytes preserved
-  // but *only* at the top level, so {},a}b will not expand to anything,
-  // but a{},b}c will be expanded to [a}c,abc].
-  // One could argue that this is a bug in Bash, but since the goal of
-  // this module is to match Bash's rules, we escape a leading {}
-  if (str.substr(0, 2) === '{}') {
-    str = '\\{\\}' + str.substr(2);
-  }
-
-  return expand(escapeBraces(str), true).map(unescapeBraces);
-}
-
-function identity(e) {
-  return e;
-}
-
-function embrace(str) {
-  return '{' + str + '}';
-}
-function isPadded(el) {
-  return /^-?0\d/.test(el);
-}
-
-function lte(i, y) {
-  return i <= y;
-}
-function gte(i, y) {
-  return i >= y;
-}
-
-function expand(str, isTop) {
-  var expansions = [];
-
-  var m = balanced('{', '}', str);
-  if (!m || /\$$/.test(m.pre)) return [str];
-
-  var isNumericSequence = /^-?\d+\.\.-?\d+(?:\.\.-?\d+)?$/.test(m.body);
-  var isAlphaSequence = /^[a-zA-Z]\.\.[a-zA-Z](?:\.\.-?\d+)?$/.test(m.body);
-  var isSequence = isNumericSequence || isAlphaSequence;
-  var isOptions = m.body.indexOf(',') >= 0;
-  if (!isSequence && !isOptions) {
-    // {a},b}
-    if (m.post.match(/,(?!,).*\}/)) {
-      str = m.pre + '{' + m.body + escClose + m.post;
-      return expand(str);
-    }
-    return [str];
-  }
-
-  var n;
-  if (isSequence) {
-    n = m.body.split(/\.\./);
-  } else {
-    n = parseCommaParts(m.body);
-    if (n.length === 1) {
-      // x{{a,b}}y ==> x{a}y x{b}y
-      n = expand(n[0], false).map(embrace);
-      if (n.length === 1) {
-        var post = m.post.length
-          ? expand(m.post, false)
-          : [''];
-        return post.map(function(p) {
-          return m.pre + n[0] + p;
-        });
-      }
-    }
-  }
-
-  // at this point, n is the parts, and we know it's not a comma set
-  // with a single entry.
-
-  // no need to expand pre, since it is guaranteed to be free of brace-sets
-  var pre = m.pre;
-  var post = m.post.length
-    ? expand(m.post, false)
-    : [''];
-
-  var N;
-
-  if (isSequence) {
-    var x = numeric(n[0]);
-    var y = numeric(n[1]);
-    var width = Math.max(n[0].length, n[1].length)
-    var incr = n.length == 3
-      ? Math.abs(numeric(n[2]))
-      : 1;
-    var test = lte;
-    var reverse = y < x;
-    if (reverse) {
-      incr *= -1;
-      test = gte;
-    }
-    var pad = n.some(isPadded);
-
-    N = [];
-
-    for (var i = x; test(i, y); i += incr) {
-      var c;
-      if (isAlphaSequence) {
-        c = String.fromCharCode(i);
-        if (c === '\\')
-          c = '';
-      } else {
-        c = String(i);
-        if (pad) {
-          var need = width - c.length;
-          if (need > 0) {
-            var z = new Array(need + 1).join('0');
-            if (i < 0)
-              c = '-' + z + c.slice(1);
-            else
-              c = z + c;
-          }
-        }
-      }
-      N.push(c);
-    }
-  } else {
-    N = concatMap(n, function(el) { return expand(el, false) });
-  }
-
-  for (var j = 0; j < N.length; j++) {
-    for (var k = 0; k < post.length; k++) {
-      var expansion = pre + N[j] + post[k];
-      if (!isTop || isSequence || expansion)
-        expansions.push(expansion);
-    }
-  }
-
-  return expansions;
-}
-
-
-
-/***/ }),
-
-/***/ 7087:
-/***/ ((module) => {
-
-module.exports = function (xs, fn) {
-    var res = [];
-    for (var i = 0; i < xs.length; i++) {
-        var x = fn(xs[i], i);
-        if (isArray(x)) res.push.apply(res, x);
-        else res.push(x);
-    }
-    return res;
-};
-
-var isArray = Array.isArray || function (xs) {
-    return Object.prototype.toString.call(xs) === '[object Array]';
-};
-
-
-/***/ }),
-
-/***/ 3772:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-module.exports = minimatch
-minimatch.Minimatch = Minimatch
-
-var path = (function () { try { return __nccwpck_require__(6928) } catch (e) {}}()) || {
-  sep: '/'
-}
-minimatch.sep = path.sep
-
-var GLOBSTAR = minimatch.GLOBSTAR = Minimatch.GLOBSTAR = {}
-var expand = __nccwpck_require__(4691)
-
-var plTypes = {
-  '!': { open: '(?:(?!(?:', close: '))[^/]*?)'},
-  '?': { open: '(?:', close: ')?' },
-  '+': { open: '(?:', close: ')+' },
-  '*': { open: '(?:', close: ')*' },
-  '@': { open: '(?:', close: ')' }
-}
-
-// any single thing other than /
-// don't need to escape / when using new RegExp()
-var qmark = '[^/]'
-
-// * => any number of characters
-var star = qmark + '*?'
-
-// ** when dots are allowed.  Anything goes, except .. and .
-// not (^ or / followed by one or two dots followed by $ or /),
-// followed by anything, any number of times.
-var twoStarDot = '(?:(?!(?:\\\/|^)(?:\\.{1,2})($|\\\/)).)*?'
-
-// not a ^ or / followed by a dot,
-// followed by anything, any number of times.
-var twoStarNoDot = '(?:(?!(?:\\\/|^)\\.).)*?'
-
-// characters that need to be escaped in RegExp.
-var reSpecials = charSet('().*{}+?[]^$\\!')
-
-// "abc" -> { a:true, b:true, c:true }
-function charSet (s) {
-  return s.split('').reduce(function (set, c) {
-    set[c] = true
-    return set
-  }, {})
-}
-
-// normalizes slashes.
-var slashSplit = /\/+/
-
-minimatch.filter = filter
-function filter (pattern, options) {
-  options = options || {}
-  return function (p, i, list) {
-    return minimatch(p, pattern, options)
-  }
-}
-
-function ext (a, b) {
-  b = b || {}
-  var t = {}
-  Object.keys(a).forEach(function (k) {
-    t[k] = a[k]
-  })
-  Object.keys(b).forEach(function (k) {
-    t[k] = b[k]
-  })
-  return t
-}
-
-minimatch.defaults = function (def) {
-  if (!def || typeof def !== 'object' || !Object.keys(def).length) {
-    return minimatch
-  }
-
-  var orig = minimatch
-
-  var m = function minimatch (p, pattern, options) {
-    return orig(p, pattern, ext(def, options))
-  }
-
-  m.Minimatch = function Minimatch (pattern, options) {
-    return new orig.Minimatch(pattern, ext(def, options))
-  }
-  m.Minimatch.defaults = function defaults (options) {
-    return orig.defaults(ext(def, options)).Minimatch
-  }
-
-  m.filter = function filter (pattern, options) {
-    return orig.filter(pattern, ext(def, options))
-  }
-
-  m.defaults = function defaults (options) {
-    return orig.defaults(ext(def, options))
-  }
-
-  m.makeRe = function makeRe (pattern, options) {
-    return orig.makeRe(pattern, ext(def, options))
-  }
-
-  m.braceExpand = function braceExpand (pattern, options) {
-    return orig.braceExpand(pattern, ext(def, options))
-  }
-
-  m.match = function (list, pattern, options) {
-    return orig.match(list, pattern, ext(def, options))
-  }
-
-  return m
-}
-
-Minimatch.defaults = function (def) {
-  return minimatch.defaults(def).Minimatch
-}
-
-function minimatch (p, pattern, options) {
-  assertValidPattern(pattern)
-
-  if (!options) options = {}
-
-  // shortcut: comments match nothing.
-  if (!options.nocomment && pattern.charAt(0) === '#') {
-    return false
-  }
-
-  return new Minimatch(pattern, options).match(p)
-}
-
-function Minimatch (pattern, options) {
-  if (!(this instanceof Minimatch)) {
-    return new Minimatch(pattern, options)
-  }
-
-  assertValidPattern(pattern)
-
-  if (!options) options = {}
-
-  pattern = pattern.trim()
-
-  // windows support: need to use /, not \
-  if (!options.allowWindowsEscape && path.sep !== '/') {
-    pattern = pattern.split(path.sep).join('/')
-  }
-
-  this.options = options
-  this.set = []
-  this.pattern = pattern
-  this.regexp = null
-  this.negate = false
-  this.comment = false
-  this.empty = false
-  this.partial = !!options.partial
-
-  // make the set of regexps etc.
-  this.make()
-}
-
-Minimatch.prototype.debug = function () {}
-
-Minimatch.prototype.make = make
-function make () {
-  var pattern = this.pattern
-  var options = this.options
-
-  // empty patterns and comments match nothing.
-  if (!options.nocomment && pattern.charAt(0) === '#') {
-    this.comment = true
-    return
-  }
-  if (!pattern) {
-    this.empty = true
-    return
-  }
-
-  // step 1: figure out negation, etc.
-  this.parseNegate()
-
-  // step 2: expand braces
-  var set = this.globSet = this.braceExpand()
-
-  if (options.debug) this.debug = function debug() { console.error.apply(console, arguments) }
-
-  this.debug(this.pattern, set)
-
-  // step 3: now we have a set, so turn each one into a series of path-portion
-  // matching patterns.
-  // These will be regexps, except in the case of "**", which is
-  // set to the GLOBSTAR object for globstar behavior,
-  // and will not contain any / characters
-  set = this.globParts = set.map(function (s) {
-    return s.split(slashSplit)
-  })
-
-  this.debug(this.pattern, set)
-
-  // glob --> regexps
-  set = set.map(function (s, si, set) {
-    return s.map(this.parse, this)
-  }, this)
-
-  this.debug(this.pattern, set)
-
-  // filter out everything that didn't compile properly.
-  set = set.filter(function (s) {
-    return s.indexOf(false) === -1
-  })
-
-  this.debug(this.pattern, set)
-
-  this.set = set
-}
-
-Minimatch.prototype.parseNegate = parseNegate
-function parseNegate () {
-  var pattern = this.pattern
-  var negate = false
-  var options = this.options
-  var negateOffset = 0
-
-  if (options.nonegate) return
-
-  for (var i = 0, l = pattern.length
-    ; i < l && pattern.charAt(i) === '!'
-    ; i++) {
-    negate = !negate
-    negateOffset++
-  }
-
-  if (negateOffset) this.pattern = pattern.substr(negateOffset)
-  this.negate = negate
-}
-
-// Brace expansion:
-// a{b,c}d -> abd acd
-// a{b,}c -> abc ac
-// a{0..3}d -> a0d a1d a2d a3d
-// a{b,c{d,e}f}g -> abg acdfg acefg
-// a{b,c}d{e,f}g -> abdeg acdeg abdeg abdfg
-//
-// Invalid sets are not expanded.
-// a{2..}b -> a{2..}b
-// a{b}c -> a{b}c
-minimatch.braceExpand = function (pattern, options) {
-  return braceExpand(pattern, options)
-}
-
-Minimatch.prototype.braceExpand = braceExpand
-
-function braceExpand (pattern, options) {
-  if (!options) {
-    if (this instanceof Minimatch) {
-      options = this.options
-    } else {
-      options = {}
-    }
-  }
-
-  pattern = typeof pattern === 'undefined'
-    ? this.pattern : pattern
-
-  assertValidPattern(pattern)
-
-  // Thanks to Yeting Li <https://github.com/yetingli> for
-  // improving this regexp to avoid a ReDOS vulnerability.
-  if (options.nobrace || !/\{(?:(?!\{).)*\}/.test(pattern)) {
-    // shortcut. no need to expand.
-    return [pattern]
-  }
-
-  return expand(pattern)
-}
-
-var MAX_PATTERN_LENGTH = 1024 * 64
-var assertValidPattern = function (pattern) {
-  if (typeof pattern !== 'string') {
-    throw new TypeError('invalid pattern')
-  }
-
-  if (pattern.length > MAX_PATTERN_LENGTH) {
-    throw new TypeError('pattern is too long')
-  }
-}
-
-// parse a component of the expanded set.
-// At this point, no pattern may contain "/" in it
-// so we're going to return a 2d array, where each entry is the full
-// pattern, split on '/', and then turned into a regular expression.
-// A regexp is made at the end which joins each array with an
-// escaped /, and another full one which joins each regexp with |.
-//
-// Following the lead of Bash 4.1, note that "**" only has special meaning
-// when it is the *only* thing in a path portion.  Otherwise, any series
-// of * is equivalent to a single *.  Globstar behavior is enabled by
-// default, and can be disabled by setting options.noglobstar.
-Minimatch.prototype.parse = parse
-var SUBPARSE = {}
-function parse (pattern, isSub) {
-  assertValidPattern(pattern)
-
-  var options = this.options
-
-  // shortcuts
-  if (pattern === '**') {
-    if (!options.noglobstar)
-      return GLOBSTAR
-    else
-      pattern = '*'
-  }
-  if (pattern === '') return ''
-
-  var re = ''
-  var hasMagic = !!options.nocase
-  var escaping = false
-  // ? => one single character
-  var patternListStack = []
-  var negativeLists = []
-  var stateChar
-  var inClass = false
-  var reClassStart = -1
-  var classStart = -1
-  // . and .. never match anything that doesn't start with .,
-  // even when options.dot is set.
-  var patternStart = pattern.charAt(0) === '.' ? '' // anything
-  // not (start or / followed by . or .. followed by / or end)
-  : options.dot ? '(?!(?:^|\\\/)\\.{1,2}(?:$|\\\/))'
-  : '(?!\\.)'
-  var self = this
-
-  function clearStateChar () {
-    if (stateChar) {
-      // we had some state-tracking character
-      // that wasn't consumed by this pass.
-      switch (stateChar) {
-        case '*':
-          re += star
-          hasMagic = true
-        break
-        case '?':
-          re += qmark
-          hasMagic = true
-        break
-        default:
-          re += '\\' + stateChar
-        break
-      }
-      self.debug('clearStateChar %j %j', stateChar, re)
-      stateChar = false
-    }
-  }
-
-  for (var i = 0, len = pattern.length, c
-    ; (i < len) && (c = pattern.charAt(i))
-    ; i++) {
-    this.debug('%s\t%s %s %j', pattern, i, re, c)
-
-    // skip over any that are escaped.
-    if (escaping && reSpecials[c]) {
-      re += '\\' + c
-      escaping = false
-      continue
-    }
-
-    switch (c) {
-      /* istanbul ignore next */
-      case '/': {
-        // completely not allowed, even escaped.
-        // Should already be path-split by now.
-        return false
-      }
-
-      case '\\':
-        clearStateChar()
-        escaping = true
-      continue
-
-      // the various stateChar values
-      // for the "extglob" stuff.
-      case '?':
-      case '*':
-      case '+':
-      case '@':
-      case '!':
-        this.debug('%s\t%s %s %j <-- stateChar', pattern, i, re, c)
-
-        // all of those are literals inside a class, except that
-        // the glob [!a] means [^a] in regexp
-        if (inClass) {
-          this.debug('  in class')
-          if (c === '!' && i === classStart + 1) c = '^'
-          re += c
-          continue
-        }
-
-        // if we already have a stateChar, then it means
-        // that there was something like ** or +? in there.
-        // Handle the stateChar, then proceed with this one.
-        self.debug('call clearStateChar %j', stateChar)
-        clearStateChar()
-        stateChar = c
-        // if extglob is disabled, then +(asdf|foo) isn't a thing.
-        // just clear the statechar *now*, rather than even diving into
-        // the patternList stuff.
-        if (options.noext) clearStateChar()
-      continue
-
-      case '(':
-        if (inClass) {
-          re += '('
-          continue
-        }
-
-        if (!stateChar) {
-          re += '\\('
-          continue
-        }
-
-        patternListStack.push({
-          type: stateChar,
-          start: i - 1,
-          reStart: re.length,
-          open: plTypes[stateChar].open,
-          close: plTypes[stateChar].close
-        })
-        // negation is (?:(?!js)[^/]*)
-        re += stateChar === '!' ? '(?:(?!(?:' : '(?:'
-        this.debug('plType %j %j', stateChar, re)
-        stateChar = false
-      continue
-
-      case ')':
-        if (inClass || !patternListStack.length) {
-          re += '\\)'
-          continue
-        }
-
-        clearStateChar()
-        hasMagic = true
-        var pl = patternListStack.pop()
-        // negation is (?:(?!js)[^/]*)
-        // The others are (?:<pattern>)<type>
-        re += pl.close
-        if (pl.type === '!') {
-          negativeLists.push(pl)
-        }
-        pl.reEnd = re.length
-      continue
-
-      case '|':
-        if (inClass || !patternListStack.length || escaping) {
-          re += '\\|'
-          escaping = false
-          continue
-        }
-
-        clearStateChar()
-        re += '|'
-      continue
-
-      // these are mostly the same in regexp and glob
-      case '[':
-        // swallow any state-tracking char before the [
-        clearStateChar()
-
-        if (inClass) {
-          re += '\\' + c
-          continue
-        }
-
-        inClass = true
-        classStart = i
-        reClassStart = re.length
-        re += c
-      continue
-
-      case ']':
-        //  a right bracket shall lose its special
-        //  meaning and represent itself in
-        //  a bracket expression if it occurs
-        //  first in the list.  -- POSIX.2 2.8.3.2
-        if (i === classStart + 1 || !inClass) {
-          re += '\\' + c
-          escaping = false
-          continue
-        }
-
-        // handle the case where we left a class open.
-        // "[z-a]" is valid, equivalent to "\[z-a\]"
-        // split where the last [ was, make sure we don't have
-        // an invalid re. if so, re-walk the contents of the
-        // would-be class to re-translate any characters that
-        // were passed through as-is
-        // TODO: It would probably be faster to determine this
-        // without a try/catch and a new RegExp, but it's tricky
-        // to do safely.  For now, this is safe and works.
-        var cs = pattern.substring(classStart + 1, i)
-        try {
-          RegExp('[' + cs + ']')
-        } catch (er) {
-          // not a valid class!
-          var sp = this.parse(cs, SUBPARSE)
-          re = re.substr(0, reClassStart) + '\\[' + sp[0] + '\\]'
-          hasMagic = hasMagic || sp[1]
-          inClass = false
-          continue
-        }
-
-        // finish up the class.
-        hasMagic = true
-        inClass = false
-        re += c
-      continue
-
-      default:
-        // swallow any state char that wasn't consumed
-        clearStateChar()
-
-        if (escaping) {
-          // no need
-          escaping = false
-        } else if (reSpecials[c]
-          && !(c === '^' && inClass)) {
-          re += '\\'
-        }
-
-        re += c
-
-    } // switch
-  } // for
-
-  // handle the case where we left a class open.
-  // "[abc" is valid, equivalent to "\[abc"
-  if (inClass) {
-    // split where the last [ was, and escape it
-    // this is a huge pita.  We now have to re-walk
-    // the contents of the would-be class to re-translate
-    // any characters that were passed through as-is
-    cs = pattern.substr(classStart + 1)
-    sp = this.parse(cs, SUBPARSE)
-    re = re.substr(0, reClassStart) + '\\[' + sp[0]
-    hasMagic = hasMagic || sp[1]
-  }
-
-  // handle the case where we had a +( thing at the *end*
-  // of the pattern.
-  // each pattern list stack adds 3 chars, and we need to go through
-  // and escape any | chars that were passed through as-is for the regexp.
-  // Go through and escape them, taking care not to double-escape any
-  // | chars that were already escaped.
-  for (pl = patternListStack.pop(); pl; pl = patternListStack.pop()) {
-    var tail = re.slice(pl.reStart + pl.open.length)
-    this.debug('setting tail', re, pl)
-    // maybe some even number of \, then maybe 1 \, followed by a |
-    tail = tail.replace(/((?:\\{2}){0,64})(\\?)\|/g, function (_, $1, $2) {
-      if (!$2) {
-        // the | isn't already escaped, so escape it.
-        $2 = '\\'
-      }
-
-      // need to escape all those slashes *again*, without escaping the
-      // one that we need for escaping the | character.  As it works out,
-      // escaping an even number of slashes can be done by simply repeating
-      // it exactly after itself.  That's why this trick works.
-      //
-      // I am sorry that you have to see this.
-      return $1 + $1 + $2 + '|'
-    })
-
-    this.debug('tail=%j\n   %s', tail, tail, pl, re)
-    var t = pl.type === '*' ? star
-      : pl.type === '?' ? qmark
-      : '\\' + pl.type
-
-    hasMagic = true
-    re = re.slice(0, pl.reStart) + t + '\\(' + tail
-  }
-
-  // handle trailing things that only matter at the very end.
-  clearStateChar()
-  if (escaping) {
-    // trailing \\
-    re += '\\\\'
-  }
-
-  // only need to apply the nodot start if the re starts with
-  // something that could conceivably capture a dot
-  var addPatternStart = false
-  switch (re.charAt(0)) {
-    case '[': case '.': case '(': addPatternStart = true
-  }
-
-  // Hack to work around lack of negative lookbehind in JS
-  // A pattern like: *.!(x).!(y|z) needs to ensure that a name
-  // like 'a.xyz.yz' doesn't match.  So, the first negative
-  // lookahead, has to look ALL the way ahead, to the end of
-  // the pattern.
-  for (var n = negativeLists.length - 1; n > -1; n--) {
-    var nl = negativeLists[n]
-
-    var nlBefore = re.slice(0, nl.reStart)
-    var nlFirst = re.slice(nl.reStart, nl.reEnd - 8)
-    var nlLast = re.slice(nl.reEnd - 8, nl.reEnd)
-    var nlAfter = re.slice(nl.reEnd)
-
-    nlLast += nlAfter
-
-    // Handle nested stuff like *(*.js|!(*.json)), where open parens
-    // mean that we should *not* include the ) in the bit that is considered
-    // "after" the negated section.
-    var openParensBefore = nlBefore.split('(').length - 1
-    var cleanAfter = nlAfter
-    for (i = 0; i < openParensBefore; i++) {
-      cleanAfter = cleanAfter.replace(/\)[+*?]?/, '')
-    }
-    nlAfter = cleanAfter
-
-    var dollar = ''
-    if (nlAfter === '' && isSub !== SUBPARSE) {
-      dollar = '$'
-    }
-    var newRe = nlBefore + nlFirst + nlAfter + dollar + nlLast
-    re = newRe
-  }
-
-  // if the re is not "" at this point, then we need to make sure
-  // it doesn't match against an empty path part.
-  // Otherwise a/* will match a/, which it should not.
-  if (re !== '' && hasMagic) {
-    re = '(?=.)' + re
-  }
-
-  if (addPatternStart) {
-    re = patternStart + re
-  }
-
-  // parsing just a piece of a larger pattern.
-  if (isSub === SUBPARSE) {
-    return [re, hasMagic]
-  }
-
-  // skip the regexp for non-magical patterns
-  // unescape anything in it, though, so that it'll be
-  // an exact match against a file etc.
-  if (!hasMagic) {
-    return globUnescape(pattern)
-  }
-
-  var flags = options.nocase ? 'i' : ''
-  try {
-    var regExp = new RegExp('^' + re + '$', flags)
-  } catch (er) /* istanbul ignore next - should be impossible */ {
-    // If it was an invalid regular expression, then it can't match
-    // anything.  This trick looks for a character after the end of
-    // the string, which is of course impossible, except in multi-line
-    // mode, but it's not a /m regex.
-    return new RegExp('$.')
-  }
-
-  regExp._glob = pattern
-  regExp._src = re
-
-  return regExp
-}
-
-minimatch.makeRe = function (pattern, options) {
-  return new Minimatch(pattern, options || {}).makeRe()
-}
-
-Minimatch.prototype.makeRe = makeRe
-function makeRe () {
-  if (this.regexp || this.regexp === false) return this.regexp
-
-  // at this point, this.set is a 2d array of partial
-  // pattern strings, or "**".
-  //
-  // It's better to use .match().  This function shouldn't
-  // be used, really, but it's pretty convenient sometimes,
-  // when you just want to work with a regex.
-  var set = this.set
-
-  if (!set.length) {
-    this.regexp = false
-    return this.regexp
-  }
-  var options = this.options
-
-  var twoStar = options.noglobstar ? star
-    : options.dot ? twoStarDot
-    : twoStarNoDot
-  var flags = options.nocase ? 'i' : ''
-
-  var re = set.map(function (pattern) {
-    return pattern.map(function (p) {
-      return (p === GLOBSTAR) ? twoStar
-      : (typeof p === 'string') ? regExpEscape(p)
-      : p._src
-    }).join('\\\/')
-  }).join('|')
-
-  // must match entire pattern
-  // ending in a * or ** will make it less strict.
-  re = '^(?:' + re + ')$'
-
-  // can match anything, as long as it's not this.
-  if (this.negate) re = '^(?!' + re + ').*$'
-
-  try {
-    this.regexp = new RegExp(re, flags)
-  } catch (ex) /* istanbul ignore next - should be impossible */ {
-    this.regexp = false
-  }
-  return this.regexp
-}
-
-minimatch.match = function (list, pattern, options) {
-  options = options || {}
-  var mm = new Minimatch(pattern, options)
-  list = list.filter(function (f) {
-    return mm.match(f)
-  })
-  if (mm.options.nonull && !list.length) {
-    list.push(pattern)
-  }
-  return list
-}
-
-Minimatch.prototype.match = function match (f, partial) {
-  if (typeof partial === 'undefined') partial = this.partial
-  this.debug('match', f, this.pattern)
-  // short-circuit in the case of busted things.
-  // comments, etc.
-  if (this.comment) return false
-  if (this.empty) return f === ''
-
-  if (f === '/' && partial) return true
-
-  var options = this.options
-
-  // windows: need to use /, not \
-  if (path.sep !== '/') {
-    f = f.split(path.sep).join('/')
-  }
-
-  // treat the test path as a set of pathparts.
-  f = f.split(slashSplit)
-  this.debug(this.pattern, 'split', f)
-
-  // just ONE of the pattern sets in this.set needs to match
-  // in order for it to be valid.  If negating, then just one
-  // match means that we have failed.
-  // Either way, return on the first hit.
-
-  var set = this.set
-  this.debug(this.pattern, 'set', set)
-
-  // Find the basename of the path by looking for the last non-empty segment
-  var filename
-  var i
-  for (i = f.length - 1; i >= 0; i--) {
-    filename = f[i]
-    if (filename) break
-  }
-
-  for (i = 0; i < set.length; i++) {
-    var pattern = set[i]
-    var file = f
-    if (options.matchBase && pattern.length === 1) {
-      file = [filename]
-    }
-    var hit = this.matchOne(file, pattern, partial)
-    if (hit) {
-      if (options.flipNegate) return true
-      return !this.negate
-    }
-  }
-
-  // didn't get any hits.  this is success if it's a negative
-  // pattern, failure otherwise.
-  if (options.flipNegate) return false
-  return this.negate
-}
-
-// set partial to true to test if, for example,
-// "/a/b" matches the start of "/*/b/*/d"
-// Partial means, if you run out of file before you run
-// out of pattern, then that's fine, as long as all
-// the parts match.
-Minimatch.prototype.matchOne = function (file, pattern, partial) {
-  var options = this.options
-
-  this.debug('matchOne',
-    { 'this': this, file: file, pattern: pattern })
-
-  this.debug('matchOne', file.length, pattern.length)
-
-  for (var fi = 0,
-      pi = 0,
-      fl = file.length,
-      pl = pattern.length
-      ; (fi < fl) && (pi < pl)
-      ; fi++, pi++) {
-    this.debug('matchOne loop')
-    var p = pattern[pi]
-    var f = file[fi]
-
-    this.debug(pattern, p, f)
-
-    // should be impossible.
-    // some invalid regexp stuff in the set.
-    /* istanbul ignore if */
-    if (p === false) return false
-
-    if (p === GLOBSTAR) {
-      this.debug('GLOBSTAR', [pattern, p, f])
-
-      // "**"
-      // a/**/b/**/c would match the following:
-      // a/b/x/y/z/c
-      // a/x/y/z/b/c
-      // a/b/x/b/x/c
-      // a/b/c
-      // To do this, take the rest of the pattern after
-      // the **, and see if it would match the file remainder.
-      // If so, return success.
-      // If not, the ** "swallows" a segment, and try again.
-      // This is recursively awful.
-      //
-      // a/**/b/**/c matching a/b/x/y/z/c
-      // - a matches a
-      // - doublestar
-      //   - matchOne(b/x/y/z/c, b/**/c)
-      //     - b matches b
-      //     - doublestar
-      //       - matchOne(x/y/z/c, c) -> no
-      //       - matchOne(y/z/c, c) -> no
-      //       - matchOne(z/c, c) -> no
-      //       - matchOne(c, c) yes, hit
-      var fr = fi
-      var pr = pi + 1
-      if (pr === pl) {
-        this.debug('** at the end')
-        // a ** at the end will just swallow the rest.
-        // We have found a match.
-        // however, it will not swallow /.x, unless
-        // options.dot is set.
-        // . and .. are *never* matched by **, for explosively
-        // exponential reasons.
-        for (; fi < fl; fi++) {
-          if (file[fi] === '.' || file[fi] === '..' ||
-            (!options.dot && file[fi].charAt(0) === '.')) return false
-        }
-        return true
-      }
-
-      // ok, let's see if we can swallow whatever we can.
-      while (fr < fl) {
-        var swallowee = file[fr]
-
-        this.debug('\nglobstar while', file, fr, pattern, pr, swallowee)
-
-        // XXX remove this slice.  Just pass the start index.
-        if (this.matchOne(file.slice(fr), pattern.slice(pr), partial)) {
-          this.debug('globstar found match!', fr, fl, swallowee)
-          // found a match.
-          return true
-        } else {
-          // can't swallow "." or ".." ever.
-          // can only swallow ".foo" when explicitly asked.
-          if (swallowee === '.' || swallowee === '..' ||
-            (!options.dot && swallowee.charAt(0) === '.')) {
-            this.debug('dot detected!', file, fr, pattern, pr)
-            break
-          }
-
-          // ** swallows a segment, and continue.
-          this.debug('globstar swallow a segment, and continue')
-          fr++
-        }
-      }
-
-      // no match was found.
-      // However, in partial mode, we can't say this is necessarily over.
-      // If there's more *pattern* left, then
-      /* istanbul ignore if */
-      if (partial) {
-        // ran out of file
-        this.debug('\n>>> no match, partial?', file, fr, pattern, pr)
-        if (fr === fl) return true
-      }
-      return false
-    }
-
-    // something other than **
-    // non-magic patterns just have to match exactly
-    // patterns with magic have been turned into regexps.
-    var hit
-    if (typeof p === 'string') {
-      hit = f === p
-      this.debug('string match', p, f, hit)
-    } else {
-      hit = f.match(p)
-      this.debug('pattern match', p, f, hit)
-    }
-
-    if (!hit) return false
-  }
-
-  // Note: ending in / means that we'll get a final ""
-  // at the end of the pattern.  This can only match a
-  // corresponding "" at the end of the file.
-  // If the file ends in /, then it can only match a
-  // a pattern that ends in /, unless the pattern just
-  // doesn't have any more for it. But, a/b/ should *not*
-  // match "a/b/*", even though "" matches against the
-  // [^/]*? pattern, except in partial mode, where it might
-  // simply not be reached yet.
-  // However, a/b/ should still satisfy a/*
-
-  // now either we fell off the end of the pattern, or we're done.
-  if (fi === fl && pi === pl) {
-    // ran out of pattern and filename at the same time.
-    // an exact hit!
-    return true
-  } else if (fi === fl) {
-    // ran out of file, but still had pattern left.
-    // this is ok if we're doing the match as part of
-    // a glob fs traversal.
-    return partial
-  } else /* istanbul ignore else */ if (pi === pl) {
-    // ran out of pattern, still have file left.
-    // this is only acceptable if we're on the very last
-    // empty segment of a file with a trailing slash.
-    // a/* should match a/b/
-    return (fi === fl - 1) && (file[fi] === '')
-  }
-
-  // should be unreachable.
-  /* istanbul ignore next */
-  throw new Error('wtf?')
-}
-
-// replace stuff like \* with *
-function globUnescape (s) {
-  return s.replace(/\\(.)/g, '$1')
-}
-
-function regExpEscape (s) {
-  return s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
-}
-
 
 /***/ }),
 
@@ -32409,13 +31158,6 @@ module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:zlib");
 
 /***/ }),
 
-/***/ 6928:
-/***/ ((module) => {
-
-module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("path");
-
-/***/ }),
-
 /***/ 2203:
 /***/ ((module) => {
 
@@ -32654,6 +31396,36 @@ __webpack_unused_export__ = defaultContentType
 /******/ }
 /******/ 
 /************************************************************************/
+/******/ /* webpack/runtime/create fake namespace object */
+/******/ (() => {
+/******/ 	var getProto = Object.getPrototypeOf ? (obj) => (Object.getPrototypeOf(obj)) : (obj) => (obj.__proto__);
+/******/ 	var leafPrototypes;
+/******/ 	// create a fake namespace object
+/******/ 	// mode & 1: value is a module id, require it
+/******/ 	// mode & 2: merge all properties of value into the ns
+/******/ 	// mode & 4: return value when already ns object
+/******/ 	// mode & 16: return value when it's Promise-like
+/******/ 	// mode & 8|1: behave like require
+/******/ 	__nccwpck_require__.t = function(value, mode) {
+/******/ 		if(mode & 1) value = this(value);
+/******/ 		if(mode & 8) return value;
+/******/ 		if(typeof value === 'object' && value) {
+/******/ 			if((mode & 4) && value.__esModule) return value;
+/******/ 			if((mode & 16) && typeof value.then === 'function') return value;
+/******/ 		}
+/******/ 		var ns = Object.create(null);
+/******/ 		__nccwpck_require__.r(ns);
+/******/ 		var def = {};
+/******/ 		leafPrototypes = leafPrototypes || [null, getProto({}), getProto([]), getProto(getProto)];
+/******/ 		for(var current = mode & 2 && value; typeof current == 'object' && !~leafPrototypes.indexOf(current); current = getProto(current)) {
+/******/ 			Object.getOwnPropertyNames(current).forEach((key) => (def[key] = () => (value[key])));
+/******/ 		}
+/******/ 		def['default'] = () => (value);
+/******/ 		__nccwpck_require__.d(ns, def);
+/******/ 		return ns;
+/******/ 	};
+/******/ })();
+/******/ 
 /******/ /* webpack/runtime/define property getters */
 /******/ (() => {
 /******/ 	// define getter functions for harmony exports
@@ -32669,6 +31441,17 @@ __webpack_unused_export__ = defaultContentType
 /******/ /* webpack/runtime/hasOwnProperty shorthand */
 /******/ (() => {
 /******/ 	__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ })();
+/******/ 
+/******/ /* webpack/runtime/make namespace object */
+/******/ (() => {
+/******/ 	// define __esModule on exports
+/******/ 	__nccwpck_require__.r = (exports) => {
+/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 		}
+/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 	};
 /******/ })();
 /******/ 
 /******/ /* webpack/runtime/compat */
@@ -32852,13 +31635,13 @@ function file_command_prepareKeyValueMessage(key, value) {
     return `${key}<<${delimiter}${external_os_namespaceObject.EOL}${convertedValue}${external_os_namespaceObject.EOL}${delimiter}`;
 }
 //# sourceMappingURL=file-command.js.map
-// EXTERNAL MODULE: external "path"
-var external_path_ = __nccwpck_require__(6928);
+;// CONCATENATED MODULE: external "path"
+const external_path_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("path");
 // EXTERNAL MODULE: external "http"
 var external_http_ = __nccwpck_require__(8611);
 // EXTERNAL MODULE: external "https"
 var external_https_ = __nccwpck_require__(5692);
-;// CONCATENATED MODULE: ./node_modules/@actions/core/node_modules/@actions/http-client/lib/proxy.js
+;// CONCATENATED MODULE: ./node_modules/@actions/http-client/lib/proxy.js
 function getProxyUrl(reqUrl) {
     const usingSsl = reqUrl.protocol === 'https:';
     if (checkBypass(reqUrl)) {
@@ -32953,7 +31736,7 @@ class DecodedURL extends URL {
 var node_modules_tunnel = __nccwpck_require__(770);
 // EXTERNAL MODULE: ./node_modules/undici/index.js
 var undici = __nccwpck_require__(6752);
-;// CONCATENATED MODULE: ./node_modules/@actions/core/node_modules/@actions/http-client/lib/index.js
+;// CONCATENATED MODULE: ./node_modules/@actions/http-client/lib/index.js
 /* eslint-disable @typescript-eslint/no-explicit-any */
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -33650,7 +32433,7 @@ class lib_HttpClient {
 }
 const lowercaseKeys = (obj) => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCase()] = obj[k]), c), {});
 //# sourceMappingURL=index.js.map
-;// CONCATENATED MODULE: ./node_modules/@actions/core/node_modules/@actions/http-client/lib/auth.js
+;// CONCATENATED MODULE: ./node_modules/@actions/http-client/lib/auth.js
 var auth_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -34220,7 +33003,7 @@ function tryGetExecutablePath(filePath, extensions) {
         if (stats && stats.isFile()) {
             if (IS_WINDOWS) {
                 // on Windows, test for valid extension
-                const upperExt = external_path_.extname(filePath).toUpperCase();
+                const upperExt = external_path_namespaceObject.extname(filePath).toUpperCase();
                 if (extensions.some(validExt => validExt.toUpperCase() === upperExt)) {
                     return filePath;
                 }
@@ -34249,11 +33032,11 @@ function tryGetExecutablePath(filePath, extensions) {
                 if (IS_WINDOWS) {
                     // preserve the case of the actual file (since an extension was appended)
                     try {
-                        const directory = external_path_.dirname(filePath);
-                        const upperName = external_path_.basename(filePath).toUpperCase();
+                        const directory = external_path_namespaceObject.dirname(filePath);
+                        const upperName = external_path_namespaceObject.basename(filePath).toUpperCase();
                         for (const actualName of yield readdir(directory)) {
                             if (upperName === actualName.toUpperCase()) {
-                                filePath = external_path_.join(directory, actualName);
+                                filePath = external_path_namespaceObject.join(directory, actualName);
                                 break;
                             }
                         }
@@ -34473,7 +33256,7 @@ function findInPath(tool) {
         // build the list of extensions to try
         const extensions = [];
         if (IS_WINDOWS && process.env['PATHEXT']) {
-            for (const extension of process.env['PATHEXT'].split(external_path_.delimiter)) {
+            for (const extension of process.env['PATHEXT'].split(external_path_namespaceObject.delimiter)) {
                 if (extension) {
                     extensions.push(extension);
                 }
@@ -34488,7 +33271,7 @@ function findInPath(tool) {
             return [];
         }
         // if any path separators, return empty
-        if (tool.includes(external_path_.sep)) {
+        if (tool.includes(external_path_namespaceObject.sep)) {
             return [];
         }
         // build the list of directories
@@ -34499,7 +33282,7 @@ function findInPath(tool) {
         // across platforms.
         const directories = [];
         if (process.env.PATH) {
-            for (const p of process.env.PATH.split(external_path_.delimiter)) {
+            for (const p of process.env.PATH.split(external_path_namespaceObject.delimiter)) {
                 if (p) {
                     directories.push(p);
                 }
@@ -34508,7 +33291,7 @@ function findInPath(tool) {
         // find all matches
         const matches = [];
         for (const directory of directories) {
-            const filePath = yield tryGetExecutablePath(external_path_.join(directory, tool), extensions);
+            const filePath = yield tryGetExecutablePath(external_path_namespaceObject.join(directory, tool), extensions);
             if (filePath) {
                 matches.push(filePath);
             }
@@ -34939,7 +33722,7 @@ class ToolRunner extends external_events_.EventEmitter {
                 (this.toolPath.includes('/') ||
                     (toolrunner_IS_WINDOWS && this.toolPath.includes('\\')))) {
                 // prefer options.cwd if it is specified, however options.cwd may also need to be rooted
-                this.toolPath = external_path_.resolve(process.cwd(), this.options.cwd || process.cwd(), this.toolPath);
+                this.toolPath = external_path_namespaceObject.resolve(process.cwd(), this.options.cwd || process.cwd(), this.toolPath);
             }
             // if the tool is only a file name, then resolve it from the PATH
             // otherwise verify it exists (add extension on Windows if necessary)
@@ -35681,8 +34464,8 @@ class Context {
     }
 }
 //# sourceMappingURL=context.js.map
-// EXTERNAL MODULE: ./node_modules/@actions/http-client/lib/index.js
-var lib = __nccwpck_require__(4844);
+// EXTERNAL MODULE: ./node_modules/@actions/github/node_modules/@actions/http-client/lib/index.js
+var lib = __nccwpck_require__(9659);
 ;// CONCATENATED MODULE: ./node_modules/@actions/github/lib/internal/utils.js
 var utils_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -36042,7 +34825,7 @@ function isKeyOperator(operator) {
 function getValues(context, operator, key, modifier) {
   var value = context[key], result = [];
   if (isDefined(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
       value = value.toString();
       if (modifier && modifier !== "*") {
         value = value.substring(0, parseInt(modifier, 10));
@@ -36231,6 +35014,147 @@ var endpoint = withDefaults(null, DEFAULTS);
 
 // EXTERNAL MODULE: ./node_modules/fast-content-type-parse/index.js
 var fast_content_type_parse = __nccwpck_require__(1120);
+;// CONCATENATED MODULE: ./node_modules/json-with-bigint/json-with-bigint.js
+const noiseValue = /^-?\d+n+$/; // Noise - strings that match the custom format before being converted to it
+const originalStringify = JSON.stringify;
+const originalParse = JSON.parse;
+
+/*
+  Function to serialize value to a JSON string.
+  Converts BigInt values to a custom format (strings with digits and "n" at the end) and then converts them to proper big integers in a JSON string.
+*/
+const JSONStringify = (value, replacer, space) => {
+  if ("rawJSON" in JSON) {
+    return originalStringify(
+      value,
+      (key, value) => {
+        if (typeof value === "bigint") return JSON.rawJSON(value.toString());
+
+        if (typeof replacer === "function") return replacer(key, value);
+
+        if (Array.isArray(replacer) && replacer.includes(key)) return value;
+
+        return value;
+      },
+      space
+    );
+  }
+
+  if (!value) return originalStringify(value, replacer, space);
+
+  const bigInts = /([\[:])?"(-?\d+)n"($|([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
+  const noise = /([\[:])?("-?\d+n+)n("$|"([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
+  const convertedToCustomJSON = originalStringify(
+    value,
+    (key, value) => {
+      const isNoise =
+        typeof value === "string" && Boolean(value.match(noiseValue));
+
+      if (isNoise) return value.toString() + "n"; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+
+      if (typeof value === "bigint") return value.toString() + "n";
+
+      if (typeof replacer === "function") return replacer(key, value);
+
+      if (Array.isArray(replacer) && replacer.includes(key)) return value;
+
+      return value;
+    },
+    space
+  );
+  const processedJSON = convertedToCustomJSON.replace(bigInts, "$1$2$3"); // Delete one "n" off the end of every BigInt value
+  const denoisedJSON = processedJSON.replace(noise, "$1$2$3"); // Remove one "n" off the end of every noisy string
+
+  return denoisedJSON;
+};
+
+/*
+  Function to check if the JSON.parse's context.source feature is supported.
+*/
+const isContextSourceSupported = () =>
+  JSON.parse("1", (_, __, context) => !!context && context.source === "1");
+
+/*
+  Faster (2x) and simpler function to parse JSON.
+  Based on JSON.parse's context.source feature, which is not universally available now.
+  Does not support the legacy custom format, used in the first version of this library.
+*/
+const JSONParseV2 = (text, reviver) => {
+  const intRegex = /^-?\d+$/;
+
+  return JSON.parse(text, (key, value, context) => {
+    const isBigNumber =
+      typeof value === "number" &&
+      (value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER);
+    const isInt = intRegex.test(context.source);
+    const isBigInt = isBigNumber && isInt;
+
+    if (isBigInt) return BigInt(context.source);
+
+    if (typeof reviver !== "function") return value;
+
+    return reviver(key, value, context);
+  });
+};
+
+/*
+  Function to parse JSON.
+  If JSON has number values greater than Number.MAX_SAFE_INTEGER, we convert those values to a custom format, then parse them to BigInt values.
+  Other types of values are not affected and parsed as native JSON.parse() would parse them.
+*/
+const JSONParse = (text, reviver) => {
+  if (!text) return originalParse(text, reviver);
+
+  if (isContextSourceSupported()) return JSONParseV2(text, reviver); // Shortcut to a faster (2x) and simpler version
+
+  const MAX_INT = Number.MAX_SAFE_INTEGER.toString();
+  const MAX_DIGITS = MAX_INT.length;
+  const stringsOrLargeNumbers =
+    /"(?:\\.|[^"])*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
+  const noiseValueWithQuotes = /^"-?\d+n+"$/; // Noise - strings that match the custom format before being converted to it
+  const customFormat = /^-?\d+n$/;
+
+  // Find and mark big numbers with "n"
+  const serializedData = text.replace(
+    stringsOrLargeNumbers,
+    (text, digits, fractional, exponential) => {
+      const isString = text[0] === '"';
+      const isNoise = isString && Boolean(text.match(noiseValueWithQuotes));
+
+      if (isNoise) return text.substring(0, text.length - 1) + 'n"'; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+
+      const isFractionalOrExponential = fractional || exponential;
+      const isLessThanMaxSafeInt =
+        digits &&
+        (digits.length < MAX_DIGITS ||
+          (digits.length === MAX_DIGITS && digits <= MAX_INT)); // With a fixed number of digits, we can correctly use lexicographical comparison to do a numeric comparison
+
+      if (isString || isFractionalOrExponential || isLessThanMaxSafeInt)
+        return text;
+
+      return '"' + text + 'n"';
+    }
+  );
+
+  // Convert marked big numbers to BigInt
+  return originalParse(serializedData, (key, value, context) => {
+    const isCustomFormatBigInt =
+      typeof value === "string" && Boolean(value.match(customFormat));
+
+    if (isCustomFormatBigInt)
+      return BigInt(value.substring(0, value.length - 1));
+
+    const isNoiseValue =
+      typeof value === "string" && Boolean(value.match(noiseValue));
+
+    if (isNoiseValue) return value.substring(0, value.length - 1); // Remove one "n" off the end of the noisy string
+
+    if (typeof reviver !== "function") return value;
+
+    return reviver(key, value, context);
+  });
+};
+
 ;// CONCATENATED MODULE: ./node_modules/@octokit/request-error/dist-src/index.js
 class RequestError extends Error {
   name;
@@ -36280,7 +35204,7 @@ class RequestError extends Error {
 
 
 // pkg/dist-src/version.js
-var dist_bundle_VERSION = "10.0.7";
+var dist_bundle_VERSION = "10.0.8";
 
 // pkg/dist-src/defaults.js
 var defaults_default = {
@@ -36290,6 +35214,7 @@ var defaults_default = {
 };
 
 // pkg/dist-src/fetch-wrapper.js
+
 
 
 // pkg/dist-src/is-plain-object.js
@@ -36314,7 +35239,7 @@ async function fetchWrapper(requestOptions) {
   }
   const log = requestOptions.request?.log || console;
   const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  const body = dist_bundle_isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body) ? JSON.stringify(requestOptions.body) : requestOptions.body;
+  const body = dist_bundle_isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body) ? JSONStringify(requestOptions.body) : requestOptions.body;
   const requestHeaders = Object.fromEntries(
     Object.entries(requestOptions.headers).map(([name, value]) => [
       name,
@@ -36413,7 +35338,7 @@ async function getResponseData(response) {
     let text = "";
     try {
       text = await response.text();
-      return JSON.parse(text);
+      return JSONParse(text);
     } catch (err) {
       return text;
     }
@@ -40066,969 +38991,27 @@ async function findPriorComment(octokit, identifier, issueNumber) {
     return foundComment?.id;
 }
 
-;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/internal-glob-options-helper.js
+// EXTERNAL MODULE: external "node:url"
+var external_node_url_ = __nccwpck_require__(3136);
+;// CONCATENATED MODULE: external "node:path"
+const external_node_path_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:path");
+;// CONCATENATED MODULE: external "node:fs"
+const external_node_fs_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs");
+var external_node_fs_namespaceObject_0 = /*#__PURE__*/__nccwpck_require__.t(external_node_fs_namespaceObject, 2);
+;// CONCATENATED MODULE: external "node:fs/promises"
+const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs/promises");
+// EXTERNAL MODULE: external "node:events"
+var external_node_events_ = __nccwpck_require__(8474);
+// EXTERNAL MODULE: external "node:stream"
+var external_node_stream_ = __nccwpck_require__(7075);
+;// CONCATENATED MODULE: external "node:string_decoder"
+const external_node_string_decoder_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:string_decoder");
+;// CONCATENATED MODULE: ./node_modules/glob/dist/esm/index.min.js
+var Gt=(n,t,e)=>{let s=n instanceof RegExp?ce(n,e):n,i=t instanceof RegExp?ce(t,e):t,r=s!==null&&i!=null&&ss(s,i,e);return r&&{start:r[0],end:r[1],pre:e.slice(0,r[0]),body:e.slice(r[0]+s.length,r[1]),post:e.slice(r[1]+i.length)}},ce=(n,t)=>{let e=t.match(n);return e?e[0]:null},ss=(n,t,e)=>{let s,i,r,o,h,a=e.indexOf(n),l=e.indexOf(t,a+1),u=a;if(a>=0&&l>0){if(n===t)return[a,l];for(s=[],r=e.length;u>=0&&!h;){if(u===a)s.push(u),a=e.indexOf(n,u+1);else if(s.length===1){let c=s.pop();c!==void 0&&(h=[c,l])}else i=s.pop(),i!==void 0&&i<r&&(r=i,o=l),l=e.indexOf(t,u+1);u=a<l&&a>=0?a:l}s.length&&o!==void 0&&(h=[r,o])}return h};var fe="\0SLASH"+Math.random()+"\0",ue="\0OPEN"+Math.random()+"\0",qt="\0CLOSE"+Math.random()+"\0",de="\0COMMA"+Math.random()+"\0",pe="\0PERIOD"+Math.random()+"\0",is=new RegExp(fe,"g"),rs=new RegExp(ue,"g"),ns=new RegExp(qt,"g"),os=new RegExp(de,"g"),hs=new RegExp(pe,"g"),as=/\\\\/g,ls=/\\{/g,cs=/\\}/g,index_min_fs=/\\,/g,us=/\\./g,ds=1e5;function Ht(n){return isNaN(n)?n.charCodeAt(0):parseInt(n,10)}function ps(n){return n.replace(as,fe).replace(ls,ue).replace(cs,qt).replace(index_min_fs,de).replace(us,pe)}function ms(n){return n.replace(is,"\\").replace(rs,"{").replace(ns,"}").replace(os,",").replace(hs,".")}function me(n){if(!n)return[""];let t=[],e=Gt("{","}",n);if(!e)return n.split(",");let{pre:s,body:i,post:r}=e,o=s.split(",");o[o.length-1]+="{"+i+"}";let h=me(r);return r.length&&(o[o.length-1]+=h.shift(),o.push.apply(o,h)),t.push.apply(t,o),t}function ge(n,t={}){if(!n)return[];let{max:e=ds}=t;return n.slice(0,2)==="{}"&&(n="\\{\\}"+n.slice(2)),ht(ps(n),e,!0).map(ms)}function gs(n){return"{"+n+"}"}function ws(n){return/^-?0\d/.test(n)}function ys(n,t){return n<=t}function bs(n,t){return n>=t}function ht(n,t,e){let s=[],i=Gt("{","}",n);if(!i)return[n];let r=i.pre,o=i.post.length?ht(i.post,t,!1):[""];if(/\$$/.test(i.pre))for(let h=0;h<o.length&&h<t;h++){let a=r+"{"+i.body+"}"+o[h];s.push(a)}else{let h=/^-?\d+\.\.-?\d+(?:\.\.-?\d+)?$/.test(i.body),a=/^[a-zA-Z]\.\.[a-zA-Z](?:\.\.-?\d+)?$/.test(i.body),l=h||a,u=i.body.indexOf(",")>=0;if(!l&&!u)return i.post.match(/,(?!,).*\}/)?(n=i.pre+"{"+i.body+qt+i.post,ht(n,t,!0)):[n];let c;if(l)c=i.body.split(/\.\./);else if(c=me(i.body),c.length===1&&c[0]!==void 0&&(c=ht(c[0],t,!1).map(gs),c.length===1))return o.map(f=>i.pre+c[0]+f);let d;if(l&&c[0]!==void 0&&c[1]!==void 0){let f=Ht(c[0]),m=Ht(c[1]),p=Math.max(c[0].length,c[1].length),w=c.length===3&&c[2]!==void 0?Math.abs(Ht(c[2])):1,g=ys;m<f&&(w*=-1,g=bs);let E=c.some(ws);d=[];for(let y=f;g(y,m);y+=w){let b;if(a)b=String.fromCharCode(y),b==="\\"&&(b="");else if(b=String(y),E){let z=p-b.length;if(z>0){let $=new Array(z+1).join("0");y<0?b="-"+$+b.slice(1):b=$+b}}d.push(b)}}else{d=[];for(let f=0;f<c.length;f++)d.push.apply(d,ht(c[f],t,!1))}for(let f=0;f<d.length;f++)for(let m=0;m<o.length&&s.length<t;m++){let p=r+d[f]+o[m];(!e||l||p)&&s.push(p)}}return s}var at=n=>{if(typeof n!="string")throw new TypeError("invalid pattern");if(n.length>65536)throw new TypeError("pattern is too long")};var Ss={"[:alnum:]":["\\p{L}\\p{Nl}\\p{Nd}",!0],"[:alpha:]":["\\p{L}\\p{Nl}",!0],"[:ascii:]":["\\x00-\\x7f",!1],"[:blank:]":["\\p{Zs}\\t",!0],"[:cntrl:]":["\\p{Cc}",!0],"[:digit:]":["\\p{Nd}",!0],"[:graph:]":["\\p{Z}\\p{C}",!0,!0],"[:lower:]":["\\p{Ll}",!0],"[:print:]":["\\p{C}",!0],"[:punct:]":["\\p{P}",!0],"[:space:]":["\\p{Z}\\t\\r\\n\\v\\f",!0],"[:upper:]":["\\p{Lu}",!0],"[:word:]":["\\p{L}\\p{Nl}\\p{Nd}\\p{Pc}",!0],"[:xdigit:]":["A-Fa-f0-9",!1]},lt=n=>n.replace(/[[\]\\-]/g,"\\$&"),Es=n=>n.replace(/[-[\]{}()*+?.,\\^$|#\s]/g,"\\$&"),we=n=>n.join(""),ye=(n,t)=>{let e=t;if(n.charAt(e)!=="[")throw new Error("not in a brace expression");let s=[],i=[],r=e+1,o=!1,h=!1,a=!1,l=!1,u=e,c="";t:for(;r<n.length;){let p=n.charAt(r);if((p==="!"||p==="^")&&r===e+1){l=!0,r++;continue}if(p==="]"&&o&&!a){u=r+1;break}if(o=!0,p==="\\"&&!a){a=!0,r++;continue}if(p==="["&&!a){for(let[w,[g,S,E]]of Object.entries(Ss))if(n.startsWith(w,r)){if(c)return["$.",!1,n.length-e,!0];r+=w.length,E?i.push(g):s.push(g),h=h||S;continue t}}if(a=!1,c){p>c?s.push(lt(c)+"-"+lt(p)):p===c&&s.push(lt(p)),c="",r++;continue}if(n.startsWith("-]",r+1)){s.push(lt(p+"-")),r+=2;continue}if(n.startsWith("-",r+1)){c=p,r+=2;continue}s.push(lt(p)),r++}if(u<r)return["",!1,0,!1];if(!s.length&&!i.length)return["$.",!1,n.length-e,!0];if(i.length===0&&s.length===1&&/^\\?.$/.test(s[0])&&!l){let p=s[0].length===2?s[0].slice(-1):s[0];return[Es(p),!1,u-e,!1]}let d="["+(l?"^":"")+we(s)+"]",f="["+(l?"":"^")+we(i)+"]";return[s.length&&i.length?"("+d+"|"+f+")":s.length?d:f,h,u-e,!0]};var W=(n,{windowsPathsNoEscape:t=!1,magicalBraces:e=!0}={})=>e?t?n.replace(/\[([^\/\\])\]/g,"$1"):n.replace(/((?!\\).|^)\[([^\/\\])\]/g,"$1$2").replace(/\\([^\/])/g,"$1"):t?n.replace(/\[([^\/\\{}])\]/g,"$1"):n.replace(/((?!\\).|^)\[([^\/\\{}])\]/g,"$1$2").replace(/\\([^\/{}])/g,"$1");var xs=new Set(["!","?","+","*","@"]),be=n=>xs.has(n),vs="(?!(?:^|/)\\.\\.?(?:$|/))",Ct="(?!\\.)",Cs=new Set(["[","."]),Ts=new Set(["..","."]),As=new Set("().*{}+?[]^$\\!"),ks=n=>n.replace(/[-[\]{}()*+?.,\\^$|#\s]/g,"\\$&"),Kt="[^/]",Se=Kt+"*?",Ee=Kt+"+?",Q=class n{type;#t;#s;#n=!1;#r=[];#o;#S;#w;#c=!1;#h;#u;#f=!1;constructor(t,e,s={}){this.type=t,t&&(this.#s=!0),this.#o=e,this.#t=this.#o?this.#o.#t:this,this.#h=this.#t===this?s:this.#t.#h,this.#w=this.#t===this?[]:this.#t.#w,t==="!"&&!this.#t.#c&&this.#w.push(this),this.#S=this.#o?this.#o.#r.length:0}get hasMagic(){if(this.#s!==void 0)return this.#s;for(let t of this.#r)if(typeof t!="string"&&(t.type||t.hasMagic))return this.#s=!0;return this.#s}toString(){return this.#u!==void 0?this.#u:this.type?this.#u=this.type+"("+this.#r.map(t=>String(t)).join("|")+")":this.#u=this.#r.map(t=>String(t)).join("")}#a(){if(this!==this.#t)throw new Error("should only call on root");if(this.#c)return this;this.toString(),this.#c=!0;let t;for(;t=this.#w.pop();){if(t.type!=="!")continue;let e=t,s=e.#o;for(;s;){for(let i=e.#S+1;!s.type&&i<s.#r.length;i++)for(let r of t.#r){if(typeof r=="string")throw new Error("string part in extglob AST??");r.copyIn(s.#r[i])}e=s,s=e.#o}}return this}push(...t){for(let e of t)if(e!==""){if(typeof e!="string"&&!(e instanceof n&&e.#o===this))throw new Error("invalid part: "+e);this.#r.push(e)}}toJSON(){let t=this.type===null?this.#r.slice().map(e=>typeof e=="string"?e:e.toJSON()):[this.type,...this.#r.map(e=>e.toJSON())];return this.isStart()&&!this.type&&t.unshift([]),this.isEnd()&&(this===this.#t||this.#t.#c&&this.#o?.type==="!")&&t.push({}),t}isStart(){if(this.#t===this)return!0;if(!this.#o?.isStart())return!1;if(this.#S===0)return!0;let t=this.#o;for(let e=0;e<this.#S;e++){let s=t.#r[e];if(!(s instanceof n&&s.type==="!"))return!1}return!0}isEnd(){if(this.#t===this||this.#o?.type==="!")return!0;if(!this.#o?.isEnd())return!1;if(!this.type)return this.#o?.isEnd();let t=this.#o?this.#o.#r.length:0;return this.#S===t-1}copyIn(t){typeof t=="string"?this.push(t):this.push(t.clone(this))}clone(t){let e=new n(this.type,t);for(let s of this.#r)e.copyIn(s);return e}static#i(t,e,s,i){let r=!1,o=!1,h=-1,a=!1;if(e.type===null){let f=s,m="";for(;f<t.length;){let p=t.charAt(f++);if(r||p==="\\"){r=!r,m+=p;continue}if(o){f===h+1?(p==="^"||p==="!")&&(a=!0):p==="]"&&!(f===h+2&&a)&&(o=!1),m+=p;continue}else if(p==="["){o=!0,h=f,a=!1,m+=p;continue}if(!i.noext&&be(p)&&t.charAt(f)==="("){e.push(m),m="";let w=new n(p,e);f=n.#i(t,w,f,i),e.push(w);continue}m+=p}return e.push(m),f}let l=s+1,u=new n(null,e),c=[],d="";for(;l<t.length;){let f=t.charAt(l++);if(r||f==="\\"){r=!r,d+=f;continue}if(o){l===h+1?(f==="^"||f==="!")&&(a=!0):f==="]"&&!(l===h+2&&a)&&(o=!1),d+=f;continue}else if(f==="["){o=!0,h=l,a=!1,d+=f;continue}if(be(f)&&t.charAt(l)==="("){u.push(d),d="";let m=new n(f,u);u.push(m),l=n.#i(t,m,l,i);continue}if(f==="|"){u.push(d),d="",c.push(u),u=new n(null,e);continue}if(f===")")return d===""&&e.#r.length===0&&(e.#f=!0),u.push(d),d="",e.push(...c,u),l;d+=f}return e.type=null,e.#s=void 0,e.#r=[t.substring(s-1)],l}static fromGlob(t,e={}){let s=new n(null,void 0,e);return n.#i(t,s,0,e),s}toMMPattern(){if(this!==this.#t)return this.#t.toMMPattern();let t=this.toString(),[e,s,i,r]=this.toRegExpSource();if(!(i||this.#s||this.#h.nocase&&!this.#h.nocaseMagicOnly&&t.toUpperCase()!==t.toLowerCase()))return s;let h=(this.#h.nocase?"i":"")+(r?"u":"");return Object.assign(new RegExp(`^${e}$`,h),{_src:e,_glob:t})}get options(){return this.#h}toRegExpSource(t){let e=t??!!this.#h.dot;if(this.#t===this&&this.#a(),!this.type){let a=this.isStart()&&this.isEnd()&&!this.#r.some(f=>typeof f!="string"),l=this.#r.map(f=>{let[m,p,w,g]=typeof f=="string"?n.#E(f,this.#s,a):f.toRegExpSource(t);return this.#s=this.#s||w,this.#n=this.#n||g,m}).join(""),u="";if(this.isStart()&&typeof this.#r[0]=="string"&&!(this.#r.length===1&&Ts.has(this.#r[0]))){let m=Cs,p=e&&m.has(l.charAt(0))||l.startsWith("\\.")&&m.has(l.charAt(2))||l.startsWith("\\.\\.")&&m.has(l.charAt(4)),w=!e&&!t&&m.has(l.charAt(0));u=p?vs:w?Ct:""}let c="";return this.isEnd()&&this.#t.#c&&this.#o?.type==="!"&&(c="(?:$|\\/)"),[u+l+c,W(l),this.#s=!!this.#s,this.#n]}let s=this.type==="*"||this.type==="+",i=this.type==="!"?"(?:(?!(?:":"(?:",r=this.#d(e);if(this.isStart()&&this.isEnd()&&!r&&this.type!=="!"){let a=this.toString();return this.#r=[a],this.type=null,this.#s=void 0,[a,W(this.toString()),!1,!1]}let o=!s||t||e||!Ct?"":this.#d(!0);o===r&&(o=""),o&&(r=`(?:${r})(?:${o})*?`);let h="";if(this.type==="!"&&this.#f)h=(this.isStart()&&!e?Ct:"")+Ee;else{let a=this.type==="!"?"))"+(this.isStart()&&!e&&!t?Ct:"")+Se+")":this.type==="@"?")":this.type==="?"?")?":this.type==="+"&&o?")":this.type==="*"&&o?")?":`)${this.type}`;h=i+r+a}return[h,W(r),this.#s=!!this.#s,this.#n]}#d(t){return this.#r.map(e=>{if(typeof e=="string")throw new Error("string type in extglob ast??");let[s,i,r,o]=e.toRegExpSource(t);return this.#n=this.#n||o,s}).filter(e=>!(this.isStart()&&this.isEnd())||!!e).join("|")}static#E(t,e,s=!1){let i=!1,r="",o=!1,h=!1;for(let a=0;a<t.length;a++){let l=t.charAt(a);if(i){i=!1,r+=(As.has(l)?"\\":"")+l;continue}if(l==="*"){if(h)continue;h=!0,r+=s&&/^[*]+$/.test(t)?Ee:Se,e=!0;continue}else h=!1;if(l==="\\"){a===t.length-1?r+="\\\\":i=!0;continue}if(l==="["){let[u,c,d,f]=ye(t,a);if(d){r+=u,o=o||c,a+=d-1,e=e||f;continue}}if(l==="?"){r+=Kt,e=!0;continue}r+=ks(l)}return[r,W(t),!!e,o]}};var tt=(n,{windowsPathsNoEscape:t=!1,magicalBraces:e=!1}={})=>e?t?n.replace(/[?*()[\]{}]/g,"[$&]"):n.replace(/[?*()[\]\\{}]/g,"\\$&"):t?n.replace(/[?*()[\]]/g,"[$&]"):n.replace(/[?*()[\]\\]/g,"\\$&");var O=(n,t,e={})=>(at(t),!e.nocomment&&t.charAt(0)==="#"?!1:new D(t,e).match(n)),Rs=/^\*+([^+@!?\*\[\(]*)$/,Os=n=>t=>!t.startsWith(".")&&t.endsWith(n),Fs=n=>t=>t.endsWith(n),Ds=n=>(n=n.toLowerCase(),t=>!t.startsWith(".")&&t.toLowerCase().endsWith(n)),Ms=n=>(n=n.toLowerCase(),t=>t.toLowerCase().endsWith(n)),Ns=/^\*+\.\*+$/,_s=n=>!n.startsWith(".")&&n.includes("."),Ls=n=>n!=="."&&n!==".."&&n.includes("."),Ws=/^\.\*+$/,Ps=n=>n!=="."&&n!==".."&&n.startsWith("."),js=/^\*+$/,Is=n=>n.length!==0&&!n.startsWith("."),zs=n=>n.length!==0&&n!=="."&&n!=="..",Bs=/^\?+([^+@!?\*\[\(]*)?$/,Us=([n,t=""])=>{let e=Ce([n]);return t?(t=t.toLowerCase(),s=>e(s)&&s.toLowerCase().endsWith(t)):e},$s=([n,t=""])=>{let e=Te([n]);return t?(t=t.toLowerCase(),s=>e(s)&&s.toLowerCase().endsWith(t)):e},Gs=([n,t=""])=>{let e=Te([n]);return t?s=>e(s)&&s.endsWith(t):e},Hs=([n,t=""])=>{let e=Ce([n]);return t?s=>e(s)&&s.endsWith(t):e},Ce=([n])=>{let t=n.length;return e=>e.length===t&&!e.startsWith(".")},Te=([n])=>{let t=n.length;return e=>e.length===t&&e!=="."&&e!==".."},Ae=typeof process=="object"&&process?typeof process.env=="object"&&process.env&&process.env.__MINIMATCH_TESTING_PLATFORM__||process.platform:"posix",xe={win32:{sep:"\\"},posix:{sep:"/"}},qs=Ae==="win32"?xe.win32.sep:xe.posix.sep;O.sep=qs;var A=Symbol("globstar **");O.GLOBSTAR=A;var Ks="[^/]",Vs=Ks+"*?",Ys="(?:(?!(?:\\/|^)(?:\\.{1,2})($|\\/)).)*?",Xs="(?:(?!(?:\\/|^)\\.).)*?",Js=(n,t={})=>e=>O(e,n,t);O.filter=Js;var N=(n,t={})=>Object.assign({},n,t),Zs=n=>{if(!n||typeof n!="object"||!Object.keys(n).length)return O;let t=O;return Object.assign((s,i,r={})=>t(s,i,N(n,r)),{Minimatch:class extends t.Minimatch{constructor(i,r={}){super(i,N(n,r))}static defaults(i){return t.defaults(N(n,i)).Minimatch}},AST:class extends t.AST{constructor(i,r,o={}){super(i,r,N(n,o))}static fromGlob(i,r={}){return t.AST.fromGlob(i,N(n,r))}},unescape:(s,i={})=>t.unescape(s,N(n,i)),escape:(s,i={})=>t.escape(s,N(n,i)),filter:(s,i={})=>t.filter(s,N(n,i)),defaults:s=>t.defaults(N(n,s)),makeRe:(s,i={})=>t.makeRe(s,N(n,i)),braceExpand:(s,i={})=>t.braceExpand(s,N(n,i)),match:(s,i,r={})=>t.match(s,i,N(n,r)),sep:t.sep,GLOBSTAR:A})};O.defaults=Zs;var ke=(n,t={})=>(at(n),t.nobrace||!/\{(?:(?!\{).)*\}/.test(n)?[n]:ge(n,{max:t.braceExpandMax}));O.braceExpand=ke;var Qs=(n,t={})=>new D(n,t).makeRe();O.makeRe=Qs;var ti=(n,t,e={})=>{let s=new D(t,e);return n=n.filter(i=>s.match(i)),s.options.nonull&&!n.length&&n.push(t),n};O.match=ti;var ve=/[?*]|[+@!]\(.*?\)|\[|\]/,ei=n=>n.replace(/[-[\]{}()*+?.,\\^$|#\s]/g,"\\$&"),D=class{options;set;pattern;windowsPathsNoEscape;nonegate;negate;comment;empty;preserveMultipleSlashes;partial;globSet;globParts;nocase;isWindows;platform;windowsNoMagicRoot;regexp;constructor(t,e={}){at(t),e=e||{},this.options=e,this.pattern=t,this.platform=e.platform||Ae,this.isWindows=this.platform==="win32";let s="allowWindowsEscape";this.windowsPathsNoEscape=!!e.windowsPathsNoEscape||e[s]===!1,this.windowsPathsNoEscape&&(this.pattern=this.pattern.replace(/\\/g,"/")),this.preserveMultipleSlashes=!!e.preserveMultipleSlashes,this.regexp=null,this.negate=!1,this.nonegate=!!e.nonegate,this.comment=!1,this.empty=!1,this.partial=!!e.partial,this.nocase=!!this.options.nocase,this.windowsNoMagicRoot=e.windowsNoMagicRoot!==void 0?e.windowsNoMagicRoot:!!(this.isWindows&&this.nocase),this.globSet=[],this.globParts=[],this.set=[],this.make()}hasMagic(){if(this.options.magicalBraces&&this.set.length>1)return!0;for(let t of this.set)for(let e of t)if(typeof e!="string")return!0;return!1}debug(...t){}make(){let t=this.pattern,e=this.options;if(!e.nocomment&&t.charAt(0)==="#"){this.comment=!0;return}if(!t){this.empty=!0;return}this.parseNegate(),this.globSet=[...new Set(this.braceExpand())],e.debug&&(this.debug=(...r)=>console.error(...r)),this.debug(this.pattern,this.globSet);let s=this.globSet.map(r=>this.slashSplit(r));this.globParts=this.preprocess(s),this.debug(this.pattern,this.globParts);let i=this.globParts.map((r,o,h)=>{if(this.isWindows&&this.windowsNoMagicRoot){let a=r[0]===""&&r[1]===""&&(r[2]==="?"||!ve.test(r[2]))&&!ve.test(r[3]),l=/^[a-z]:/i.test(r[0]);if(a)return[...r.slice(0,4),...r.slice(4).map(u=>this.parse(u))];if(l)return[r[0],...r.slice(1).map(u=>this.parse(u))]}return r.map(a=>this.parse(a))});if(this.debug(this.pattern,i),this.set=i.filter(r=>r.indexOf(!1)===-1),this.isWindows)for(let r=0;r<this.set.length;r++){let o=this.set[r];o[0]===""&&o[1]===""&&this.globParts[r][2]==="?"&&typeof o[3]=="string"&&/^[a-z]:$/i.test(o[3])&&(o[2]="?")}this.debug(this.pattern,this.set)}preprocess(t){if(this.options.noglobstar)for(let s=0;s<t.length;s++)for(let i=0;i<t[s].length;i++)t[s][i]==="**"&&(t[s][i]="*");let{optimizationLevel:e=1}=this.options;return e>=2?(t=this.firstPhasePreProcess(t),t=this.secondPhasePreProcess(t)):e>=1?t=this.levelOneOptimize(t):t=this.adjascentGlobstarOptimize(t),t}adjascentGlobstarOptimize(t){return t.map(e=>{let s=-1;for(;(s=e.indexOf("**",s+1))!==-1;){let i=s;for(;e[i+1]==="**";)i++;i!==s&&e.splice(s,i-s)}return e})}levelOneOptimize(t){return t.map(e=>(e=e.reduce((s,i)=>{let r=s[s.length-1];return i==="**"&&r==="**"?s:i===".."&&r&&r!==".."&&r!=="."&&r!=="**"?(s.pop(),s):(s.push(i),s)},[]),e.length===0?[""]:e))}levelTwoFileOptimize(t){Array.isArray(t)||(t=this.slashSplit(t));let e=!1;do{if(e=!1,!this.preserveMultipleSlashes){for(let i=1;i<t.length-1;i++){let r=t[i];i===1&&r===""&&t[0]===""||(r==="."||r==="")&&(e=!0,t.splice(i,1),i--)}t[0]==="."&&t.length===2&&(t[1]==="."||t[1]==="")&&(e=!0,t.pop())}let s=0;for(;(s=t.indexOf("..",s+1))!==-1;){let i=t[s-1];i&&i!=="."&&i!==".."&&i!=="**"&&(e=!0,t.splice(s-1,2),s-=2)}}while(e);return t.length===0?[""]:t}firstPhasePreProcess(t){let e=!1;do{e=!1;for(let s of t){let i=-1;for(;(i=s.indexOf("**",i+1))!==-1;){let o=i;for(;s[o+1]==="**";)o++;o>i&&s.splice(i+1,o-i);let h=s[i+1],a=s[i+2],l=s[i+3];if(h!==".."||!a||a==="."||a===".."||!l||l==="."||l==="..")continue;e=!0,s.splice(i,1);let u=s.slice(0);u[i]="**",t.push(u),i--}if(!this.preserveMultipleSlashes){for(let o=1;o<s.length-1;o++){let h=s[o];o===1&&h===""&&s[0]===""||(h==="."||h==="")&&(e=!0,s.splice(o,1),o--)}s[0]==="."&&s.length===2&&(s[1]==="."||s[1]==="")&&(e=!0,s.pop())}let r=0;for(;(r=s.indexOf("..",r+1))!==-1;){let o=s[r-1];if(o&&o!=="."&&o!==".."&&o!=="**"){e=!0;let a=r===1&&s[r+1]==="**"?["."]:[];s.splice(r-1,2,...a),s.length===0&&s.push(""),r-=2}}}}while(e);return t}secondPhasePreProcess(t){for(let e=0;e<t.length-1;e++)for(let s=e+1;s<t.length;s++){let i=this.partsMatch(t[e],t[s],!this.preserveMultipleSlashes);if(i){t[e]=[],t[s]=i;break}}return t.filter(e=>e.length)}partsMatch(t,e,s=!1){let i=0,r=0,o=[],h="";for(;i<t.length&&r<e.length;)if(t[i]===e[r])o.push(h==="b"?e[r]:t[i]),i++,r++;else if(s&&t[i]==="**"&&e[r]===t[i+1])o.push(t[i]),i++;else if(s&&e[r]==="**"&&t[i]===e[r+1])o.push(e[r]),r++;else if(t[i]==="*"&&e[r]&&(this.options.dot||!e[r].startsWith("."))&&e[r]!=="**"){if(h==="b")return!1;h="a",o.push(t[i]),i++,r++}else if(e[r]==="*"&&t[i]&&(this.options.dot||!t[i].startsWith("."))&&t[i]!=="**"){if(h==="a")return!1;h="b",o.push(e[r]),i++,r++}else return!1;return t.length===e.length&&o}parseNegate(){if(this.nonegate)return;let t=this.pattern,e=!1,s=0;for(let i=0;i<t.length&&t.charAt(i)==="!";i++)e=!e,s++;s&&(this.pattern=t.slice(s)),this.negate=e}matchOne(t,e,s=!1){let i=this.options;if(this.isWindows){let p=typeof t[0]=="string"&&/^[a-z]:$/i.test(t[0]),w=!p&&t[0]===""&&t[1]===""&&t[2]==="?"&&/^[a-z]:$/i.test(t[3]),g=typeof e[0]=="string"&&/^[a-z]:$/i.test(e[0]),S=!g&&e[0]===""&&e[1]===""&&e[2]==="?"&&typeof e[3]=="string"&&/^[a-z]:$/i.test(e[3]),E=w?3:p?0:void 0,y=S?3:g?0:void 0;if(typeof E=="number"&&typeof y=="number"){let[b,z]=[t[E],e[y]];b.toLowerCase()===z.toLowerCase()&&(e[y]=b,y>E?e=e.slice(y):E>y&&(t=t.slice(E)))}}let{optimizationLevel:r=1}=this.options;r>=2&&(t=this.levelTwoFileOptimize(t)),this.debug("matchOne",this,{file:t,pattern:e}),this.debug("matchOne",t.length,e.length);for(var o=0,h=0,a=t.length,l=e.length;o<a&&h<l;o++,h++){this.debug("matchOne loop");var u=e[h],c=t[o];if(this.debug(e,u,c),u===!1)return!1;if(u===A){this.debug("GLOBSTAR",[e,u,c]);var d=o,f=h+1;if(f===l){for(this.debug("** at the end");o<a;o++)if(t[o]==="."||t[o]===".."||!i.dot&&t[o].charAt(0)===".")return!1;return!0}for(;d<a;){var m=t[d];if(this.debug(`
+globstar while`,t,d,e,f,m),this.matchOne(t.slice(d),e.slice(f),s))return this.debug("globstar found match!",d,a,m),!0;if(m==="."||m===".."||!i.dot&&m.charAt(0)==="."){this.debug("dot detected!",t,d,e,f);break}this.debug("globstar swallow a segment, and continue"),d++}return!!(s&&(this.debug(`
+>>> no match, partial?`,t,d,e,f),d===a))}let p;if(typeof u=="string"?(p=c===u,this.debug("string match",u,c,p)):(p=u.test(c),this.debug("pattern match",u,c,p)),!p)return!1}if(o===a&&h===l)return!0;if(o===a)return s;if(h===l)return o===a-1&&t[o]==="";throw new Error("wtf?")}braceExpand(){return ke(this.pattern,this.options)}parse(t){at(t);let e=this.options;if(t==="**")return A;if(t==="")return"";let s,i=null;(s=t.match(js))?i=e.dot?zs:Is:(s=t.match(Rs))?i=(e.nocase?e.dot?Ms:Ds:e.dot?Fs:Os)(s[1]):(s=t.match(Bs))?i=(e.nocase?e.dot?$s:Us:e.dot?Gs:Hs)(s):(s=t.match(Ns))?i=e.dot?Ls:_s:(s=t.match(Ws))&&(i=Ps);let r=Q.fromGlob(t,this.options).toMMPattern();return i&&typeof r=="object"&&Reflect.defineProperty(r,"test",{value:i}),r}makeRe(){if(this.regexp||this.regexp===!1)return this.regexp;let t=this.set;if(!t.length)return this.regexp=!1,this.regexp;let e=this.options,s=e.noglobstar?Vs:e.dot?Ys:Xs,i=new Set(e.nocase?["i"]:[]),r=t.map(a=>{let l=a.map(c=>{if(c instanceof RegExp)for(let d of c.flags.split(""))i.add(d);return typeof c=="string"?ei(c):c===A?A:c._src});l.forEach((c,d)=>{let f=l[d+1],m=l[d-1];c!==A||m===A||(m===void 0?f!==void 0&&f!==A?l[d+1]="(?:\\/|"+s+"\\/)?"+f:l[d]=s:f===void 0?l[d-1]=m+"(?:\\/|\\/"+s+")?":f!==A&&(l[d-1]=m+"(?:\\/|\\/"+s+"\\/)"+f,l[d+1]=A))});let u=l.filter(c=>c!==A);if(this.partial&&u.length>=1){let c=[];for(let d=1;d<=u.length;d++)c.push(u.slice(0,d).join("/"));return"(?:"+c.join("|")+")"}return u.join("/")}).join("|"),[o,h]=t.length>1?["(?:",")"]:["",""];r="^"+o+r+h+"$",this.partial&&(r="^(?:\\/|"+o+r.slice(1,-1)+h+")$"),this.negate&&(r="^(?!"+r+").+$");try{this.regexp=new RegExp(r,[...i].join(""))}catch{this.regexp=!1}return this.regexp}slashSplit(t){return this.preserveMultipleSlashes?t.split("/"):this.isWindows&&/^\/\/[^\/]+/.test(t)?["",...t.split(/\/+/)]:t.split(/\/+/)}match(t,e=this.partial){if(this.debug("match",t,this.pattern),this.comment)return!1;if(this.empty)return t==="";if(t==="/"&&e)return!0;let s=this.options;this.isWindows&&(t=t.split("\\").join("/"));let i=this.slashSplit(t);this.debug(this.pattern,"split",i);let r=this.set;this.debug(this.pattern,"set",r);let o=i[i.length-1];if(!o)for(let h=i.length-2;!o&&h>=0;h--)o=i[h];for(let h=0;h<r.length;h++){let a=r[h],l=i;if(s.matchBase&&a.length===1&&(l=[o]),this.matchOne(l,a,e))return s.flipNegate?!0:!this.negate}return s.flipNegate?!1:this.negate}static defaults(t){return O.defaults(t).Minimatch}};O.AST=Q;O.Minimatch=D;O.escape=tt;O.unescape=W;var si=typeof performance=="object"&&performance&&typeof performance.now=="function"?performance:Date,Oe=new Set,Vt=typeof process=="object"&&process?process:{},Fe=(n,t,e,s)=>{typeof Vt.emitWarning=="function"?Vt.emitWarning(n,t,e,s):console.error(`[${e}] ${t}: ${n}`)},At=globalThis.AbortController,Re=globalThis.AbortSignal;if(typeof At>"u"){Re=class{onabort;_onabort=[];reason;aborted=!1;addEventListener(e,s){this._onabort.push(s)}},At=class{constructor(){t()}signal=new Re;abort(e){if(!this.signal.aborted){this.signal.reason=e,this.signal.aborted=!0;for(let s of this.signal._onabort)s(e);this.signal.onabort?.(e)}}};let n=Vt.env?.LRU_CACHE_IGNORE_AC_WARNING!=="1",t=()=>{n&&(n=!1,Fe("AbortController is not defined. If using lru-cache in node 14, load an AbortController polyfill from the `node-abort-controller` package. A minimal polyfill is provided for use by LRUCache.fetch(), but it should not be relied upon in other contexts (eg, passing it to other APIs that use AbortController/AbortSignal might have undesirable effects). You may disable this with LRU_CACHE_IGNORE_AC_WARNING=1 in the env.","NO_ABORT_CONTROLLER","ENOTSUP",t))}}var ii=n=>!Oe.has(n);var q=n=>n&&n===Math.floor(n)&&n>0&&isFinite(n),De=n=>q(n)?n<=Math.pow(2,8)?Uint8Array:n<=Math.pow(2,16)?Uint16Array:n<=Math.pow(2,32)?Uint32Array:n<=Number.MAX_SAFE_INTEGER?Tt:null:null,Tt=class extends Array{constructor(n){super(n),this.fill(0)}},ri=class ct{heap;length;static#t=!1;static create(t){let e=De(t);if(!e)return[];ct.#t=!0;let s=new ct(t,e);return ct.#t=!1,s}constructor(t,e){if(!ct.#t)throw new TypeError("instantiate Stack using Stack.create(n)");this.heap=new e(t),this.length=0}push(t){this.heap[this.length++]=t}pop(){return this.heap[--this.length]}},ft=class Me{#t;#s;#n;#r;#o;#S;#w;#c;get perf(){return this.#c}ttl;ttlResolution;ttlAutopurge;updateAgeOnGet;updateAgeOnHas;allowStale;noDisposeOnSet;noUpdateTTL;maxEntrySize;sizeCalculation;noDeleteOnFetchRejection;noDeleteOnStaleGet;allowStaleOnFetchAbort;allowStaleOnFetchRejection;ignoreFetchAbort;#h;#u;#f;#a;#i;#d;#E;#b;#p;#R;#m;#C;#T;#g;#y;#x;#A;#e;#_;static unsafeExposeInternals(t){return{starts:t.#T,ttls:t.#g,autopurgeTimers:t.#y,sizes:t.#C,keyMap:t.#f,keyList:t.#a,valList:t.#i,next:t.#d,prev:t.#E,get head(){return t.#b},get tail(){return t.#p},free:t.#R,isBackgroundFetch:e=>t.#l(e),backgroundFetch:(e,s,i,r)=>t.#U(e,s,i,r),moveToTail:e=>t.#W(e),indexes:e=>t.#F(e),rindexes:e=>t.#D(e),isStale:e=>t.#v(e)}}get max(){return this.#t}get maxSize(){return this.#s}get calculatedSize(){return this.#u}get size(){return this.#h}get fetchMethod(){return this.#S}get memoMethod(){return this.#w}get dispose(){return this.#n}get onInsert(){return this.#r}get disposeAfter(){return this.#o}constructor(t){let{max:e=0,ttl:s,ttlResolution:i=1,ttlAutopurge:r,updateAgeOnGet:o,updateAgeOnHas:h,allowStale:a,dispose:l,onInsert:u,disposeAfter:c,noDisposeOnSet:d,noUpdateTTL:f,maxSize:m=0,maxEntrySize:p=0,sizeCalculation:w,fetchMethod:g,memoMethod:S,noDeleteOnFetchRejection:E,noDeleteOnStaleGet:y,allowStaleOnFetchRejection:b,allowStaleOnFetchAbort:z,ignoreFetchAbort:$,perf:J}=t;if(J!==void 0&&typeof J?.now!="function")throw new TypeError("perf option must have a now() method if specified");if(this.#c=J??si,e!==0&&!q(e))throw new TypeError("max option must be a nonnegative integer");let Z=e?De(e):Array;if(!Z)throw new Error("invalid max value: "+e);if(this.#t=e,this.#s=m,this.maxEntrySize=p||this.#s,this.sizeCalculation=w,this.sizeCalculation){if(!this.#s&&!this.maxEntrySize)throw new TypeError("cannot set sizeCalculation without setting maxSize or maxEntrySize");if(typeof this.sizeCalculation!="function")throw new TypeError("sizeCalculation set to non-function")}if(S!==void 0&&typeof S!="function")throw new TypeError("memoMethod must be a function if defined");if(this.#w=S,g!==void 0&&typeof g!="function")throw new TypeError("fetchMethod must be a function if specified");if(this.#S=g,this.#A=!!g,this.#f=new Map,this.#a=new Array(e).fill(void 0),this.#i=new Array(e).fill(void 0),this.#d=new Z(e),this.#E=new Z(e),this.#b=0,this.#p=0,this.#R=ri.create(e),this.#h=0,this.#u=0,typeof l=="function"&&(this.#n=l),typeof u=="function"&&(this.#r=u),typeof c=="function"?(this.#o=c,this.#m=[]):(this.#o=void 0,this.#m=void 0),this.#x=!!this.#n,this.#_=!!this.#r,this.#e=!!this.#o,this.noDisposeOnSet=!!d,this.noUpdateTTL=!!f,this.noDeleteOnFetchRejection=!!E,this.allowStaleOnFetchRejection=!!b,this.allowStaleOnFetchAbort=!!z,this.ignoreFetchAbort=!!$,this.maxEntrySize!==0){if(this.#s!==0&&!q(this.#s))throw new TypeError("maxSize must be a positive integer if specified");if(!q(this.maxEntrySize))throw new TypeError("maxEntrySize must be a positive integer if specified");this.#G()}if(this.allowStale=!!a,this.noDeleteOnStaleGet=!!y,this.updateAgeOnGet=!!o,this.updateAgeOnHas=!!h,this.ttlResolution=q(i)||i===0?i:1,this.ttlAutopurge=!!r,this.ttl=s||0,this.ttl){if(!q(this.ttl))throw new TypeError("ttl must be a positive integer if specified");this.#M()}if(this.#t===0&&this.ttl===0&&this.#s===0)throw new TypeError("At least one of max, maxSize, or ttl is required");if(!this.ttlAutopurge&&!this.#t&&!this.#s){let $t="LRU_CACHE_UNBOUNDED";ii($t)&&(Oe.add($t),Fe("TTL caching without ttlAutopurge, max, or maxSize can result in unbounded memory consumption.","UnboundedCacheWarning",$t,Me))}}getRemainingTTL(t){return this.#f.has(t)?1/0:0}#M(){let t=new Tt(this.#t),e=new Tt(this.#t);this.#g=t,this.#T=e;let s=this.ttlAutopurge?new Array(this.#t):void 0;this.#y=s,this.#j=(o,h,a=this.#c.now())=>{if(e[o]=h!==0?a:0,t[o]=h,s?.[o]&&(clearTimeout(s[o]),s[o]=void 0),h!==0&&s){let l=setTimeout(()=>{this.#v(o)&&this.#O(this.#a[o],"expire")},h+1);l.unref&&l.unref(),s[o]=l}},this.#k=o=>{e[o]=t[o]!==0?this.#c.now():0},this.#N=(o,h)=>{if(t[h]){let a=t[h],l=e[h];if(!a||!l)return;o.ttl=a,o.start=l,o.now=i||r();let u=o.now-l;o.remainingTTL=a-u}};let i=0,r=()=>{let o=this.#c.now();if(this.ttlResolution>0){i=o;let h=setTimeout(()=>i=0,this.ttlResolution);h.unref&&h.unref()}return o};this.getRemainingTTL=o=>{let h=this.#f.get(o);if(h===void 0)return 0;let a=t[h],l=e[h];if(!a||!l)return 1/0;let u=(i||r())-l;return a-u},this.#v=o=>{let h=e[o],a=t[o];return!!a&&!!h&&(i||r())-h>a}}#k=()=>{};#N=()=>{};#j=()=>{};#v=()=>!1;#G(){let t=new Tt(this.#t);this.#u=0,this.#C=t,this.#P=e=>{this.#u-=t[e],t[e]=0},this.#I=(e,s,i,r)=>{if(this.#l(s))return 0;if(!q(i))if(r){if(typeof r!="function")throw new TypeError("sizeCalculation must be a function");if(i=r(s,e),!q(i))throw new TypeError("sizeCalculation return invalid (expect positive integer)")}else throw new TypeError("invalid size value (must be positive integer). When maxSize or maxEntrySize is used, sizeCalculation or size must be set.");return i},this.#L=(e,s,i)=>{if(t[e]=s,this.#s){let r=this.#s-t[e];for(;this.#u>r;)this.#B(!0)}this.#u+=t[e],i&&(i.entrySize=s,i.totalCalculatedSize=this.#u)}}#P=t=>{};#L=(t,e,s)=>{};#I=(t,e,s,i)=>{if(s||i)throw new TypeError("cannot set size without setting maxSize or maxEntrySize on cache");return 0};*#F({allowStale:t=this.allowStale}={}){if(this.#h)for(let e=this.#p;!(!this.#z(e)||((t||!this.#v(e))&&(yield e),e===this.#b));)e=this.#E[e]}*#D({allowStale:t=this.allowStale}={}){if(this.#h)for(let e=this.#b;!(!this.#z(e)||((t||!this.#v(e))&&(yield e),e===this.#p));)e=this.#d[e]}#z(t){return t!==void 0&&this.#f.get(this.#a[t])===t}*entries(){for(let t of this.#F())this.#i[t]!==void 0&&this.#a[t]!==void 0&&!this.#l(this.#i[t])&&(yield[this.#a[t],this.#i[t]])}*rentries(){for(let t of this.#D())this.#i[t]!==void 0&&this.#a[t]!==void 0&&!this.#l(this.#i[t])&&(yield[this.#a[t],this.#i[t]])}*keys(){for(let t of this.#F()){let e=this.#a[t];e!==void 0&&!this.#l(this.#i[t])&&(yield e)}}*rkeys(){for(let t of this.#D()){let e=this.#a[t];e!==void 0&&!this.#l(this.#i[t])&&(yield e)}}*values(){for(let t of this.#F())this.#i[t]!==void 0&&!this.#l(this.#i[t])&&(yield this.#i[t])}*rvalues(){for(let t of this.#D())this.#i[t]!==void 0&&!this.#l(this.#i[t])&&(yield this.#i[t])}[Symbol.iterator](){return this.entries()}[Symbol.toStringTag]="LRUCache";find(t,e={}){for(let s of this.#F()){let i=this.#i[s],r=this.#l(i)?i.__staleWhileFetching:i;if(r!==void 0&&t(r,this.#a[s],this))return this.get(this.#a[s],e)}}forEach(t,e=this){for(let s of this.#F()){let i=this.#i[s],r=this.#l(i)?i.__staleWhileFetching:i;r!==void 0&&t.call(e,r,this.#a[s],this)}}rforEach(t,e=this){for(let s of this.#D()){let i=this.#i[s],r=this.#l(i)?i.__staleWhileFetching:i;r!==void 0&&t.call(e,r,this.#a[s],this)}}purgeStale(){let t=!1;for(let e of this.#D({allowStale:!0}))this.#v(e)&&(this.#O(this.#a[e],"expire"),t=!0);return t}info(t){let e=this.#f.get(t);if(e===void 0)return;let s=this.#i[e],i=this.#l(s)?s.__staleWhileFetching:s;if(i===void 0)return;let r={value:i};if(this.#g&&this.#T){let o=this.#g[e],h=this.#T[e];if(o&&h){let a=o-(this.#c.now()-h);r.ttl=a,r.start=Date.now()}}return this.#C&&(r.size=this.#C[e]),r}dump(){let t=[];for(let e of this.#F({allowStale:!0})){let s=this.#a[e],i=this.#i[e],r=this.#l(i)?i.__staleWhileFetching:i;if(r===void 0||s===void 0)continue;let o={value:r};if(this.#g&&this.#T){o.ttl=this.#g[e];let h=this.#c.now()-this.#T[e];o.start=Math.floor(Date.now()-h)}this.#C&&(o.size=this.#C[e]),t.unshift([s,o])}return t}load(t){this.clear();for(let[e,s]of t){if(s.start){let i=Date.now()-s.start;s.start=this.#c.now()-i}this.set(e,s.value,s)}}set(t,e,s={}){if(e===void 0)return this.delete(t),this;let{ttl:i=this.ttl,start:r,noDisposeOnSet:o=this.noDisposeOnSet,sizeCalculation:h=this.sizeCalculation,status:a}=s,{noUpdateTTL:l=this.noUpdateTTL}=s,u=this.#I(t,e,s.size||0,h);if(this.maxEntrySize&&u>this.maxEntrySize)return a&&(a.set="miss",a.maxEntrySizeExceeded=!0),this.#O(t,"set"),this;let c=this.#h===0?void 0:this.#f.get(t);if(c===void 0)c=this.#h===0?this.#p:this.#R.length!==0?this.#R.pop():this.#h===this.#t?this.#B(!1):this.#h,this.#a[c]=t,this.#i[c]=e,this.#f.set(t,c),this.#d[this.#p]=c,this.#E[c]=this.#p,this.#p=c,this.#h++,this.#L(c,u,a),a&&(a.set="add"),l=!1,this.#_&&this.#r?.(e,t,"add");else{this.#W(c);let d=this.#i[c];if(e!==d){if(this.#A&&this.#l(d)){d.__abortController.abort(new Error("replaced"));let{__staleWhileFetching:f}=d;f!==void 0&&!o&&(this.#x&&this.#n?.(f,t,"set"),this.#e&&this.#m?.push([f,t,"set"]))}else o||(this.#x&&this.#n?.(d,t,"set"),this.#e&&this.#m?.push([d,t,"set"]));if(this.#P(c),this.#L(c,u,a),this.#i[c]=e,a){a.set="replace";let f=d&&this.#l(d)?d.__staleWhileFetching:d;f!==void 0&&(a.oldValue=f)}}else a&&(a.set="update");this.#_&&this.onInsert?.(e,t,e===d?"update":"replace")}if(i!==0&&!this.#g&&this.#M(),this.#g&&(l||this.#j(c,i,r),a&&this.#N(a,c)),!o&&this.#e&&this.#m){let d=this.#m,f;for(;f=d?.shift();)this.#o?.(...f)}return this}pop(){try{for(;this.#h;){let t=this.#i[this.#b];if(this.#B(!0),this.#l(t)){if(t.__staleWhileFetching)return t.__staleWhileFetching}else if(t!==void 0)return t}}finally{if(this.#e&&this.#m){let t=this.#m,e;for(;e=t?.shift();)this.#o?.(...e)}}}#B(t){let e=this.#b,s=this.#a[e],i=this.#i[e];return this.#A&&this.#l(i)?i.__abortController.abort(new Error("evicted")):(this.#x||this.#e)&&(this.#x&&this.#n?.(i,s,"evict"),this.#e&&this.#m?.push([i,s,"evict"])),this.#P(e),this.#y?.[e]&&(clearTimeout(this.#y[e]),this.#y[e]=void 0),t&&(this.#a[e]=void 0,this.#i[e]=void 0,this.#R.push(e)),this.#h===1?(this.#b=this.#p=0,this.#R.length=0):this.#b=this.#d[e],this.#f.delete(s),this.#h--,e}has(t,e={}){let{updateAgeOnHas:s=this.updateAgeOnHas,status:i}=e,r=this.#f.get(t);if(r!==void 0){let o=this.#i[r];if(this.#l(o)&&o.__staleWhileFetching===void 0)return!1;if(this.#v(r))i&&(i.has="stale",this.#N(i,r));else return s&&this.#k(r),i&&(i.has="hit",this.#N(i,r)),!0}else i&&(i.has="miss");return!1}peek(t,e={}){let{allowStale:s=this.allowStale}=e,i=this.#f.get(t);if(i===void 0||!s&&this.#v(i))return;let r=this.#i[i];return this.#l(r)?r.__staleWhileFetching:r}#U(t,e,s,i){let r=e===void 0?void 0:this.#i[e];if(this.#l(r))return r;let o=new At,{signal:h}=s;h?.addEventListener("abort",()=>o.abort(h.reason),{signal:o.signal});let a={signal:o.signal,options:s,context:i},l=(p,w=!1)=>{let{aborted:g}=o.signal,S=s.ignoreFetchAbort&&p!==void 0,E=s.ignoreFetchAbort||!!(s.allowStaleOnFetchAbort&&p!==void 0);if(s.status&&(g&&!w?(s.status.fetchAborted=!0,s.status.fetchError=o.signal.reason,S&&(s.status.fetchAbortIgnored=!0)):s.status.fetchResolved=!0),g&&!S&&!w)return c(o.signal.reason,E);let y=f,b=this.#i[e];return(b===f||S&&w&&b===void 0)&&(p===void 0?y.__staleWhileFetching!==void 0?this.#i[e]=y.__staleWhileFetching:this.#O(t,"fetch"):(s.status&&(s.status.fetchUpdated=!0),this.set(t,p,a.options))),p},u=p=>(s.status&&(s.status.fetchRejected=!0,s.status.fetchError=p),c(p,!1)),c=(p,w)=>{let{aborted:g}=o.signal,S=g&&s.allowStaleOnFetchAbort,E=S||s.allowStaleOnFetchRejection,y=E||s.noDeleteOnFetchRejection,b=f;if(this.#i[e]===f&&(!y||!w&&b.__staleWhileFetching===void 0?this.#O(t,"fetch"):S||(this.#i[e]=b.__staleWhileFetching)),E)return s.status&&b.__staleWhileFetching!==void 0&&(s.status.returnedStale=!0),b.__staleWhileFetching;if(b.__returned===b)throw p},d=(p,w)=>{let g=this.#S?.(t,r,a);g&&g instanceof Promise&&g.then(S=>p(S===void 0?void 0:S),w),o.signal.addEventListener("abort",()=>{(!s.ignoreFetchAbort||s.allowStaleOnFetchAbort)&&(p(void 0),s.allowStaleOnFetchAbort&&(p=S=>l(S,!0)))})};s.status&&(s.status.fetchDispatched=!0);let f=new Promise(d).then(l,u),m=Object.assign(f,{__abortController:o,__staleWhileFetching:r,__returned:void 0});return e===void 0?(this.set(t,m,{...a.options,status:void 0}),e=this.#f.get(t)):this.#i[e]=m,m}#l(t){if(!this.#A)return!1;let e=t;return!!e&&e instanceof Promise&&e.hasOwnProperty("__staleWhileFetching")&&e.__abortController instanceof At}async fetch(t,e={}){let{allowStale:s=this.allowStale,updateAgeOnGet:i=this.updateAgeOnGet,noDeleteOnStaleGet:r=this.noDeleteOnStaleGet,ttl:o=this.ttl,noDisposeOnSet:h=this.noDisposeOnSet,size:a=0,sizeCalculation:l=this.sizeCalculation,noUpdateTTL:u=this.noUpdateTTL,noDeleteOnFetchRejection:c=this.noDeleteOnFetchRejection,allowStaleOnFetchRejection:d=this.allowStaleOnFetchRejection,ignoreFetchAbort:f=this.ignoreFetchAbort,allowStaleOnFetchAbort:m=this.allowStaleOnFetchAbort,context:p,forceRefresh:w=!1,status:g,signal:S}=e;if(!this.#A)return g&&(g.fetch="get"),this.get(t,{allowStale:s,updateAgeOnGet:i,noDeleteOnStaleGet:r,status:g});let E={allowStale:s,updateAgeOnGet:i,noDeleteOnStaleGet:r,ttl:o,noDisposeOnSet:h,size:a,sizeCalculation:l,noUpdateTTL:u,noDeleteOnFetchRejection:c,allowStaleOnFetchRejection:d,allowStaleOnFetchAbort:m,ignoreFetchAbort:f,status:g,signal:S},y=this.#f.get(t);if(y===void 0){g&&(g.fetch="miss");let b=this.#U(t,y,E,p);return b.__returned=b}else{let b=this.#i[y];if(this.#l(b)){let Z=s&&b.__staleWhileFetching!==void 0;return g&&(g.fetch="inflight",Z&&(g.returnedStale=!0)),Z?b.__staleWhileFetching:b.__returned=b}let z=this.#v(y);if(!w&&!z)return g&&(g.fetch="hit"),this.#W(y),i&&this.#k(y),g&&this.#N(g,y),b;let $=this.#U(t,y,E,p),J=$.__staleWhileFetching!==void 0&&s;return g&&(g.fetch=z?"stale":"refresh",J&&z&&(g.returnedStale=!0)),J?$.__staleWhileFetching:$.__returned=$}}async forceFetch(t,e={}){let s=await this.fetch(t,e);if(s===void 0)throw new Error("fetch() returned undefined");return s}memo(t,e={}){let s=this.#w;if(!s)throw new Error("no memoMethod provided to constructor");let{context:i,forceRefresh:r,...o}=e,h=this.get(t,o);if(!r&&h!==void 0)return h;let a=s(t,h,{options:o,context:i});return this.set(t,a,o),a}get(t,e={}){let{allowStale:s=this.allowStale,updateAgeOnGet:i=this.updateAgeOnGet,noDeleteOnStaleGet:r=this.noDeleteOnStaleGet,status:o}=e,h=this.#f.get(t);if(h!==void 0){let a=this.#i[h],l=this.#l(a);return o&&this.#N(o,h),this.#v(h)?(o&&(o.get="stale"),l?(o&&s&&a.__staleWhileFetching!==void 0&&(o.returnedStale=!0),s?a.__staleWhileFetching:void 0):(r||this.#O(t,"expire"),o&&s&&(o.returnedStale=!0),s?a:void 0)):(o&&(o.get="hit"),l?a.__staleWhileFetching:(this.#W(h),i&&this.#k(h),a))}else o&&(o.get="miss")}#$(t,e){this.#E[e]=t,this.#d[t]=e}#W(t){t!==this.#p&&(t===this.#b?this.#b=this.#d[t]:this.#$(this.#E[t],this.#d[t]),this.#$(this.#p,t),this.#p=t)}delete(t){return this.#O(t,"delete")}#O(t,e){let s=!1;if(this.#h!==0){let i=this.#f.get(t);if(i!==void 0)if(this.#y?.[i]&&(clearTimeout(this.#y?.[i]),this.#y[i]=void 0),s=!0,this.#h===1)this.#H(e);else{this.#P(i);let r=this.#i[i];if(this.#l(r)?r.__abortController.abort(new Error("deleted")):(this.#x||this.#e)&&(this.#x&&this.#n?.(r,t,e),this.#e&&this.#m?.push([r,t,e])),this.#f.delete(t),this.#a[i]=void 0,this.#i[i]=void 0,i===this.#p)this.#p=this.#E[i];else if(i===this.#b)this.#b=this.#d[i];else{let o=this.#E[i];this.#d[o]=this.#d[i];let h=this.#d[i];this.#E[h]=this.#E[i]}this.#h--,this.#R.push(i)}}if(this.#e&&this.#m?.length){let i=this.#m,r;for(;r=i?.shift();)this.#o?.(...r)}return s}clear(){return this.#H("delete")}#H(t){for(let e of this.#D({allowStale:!0})){let s=this.#i[e];if(this.#l(s))s.__abortController.abort(new Error("deleted"));else{let i=this.#a[e];this.#x&&this.#n?.(s,i,t),this.#e&&this.#m?.push([s,i,t])}}if(this.#f.clear(),this.#i.fill(void 0),this.#a.fill(void 0),this.#g&&this.#T){this.#g.fill(0),this.#T.fill(0);for(let e of this.#y??[])e!==void 0&&clearTimeout(e);this.#y?.fill(void 0)}if(this.#C&&this.#C.fill(0),this.#b=0,this.#p=0,this.#R.length=0,this.#u=0,this.#h=0,this.#e&&this.#m){let e=this.#m,s;for(;s=e?.shift();)this.#o?.(...s)}}};var Ne=typeof process=="object"&&process?process:{stdout:null,stderr:null},oi=n=>!!n&&typeof n=="object"&&(n instanceof V||n instanceof external_node_stream_||hi(n)||ai(n)),hi=n=>!!n&&typeof n=="object"&&n instanceof external_node_events_.EventEmitter&&typeof n.pipe=="function"&&n.pipe!==external_node_stream_.Writable.prototype.pipe,ai=n=>!!n&&typeof n=="object"&&n instanceof external_node_events_.EventEmitter&&typeof n.write=="function"&&typeof n.end=="function",G=Symbol("EOF"),H=Symbol("maybeEmitEnd"),K=Symbol("emittedEnd"),kt=Symbol("emittingEnd"),ut=Symbol("emittedError"),Rt=Symbol("closed"),_e=Symbol("read"),Ot=Symbol("flush"),Le=Symbol("flushChunk"),P=Symbol("encoding"),et=Symbol("decoder"),v=Symbol("flowing"),dt=Symbol("paused"),st=Symbol("resume"),C=Symbol("buffer"),F=Symbol("pipes"),T=Symbol("bufferLength"),Yt=Symbol("bufferPush"),Ft=Symbol("bufferShift"),k=Symbol("objectMode"),x=Symbol("destroyed"),Xt=Symbol("error"),Jt=Symbol("emitData"),We=Symbol("emitEnd"),Zt=Symbol("emitEnd2"),B=Symbol("async"),Qt=Symbol("abort"),Dt=Symbol("aborted"),pt=Symbol("signal"),Y=Symbol("dataListeners"),M=Symbol("discarded"),mt=n=>Promise.resolve().then(n),li=n=>n(),ci=n=>n==="end"||n==="finish"||n==="prefinish",fi=n=>n instanceof ArrayBuffer||!!n&&typeof n=="object"&&n.constructor&&n.constructor.name==="ArrayBuffer"&&n.byteLength>=0,ui=n=>!Buffer.isBuffer(n)&&ArrayBuffer.isView(n),Mt=class{src;dest;opts;ondrain;constructor(t,e,s){this.src=t,this.dest=e,this.opts=s,this.ondrain=()=>t[st](),this.dest.on("drain",this.ondrain)}unpipe(){this.dest.removeListener("drain",this.ondrain)}proxyErrors(t){}end(){this.unpipe(),this.opts.end&&this.dest.end()}},te=class extends Mt{unpipe(){this.src.removeListener("error",this.proxyErrors),super.unpipe()}constructor(t,e,s){super(t,e,s),this.proxyErrors=i=>this.dest.emit("error",i),t.on("error",this.proxyErrors)}},di=n=>!!n.objectMode,pi=n=>!n.objectMode&&!!n.encoding&&n.encoding!=="buffer",V=class extends external_node_events_.EventEmitter{[v]=!1;[dt]=!1;[F]=[];[C]=[];[k];[P];[B];[et];[G]=!1;[K]=!1;[kt]=!1;[Rt]=!1;[ut]=null;[T]=0;[x]=!1;[pt];[Dt]=!1;[Y]=0;[M]=!1;writable=!0;readable=!0;constructor(...t){let e=t[0]||{};if(super(),e.objectMode&&typeof e.encoding=="string")throw new TypeError("Encoding and objectMode may not be used together");di(e)?(this[k]=!0,this[P]=null):pi(e)?(this[P]=e.encoding,this[k]=!1):(this[k]=!1,this[P]=null),this[B]=!!e.async,this[et]=this[P]?new external_node_string_decoder_namespaceObject.StringDecoder(this[P]):null,e&&e.debugExposeBuffer===!0&&Object.defineProperty(this,"buffer",{get:()=>this[C]}),e&&e.debugExposePipes===!0&&Object.defineProperty(this,"pipes",{get:()=>this[F]});let{signal:s}=e;s&&(this[pt]=s,s.aborted?this[Qt]():s.addEventListener("abort",()=>this[Qt]()))}get bufferLength(){return this[T]}get encoding(){return this[P]}set encoding(t){throw new Error("Encoding must be set at instantiation time")}setEncoding(t){throw new Error("Encoding must be set at instantiation time")}get objectMode(){return this[k]}set objectMode(t){throw new Error("objectMode must be set at instantiation time")}get async(){return this[B]}set async(t){this[B]=this[B]||!!t}[Qt](){this[Dt]=!0,this.emit("abort",this[pt]?.reason),this.destroy(this[pt]?.reason)}get aborted(){return this[Dt]}set aborted(t){}write(t,e,s){if(this[Dt])return!1;if(this[G])throw new Error("write after end");if(this[x])return this.emit("error",Object.assign(new Error("Cannot call write after a stream was destroyed"),{code:"ERR_STREAM_DESTROYED"})),!0;typeof e=="function"&&(s=e,e="utf8"),e||(e="utf8");let i=this[B]?mt:li;if(!this[k]&&!Buffer.isBuffer(t)){if(ui(t))t=Buffer.from(t.buffer,t.byteOffset,t.byteLength);else if(fi(t))t=Buffer.from(t);else if(typeof t!="string")throw new Error("Non-contiguous data written to non-objectMode stream")}return this[k]?(this[v]&&this[T]!==0&&this[Ot](!0),this[v]?this.emit("data",t):this[Yt](t),this[T]!==0&&this.emit("readable"),s&&i(s),this[v]):t.length?(typeof t=="string"&&!(e===this[P]&&!this[et]?.lastNeed)&&(t=Buffer.from(t,e)),Buffer.isBuffer(t)&&this[P]&&(t=this[et].write(t)),this[v]&&this[T]!==0&&this[Ot](!0),this[v]?this.emit("data",t):this[Yt](t),this[T]!==0&&this.emit("readable"),s&&i(s),this[v]):(this[T]!==0&&this.emit("readable"),s&&i(s),this[v])}read(t){if(this[x])return null;if(this[M]=!1,this[T]===0||t===0||t&&t>this[T])return this[H](),null;this[k]&&(t=null),this[C].length>1&&!this[k]&&(this[C]=[this[P]?this[C].join(""):Buffer.concat(this[C],this[T])]);let e=this[_e](t||null,this[C][0]);return this[H](),e}[_e](t,e){if(this[k])this[Ft]();else{let s=e;t===s.length||t===null?this[Ft]():typeof s=="string"?(this[C][0]=s.slice(t),e=s.slice(0,t),this[T]-=t):(this[C][0]=s.subarray(t),e=s.subarray(0,t),this[T]-=t)}return this.emit("data",e),!this[C].length&&!this[G]&&this.emit("drain"),e}end(t,e,s){return typeof t=="function"&&(s=t,t=void 0),typeof e=="function"&&(s=e,e="utf8"),t!==void 0&&this.write(t,e),s&&this.once("end",s),this[G]=!0,this.writable=!1,(this[v]||!this[dt])&&this[H](),this}[st](){this[x]||(!this[Y]&&!this[F].length&&(this[M]=!0),this[dt]=!1,this[v]=!0,this.emit("resume"),this[C].length?this[Ot]():this[G]?this[H]():this.emit("drain"))}resume(){return this[st]()}pause(){this[v]=!1,this[dt]=!0,this[M]=!1}get destroyed(){return this[x]}get flowing(){return this[v]}get paused(){return this[dt]}[Yt](t){this[k]?this[T]+=1:this[T]+=t.length,this[C].push(t)}[Ft](){return this[k]?this[T]-=1:this[T]-=this[C][0].length,this[C].shift()}[Ot](t=!1){do;while(this[Le](this[Ft]())&&this[C].length);!t&&!this[C].length&&!this[G]&&this.emit("drain")}[Le](t){return this.emit("data",t),this[v]}pipe(t,e){if(this[x])return t;this[M]=!1;let s=this[K];return e=e||{},t===Ne.stdout||t===Ne.stderr?e.end=!1:e.end=e.end!==!1,e.proxyErrors=!!e.proxyErrors,s?e.end&&t.end():(this[F].push(e.proxyErrors?new te(this,t,e):new Mt(this,t,e)),this[B]?mt(()=>this[st]()):this[st]()),t}unpipe(t){let e=this[F].find(s=>s.dest===t);e&&(this[F].length===1?(this[v]&&this[Y]===0&&(this[v]=!1),this[F]=[]):this[F].splice(this[F].indexOf(e),1),e.unpipe())}addListener(t,e){return this.on(t,e)}on(t,e){let s=super.on(t,e);if(t==="data")this[M]=!1,this[Y]++,!this[F].length&&!this[v]&&this[st]();else if(t==="readable"&&this[T]!==0)super.emit("readable");else if(ci(t)&&this[K])super.emit(t),this.removeAllListeners(t);else if(t==="error"&&this[ut]){let i=e;this[B]?mt(()=>i.call(this,this[ut])):i.call(this,this[ut])}return s}removeListener(t,e){return this.off(t,e)}off(t,e){let s=super.off(t,e);return t==="data"&&(this[Y]=this.listeners("data").length,this[Y]===0&&!this[M]&&!this[F].length&&(this[v]=!1)),s}removeAllListeners(t){let e=super.removeAllListeners(t);return(t==="data"||t===void 0)&&(this[Y]=0,!this[M]&&!this[F].length&&(this[v]=!1)),e}get emittedEnd(){return this[K]}[H](){!this[kt]&&!this[K]&&!this[x]&&this[C].length===0&&this[G]&&(this[kt]=!0,this.emit("end"),this.emit("prefinish"),this.emit("finish"),this[Rt]&&this.emit("close"),this[kt]=!1)}emit(t,...e){let s=e[0];if(t!=="error"&&t!=="close"&&t!==x&&this[x])return!1;if(t==="data")return!this[k]&&!s?!1:this[B]?(mt(()=>this[Jt](s)),!0):this[Jt](s);if(t==="end")return this[We]();if(t==="close"){if(this[Rt]=!0,!this[K]&&!this[x])return!1;let r=super.emit("close");return this.removeAllListeners("close"),r}else if(t==="error"){this[ut]=s,super.emit(Xt,s);let r=!this[pt]||this.listeners("error").length?super.emit("error",s):!1;return this[H](),r}else if(t==="resume"){let r=super.emit("resume");return this[H](),r}else if(t==="finish"||t==="prefinish"){let r=super.emit(t);return this.removeAllListeners(t),r}let i=super.emit(t,...e);return this[H](),i}[Jt](t){for(let s of this[F])s.dest.write(t)===!1&&this.pause();let e=this[M]?!1:super.emit("data",t);return this[H](),e}[We](){return this[K]?!1:(this[K]=!0,this.readable=!1,this[B]?(mt(()=>this[Zt]()),!0):this[Zt]())}[Zt](){if(this[et]){let e=this[et].end();if(e){for(let s of this[F])s.dest.write(e);this[M]||super.emit("data",e)}}for(let e of this[F])e.end();let t=super.emit("end");return this.removeAllListeners("end"),t}async collect(){let t=Object.assign([],{dataLength:0});this[k]||(t.dataLength=0);let e=this.promise();return this.on("data",s=>{t.push(s),this[k]||(t.dataLength+=s.length)}),await e,t}async concat(){if(this[k])throw new Error("cannot concat in objectMode");let t=await this.collect();return this[P]?t.join(""):Buffer.concat(t,t.dataLength)}async promise(){return new Promise((t,e)=>{this.on(x,()=>e(new Error("stream destroyed"))),this.on("error",s=>e(s)),this.on("end",()=>t())})}[Symbol.asyncIterator](){this[M]=!1;let t=!1,e=async()=>(this.pause(),t=!0,{value:void 0,done:!0});return{next:()=>{if(t)return e();let i=this.read();if(i!==null)return Promise.resolve({done:!1,value:i});if(this[G])return e();let r,o,h=c=>{this.off("data",a),this.off("end",l),this.off(x,u),e(),o(c)},a=c=>{this.off("error",h),this.off("end",l),this.off(x,u),this.pause(),r({value:c,done:!!this[G]})},l=()=>{this.off("error",h),this.off("data",a),this.off(x,u),e(),r({done:!0,value:void 0})},u=()=>h(new Error("stream destroyed"));return new Promise((c,d)=>{o=d,r=c,this.once(x,u),this.once("error",h),this.once("end",l),this.once("data",a)})},throw:e,return:e,[Symbol.asyncIterator](){return this},[Symbol.asyncDispose]:async()=>{}}}[Symbol.iterator](){this[M]=!1;let t=!1,e=()=>(this.pause(),this.off(Xt,e),this.off(x,e),this.off("end",e),t=!0,{done:!0,value:void 0}),s=()=>{if(t)return e();let i=this.read();return i===null?e():{done:!1,value:i}};return this.once("end",e),this.once(Xt,e),this.once(x,e),{next:s,throw:e,return:e,[Symbol.iterator](){return this},[Symbol.dispose]:()=>{}}}destroy(t){if(this[x])return t?this.emit("error",t):this.emit(x),this;this[x]=!0,this[M]=!0,this[C].length=0,this[T]=0;let e=this;return typeof e.close=="function"&&!this[Rt]&&e.close(),t?this.emit("error",t):this.emit(x),this}static get isStream(){return oi}};var vi=external_fs_namespaceObject.realpathSync.native,wt={lstatSync:external_fs_namespaceObject.lstatSync,readdir:external_fs_namespaceObject.readdir,readdirSync:external_fs_namespaceObject.readdirSync,readlinkSync:external_fs_namespaceObject.readlinkSync,realpathSync:vi,promises:{lstat:promises_namespaceObject.lstat,readdir:promises_namespaceObject.readdir,readlink:promises_namespaceObject.readlink,realpath:promises_namespaceObject.realpath}},Ue=n=>!n||n===wt||n===external_node_fs_namespaceObject_0?wt:{...wt,...n,promises:{...wt.promises,...n.promises||{}}},$e=/^\\\\\?\\([a-z]:)\\?$/i,Ri=n=>n.replace(/\//g,"\\").replace($e,"$1\\"),Oi=/[\\\/]/,L=0,Ge=1,He=2,U=4,qe=6,Ke=8,X=10,Ve=12,_=15,gt=~_,se=16,je=32,yt=64,j=128,Nt=256,Lt=512,Ie=yt|j|Lt,Fi=1023,ie=n=>n.isFile()?Ke:n.isDirectory()?U:n.isSymbolicLink()?X:n.isCharacterDevice()?He:n.isBlockDevice()?qe:n.isSocket()?Ve:n.isFIFO()?Ge:L,ze=new ft({max:2**12}),bt=n=>{let t=ze.get(n);if(t)return t;let e=n.normalize("NFKD");return ze.set(n,e),e},Be=new ft({max:2**12}),_t=n=>{let t=Be.get(n);if(t)return t;let e=bt(n.toLowerCase());return Be.set(n,e),e},Wt=class extends ft{constructor(){super({max:256})}},ne=class extends ft{constructor(t=16*1024){super({maxSize:t,sizeCalculation:e=>e.length+1})}},Ye=Symbol("PathScurry setAsCwd"),R=class{name;root;roots;parent;nocase;isCWD=!1;#t;#s;get dev(){return this.#s}#n;get mode(){return this.#n}#r;get nlink(){return this.#r}#o;get uid(){return this.#o}#S;get gid(){return this.#S}#w;get rdev(){return this.#w}#c;get blksize(){return this.#c}#h;get ino(){return this.#h}#u;get size(){return this.#u}#f;get blocks(){return this.#f}#a;get atimeMs(){return this.#a}#i;get mtimeMs(){return this.#i}#d;get ctimeMs(){return this.#d}#E;get birthtimeMs(){return this.#E}#b;get atime(){return this.#b}#p;get mtime(){return this.#p}#R;get ctime(){return this.#R}#m;get birthtime(){return this.#m}#C;#T;#g;#y;#x;#A;#e;#_;#M;#k;get parentPath(){return(this.parent||this).fullpath()}get path(){return this.parentPath}constructor(t,e=L,s,i,r,o,h){this.name=t,this.#C=r?_t(t):bt(t),this.#e=e&Fi,this.nocase=r,this.roots=i,this.root=s||this,this.#_=o,this.#g=h.fullpath,this.#x=h.relative,this.#A=h.relativePosix,this.parent=h.parent,this.parent?this.#t=this.parent.#t:this.#t=Ue(h.fs)}depth(){return this.#T!==void 0?this.#T:this.parent?this.#T=this.parent.depth()+1:this.#T=0}childrenCache(){return this.#_}resolve(t){if(!t)return this;let e=this.getRootString(t),i=t.substring(e.length).split(this.splitSep);return e?this.getRoot(e).#N(i):this.#N(i)}#N(t){let e=this;for(let s of t)e=e.child(s);return e}children(){let t=this.#_.get(this);if(t)return t;let e=Object.assign([],{provisional:0});return this.#_.set(this,e),this.#e&=~se,e}child(t,e){if(t===""||t===".")return this;if(t==="..")return this.parent||this;let s=this.children(),i=this.nocase?_t(t):bt(t);for(let a of s)if(a.#C===i)return a;let r=this.parent?this.sep:"",o=this.#g?this.#g+r+t:void 0,h=this.newChild(t,L,{...e,parent:this,fullpath:o});return this.canReaddir()||(h.#e|=j),s.push(h),h}relative(){if(this.isCWD)return"";if(this.#x!==void 0)return this.#x;let t=this.name,e=this.parent;if(!e)return this.#x=this.name;let s=e.relative();return s+(!s||!e.parent?"":this.sep)+t}relativePosix(){if(this.sep==="/")return this.relative();if(this.isCWD)return"";if(this.#A!==void 0)return this.#A;let t=this.name,e=this.parent;if(!e)return this.#A=this.fullpathPosix();let s=e.relativePosix();return s+(!s||!e.parent?"":"/")+t}fullpath(){if(this.#g!==void 0)return this.#g;let t=this.name,e=this.parent;if(!e)return this.#g=this.name;let i=e.fullpath()+(e.parent?this.sep:"")+t;return this.#g=i}fullpathPosix(){if(this.#y!==void 0)return this.#y;if(this.sep==="/")return this.#y=this.fullpath();if(!this.parent){let i=this.fullpath().replace(/\\/g,"/");return/^[a-z]:\//i.test(i)?this.#y=`//?/${i}`:this.#y=i}let t=this.parent,e=t.fullpathPosix(),s=e+(!e||!t.parent?"":"/")+this.name;return this.#y=s}isUnknown(){return(this.#e&_)===L}isType(t){return this[`is${t}`]()}getType(){return this.isUnknown()?"Unknown":this.isDirectory()?"Directory":this.isFile()?"File":this.isSymbolicLink()?"SymbolicLink":this.isFIFO()?"FIFO":this.isCharacterDevice()?"CharacterDevice":this.isBlockDevice()?"BlockDevice":this.isSocket()?"Socket":"Unknown"}isFile(){return(this.#e&_)===Ke}isDirectory(){return(this.#e&_)===U}isCharacterDevice(){return(this.#e&_)===He}isBlockDevice(){return(this.#e&_)===qe}isFIFO(){return(this.#e&_)===Ge}isSocket(){return(this.#e&_)===Ve}isSymbolicLink(){return(this.#e&X)===X}lstatCached(){return this.#e&je?this:void 0}readlinkCached(){return this.#M}realpathCached(){return this.#k}readdirCached(){let t=this.children();return t.slice(0,t.provisional)}canReadlink(){if(this.#M)return!0;if(!this.parent)return!1;let t=this.#e&_;return!(t!==L&&t!==X||this.#e&Nt||this.#e&j)}calledReaddir(){return!!(this.#e&se)}isENOENT(){return!!(this.#e&j)}isNamed(t){return this.nocase?this.#C===_t(t):this.#C===bt(t)}async readlink(){let t=this.#M;if(t)return t;if(this.canReadlink()&&this.parent)try{let e=await this.#t.promises.readlink(this.fullpath()),s=(await this.parent.realpath())?.resolve(e);if(s)return this.#M=s}catch(e){this.#D(e.code);return}}readlinkSync(){let t=this.#M;if(t)return t;if(this.canReadlink()&&this.parent)try{let e=this.#t.readlinkSync(this.fullpath()),s=this.parent.realpathSync()?.resolve(e);if(s)return this.#M=s}catch(e){this.#D(e.code);return}}#j(t){this.#e|=se;for(let e=t.provisional;e<t.length;e++){let s=t[e];s&&s.#v()}}#v(){this.#e&j||(this.#e=(this.#e|j)&gt,this.#G())}#G(){let t=this.children();t.provisional=0;for(let e of t)e.#v()}#P(){this.#e|=Lt,this.#L()}#L(){if(this.#e&yt)return;let t=this.#e;(t&_)===U&&(t&=gt),this.#e=t|yt,this.#G()}#I(t=""){t==="ENOTDIR"||t==="EPERM"?this.#L():t==="ENOENT"?this.#v():this.children().provisional=0}#F(t=""){t==="ENOTDIR"?this.parent.#L():t==="ENOENT"&&this.#v()}#D(t=""){let e=this.#e;e|=Nt,t==="ENOENT"&&(e|=j),(t==="EINVAL"||t==="UNKNOWN")&&(e&=gt),this.#e=e,t==="ENOTDIR"&&this.parent&&this.parent.#L()}#z(t,e){return this.#U(t,e)||this.#B(t,e)}#B(t,e){let s=ie(t),i=this.newChild(t.name,s,{parent:this}),r=i.#e&_;return r!==U&&r!==X&&r!==L&&(i.#e|=yt),e.unshift(i),e.provisional++,i}#U(t,e){for(let s=e.provisional;s<e.length;s++){let i=e[s];if((this.nocase?_t(t.name):bt(t.name))===i.#C)return this.#l(t,i,s,e)}}#l(t,e,s,i){let r=e.name;return e.#e=e.#e&gt|ie(t),r!==t.name&&(e.name=t.name),s!==i.provisional&&(s===i.length-1?i.pop():i.splice(s,1),i.unshift(e)),i.provisional++,e}async lstat(){if((this.#e&j)===0)try{return this.#$(await this.#t.promises.lstat(this.fullpath())),this}catch(t){this.#F(t.code)}}lstatSync(){if((this.#e&j)===0)try{return this.#$(this.#t.lstatSync(this.fullpath())),this}catch(t){this.#F(t.code)}}#$(t){let{atime:e,atimeMs:s,birthtime:i,birthtimeMs:r,blksize:o,blocks:h,ctime:a,ctimeMs:l,dev:u,gid:c,ino:d,mode:f,mtime:m,mtimeMs:p,nlink:w,rdev:g,size:S,uid:E}=t;this.#b=e,this.#a=s,this.#m=i,this.#E=r,this.#c=o,this.#f=h,this.#R=a,this.#d=l,this.#s=u,this.#S=c,this.#h=d,this.#n=f,this.#p=m,this.#i=p,this.#r=w,this.#w=g,this.#u=S,this.#o=E;let y=ie(t);this.#e=this.#e&gt|y|je,y!==L&&y!==U&&y!==X&&(this.#e|=yt)}#W=[];#O=!1;#H(t){this.#O=!1;let e=this.#W.slice();this.#W.length=0,e.forEach(s=>s(null,t))}readdirCB(t,e=!1){if(!this.canReaddir()){e?t(null,[]):queueMicrotask(()=>t(null,[]));return}let s=this.children();if(this.calledReaddir()){let r=s.slice(0,s.provisional);e?t(null,r):queueMicrotask(()=>t(null,r));return}if(this.#W.push(t),this.#O)return;this.#O=!0;let i=this.fullpath();this.#t.readdir(i,{withFileTypes:!0},(r,o)=>{if(r)this.#I(r.code),s.provisional=0;else{for(let h of o)this.#z(h,s);this.#j(s)}this.#H(s.slice(0,s.provisional))})}#q;async readdir(){if(!this.canReaddir())return[];let t=this.children();if(this.calledReaddir())return t.slice(0,t.provisional);let e=this.fullpath();if(this.#q)await this.#q;else{let s=()=>{};this.#q=new Promise(i=>s=i);try{for(let i of await this.#t.promises.readdir(e,{withFileTypes:!0}))this.#z(i,t);this.#j(t)}catch(i){this.#I(i.code),t.provisional=0}this.#q=void 0,s()}return t.slice(0,t.provisional)}readdirSync(){if(!this.canReaddir())return[];let t=this.children();if(this.calledReaddir())return t.slice(0,t.provisional);let e=this.fullpath();try{for(let s of this.#t.readdirSync(e,{withFileTypes:!0}))this.#z(s,t);this.#j(t)}catch(s){this.#I(s.code),t.provisional=0}return t.slice(0,t.provisional)}canReaddir(){if(this.#e&Ie)return!1;let t=_&this.#e;return t===L||t===U||t===X}shouldWalk(t,e){return(this.#e&U)===U&&!(this.#e&Ie)&&!t.has(this)&&(!e||e(this))}async realpath(){if(this.#k)return this.#k;if(!((Lt|Nt|j)&this.#e))try{let t=await this.#t.promises.realpath(this.fullpath());return this.#k=this.resolve(t)}catch{this.#P()}}realpathSync(){if(this.#k)return this.#k;if(!((Lt|Nt|j)&this.#e))try{let t=this.#t.realpathSync(this.fullpath());return this.#k=this.resolve(t)}catch{this.#P()}}[Ye](t){if(t===this)return;t.isCWD=!1,this.isCWD=!0;let e=new Set([]),s=[],i=this;for(;i&&i.parent;)e.add(i),i.#x=s.join(this.sep),i.#A=s.join("/"),i=i.parent,s.push("..");for(i=t;i&&i.parent&&!e.has(i);)i.#x=void 0,i.#A=void 0,i=i.parent}},Pt=class n extends R{sep="\\";splitSep=Oi;constructor(t,e=L,s,i,r,o,h){super(t,e,s,i,r,o,h)}newChild(t,e=L,s={}){return new n(t,e,this.root,this.roots,this.nocase,this.childrenCache(),s)}getRootString(t){return external_node_path_namespaceObject.win32.parse(t).root}getRoot(t){if(t=Ri(t.toUpperCase()),t===this.root.name)return this.root;for(let[e,s]of Object.entries(this.roots))if(this.sameRoot(t,e))return this.roots[t]=s;return this.roots[t]=new it(t,this).root}sameRoot(t,e=this.root.name){return t=t.toUpperCase().replace(/\//g,"\\").replace($e,"$1\\"),t===e}},jt=class n extends R{splitSep="/";sep="/";constructor(t,e=L,s,i,r,o,h){super(t,e,s,i,r,o,h)}getRootString(t){return t.startsWith("/")?"/":""}getRoot(t){return this.root}newChild(t,e=L,s={}){return new n(t,e,this.root,this.roots,this.nocase,this.childrenCache(),s)}},It=class{root;rootPath;roots;cwd;#t;#s;#n;nocase;#r;constructor(t=process.cwd(),e,s,{nocase:i,childrenCacheSize:r=16*1024,fs:o=wt}={}){this.#r=Ue(o),(t instanceof URL||t.startsWith("file://"))&&(t=(0,external_node_url_.fileURLToPath)(t));let h=e.resolve(t);this.roots=Object.create(null),this.rootPath=this.parseRootPath(h),this.#t=new Wt,this.#s=new Wt,this.#n=new ne(r);let a=h.substring(this.rootPath.length).split(s);if(a.length===1&&!a[0]&&a.pop(),i===void 0)throw new TypeError("must provide nocase setting to PathScurryBase ctor");this.nocase=i,this.root=this.newRoot(this.#r),this.roots[this.rootPath]=this.root;let l=this.root,u=a.length-1,c=e.sep,d=this.rootPath,f=!1;for(let m of a){let p=u--;l=l.child(m,{relative:new Array(p).fill("..").join(c),relativePosix:new Array(p).fill("..").join("/"),fullpath:d+=(f?"":c)+m}),f=!0}this.cwd=l}depth(t=this.cwd){return typeof t=="string"&&(t=this.cwd.resolve(t)),t.depth()}childrenCache(){return this.#n}resolve(...t){let e="";for(let r=t.length-1;r>=0;r--){let o=t[r];if(!(!o||o===".")&&(e=e?`${o}/${e}`:o,this.isAbsolute(o)))break}let s=this.#t.get(e);if(s!==void 0)return s;let i=this.cwd.resolve(e).fullpath();return this.#t.set(e,i),i}resolvePosix(...t){let e="";for(let r=t.length-1;r>=0;r--){let o=t[r];if(!(!o||o===".")&&(e=e?`${o}/${e}`:o,this.isAbsolute(o)))break}let s=this.#s.get(e);if(s!==void 0)return s;let i=this.cwd.resolve(e).fullpathPosix();return this.#s.set(e,i),i}relative(t=this.cwd){return typeof t=="string"&&(t=this.cwd.resolve(t)),t.relative()}relativePosix(t=this.cwd){return typeof t=="string"&&(t=this.cwd.resolve(t)),t.relativePosix()}basename(t=this.cwd){return typeof t=="string"&&(t=this.cwd.resolve(t)),t.name}dirname(t=this.cwd){return typeof t=="string"&&(t=this.cwd.resolve(t)),(t.parent||t).fullpath()}async readdir(t=this.cwd,e={withFileTypes:!0}){typeof t=="string"?t=this.cwd.resolve(t):t instanceof R||(e=t,t=this.cwd);let{withFileTypes:s}=e;if(t.canReaddir()){let i=await t.readdir();return s?i:i.map(r=>r.name)}else return[]}readdirSync(t=this.cwd,e={withFileTypes:!0}){typeof t=="string"?t=this.cwd.resolve(t):t instanceof R||(e=t,t=this.cwd);let{withFileTypes:s=!0}=e;return t.canReaddir()?s?t.readdirSync():t.readdirSync().map(i=>i.name):[]}async lstat(t=this.cwd){return typeof t=="string"&&(t=this.cwd.resolve(t)),t.lstat()}lstatSync(t=this.cwd){return typeof t=="string"&&(t=this.cwd.resolve(t)),t.lstatSync()}async readlink(t=this.cwd,{withFileTypes:e}={withFileTypes:!1}){typeof t=="string"?t=this.cwd.resolve(t):t instanceof R||(e=t.withFileTypes,t=this.cwd);let s=await t.readlink();return e?s:s?.fullpath()}readlinkSync(t=this.cwd,{withFileTypes:e}={withFileTypes:!1}){typeof t=="string"?t=this.cwd.resolve(t):t instanceof R||(e=t.withFileTypes,t=this.cwd);let s=t.readlinkSync();return e?s:s?.fullpath()}async realpath(t=this.cwd,{withFileTypes:e}={withFileTypes:!1}){typeof t=="string"?t=this.cwd.resolve(t):t instanceof R||(e=t.withFileTypes,t=this.cwd);let s=await t.realpath();return e?s:s?.fullpath()}realpathSync(t=this.cwd,{withFileTypes:e}={withFileTypes:!1}){typeof t=="string"?t=this.cwd.resolve(t):t instanceof R||(e=t.withFileTypes,t=this.cwd);let s=t.realpathSync();return e?s:s?.fullpath()}async walk(t=this.cwd,e={}){typeof t=="string"?t=this.cwd.resolve(t):t instanceof R||(e=t,t=this.cwd);let{withFileTypes:s=!0,follow:i=!1,filter:r,walkFilter:o}=e,h=[];(!r||r(t))&&h.push(s?t:t.fullpath());let a=new Set,l=(c,d)=>{a.add(c),c.readdirCB((f,m)=>{if(f)return d(f);let p=m.length;if(!p)return d();let w=()=>{--p===0&&d()};for(let g of m)(!r||r(g))&&h.push(s?g:g.fullpath()),i&&g.isSymbolicLink()?g.realpath().then(S=>S?.isUnknown()?S.lstat():S).then(S=>S?.shouldWalk(a,o)?l(S,w):w()):g.shouldWalk(a,o)?l(g,w):w()},!0)},u=t;return new Promise((c,d)=>{l(u,f=>{if(f)return d(f);c(h)})})}walkSync(t=this.cwd,e={}){typeof t=="string"?t=this.cwd.resolve(t):t instanceof R||(e=t,t=this.cwd);let{withFileTypes:s=!0,follow:i=!1,filter:r,walkFilter:o}=e,h=[];(!r||r(t))&&h.push(s?t:t.fullpath());let a=new Set([t]);for(let l of a){let u=l.readdirSync();for(let c of u){(!r||r(c))&&h.push(s?c:c.fullpath());let d=c;if(c.isSymbolicLink()){if(!(i&&(d=c.realpathSync())))continue;d.isUnknown()&&d.lstatSync()}d.shouldWalk(a,o)&&a.add(d)}}return h}[Symbol.asyncIterator](){return this.iterate()}iterate(t=this.cwd,e={}){return typeof t=="string"?t=this.cwd.resolve(t):t instanceof R||(e=t,t=this.cwd),this.stream(t,e)[Symbol.asyncIterator]()}[Symbol.iterator](){return this.iterateSync()}*iterateSync(t=this.cwd,e={}){typeof t=="string"?t=this.cwd.resolve(t):t instanceof R||(e=t,t=this.cwd);let{withFileTypes:s=!0,follow:i=!1,filter:r,walkFilter:o}=e;(!r||r(t))&&(yield s?t:t.fullpath());let h=new Set([t]);for(let a of h){let l=a.readdirSync();for(let u of l){(!r||r(u))&&(yield s?u:u.fullpath());let c=u;if(u.isSymbolicLink()){if(!(i&&(c=u.realpathSync())))continue;c.isUnknown()&&c.lstatSync()}c.shouldWalk(h,o)&&h.add(c)}}}stream(t=this.cwd,e={}){typeof t=="string"?t=this.cwd.resolve(t):t instanceof R||(e=t,t=this.cwd);let{withFileTypes:s=!0,follow:i=!1,filter:r,walkFilter:o}=e,h=new V({objectMode:!0});(!r||r(t))&&h.write(s?t:t.fullpath());let a=new Set,l=[t],u=0,c=()=>{let d=!1;for(;!d;){let f=l.shift();if(!f){u===0&&h.end();return}u++,a.add(f);let m=(w,g,S=!1)=>{if(w)return h.emit("error",w);if(i&&!S){let E=[];for(let y of g)y.isSymbolicLink()&&E.push(y.realpath().then(b=>b?.isUnknown()?b.lstat():b));if(E.length){Promise.all(E).then(()=>m(null,g,!0));return}}for(let E of g)E&&(!r||r(E))&&(h.write(s?E:E.fullpath())||(d=!0));u--;for(let E of g){let y=E.realpathCached()||E;y.shouldWalk(a,o)&&l.push(y)}d&&!h.flowing?h.once("drain",c):p||c()},p=!0;f.readdirCB(m,!0),p=!1}};return c(),h}streamSync(t=this.cwd,e={}){typeof t=="string"?t=this.cwd.resolve(t):t instanceof R||(e=t,t=this.cwd);let{withFileTypes:s=!0,follow:i=!1,filter:r,walkFilter:o}=e,h=new V({objectMode:!0}),a=new Set;(!r||r(t))&&h.write(s?t:t.fullpath());let l=[t],u=0,c=()=>{let d=!1;for(;!d;){let f=l.shift();if(!f){u===0&&h.end();return}u++,a.add(f);let m=f.readdirSync();for(let p of m)(!r||r(p))&&(h.write(s?p:p.fullpath())||(d=!0));u--;for(let p of m){let w=p;if(p.isSymbolicLink()){if(!(i&&(w=p.realpathSync())))continue;w.isUnknown()&&w.lstatSync()}w.shouldWalk(a,o)&&l.push(w)}}d&&!h.flowing&&h.once("drain",c)};return c(),h}chdir(t=this.cwd){let e=this.cwd;this.cwd=typeof t=="string"?this.cwd.resolve(t):t,this.cwd[Ye](e)}},it=class extends It{sep="\\";constructor(t=process.cwd(),e={}){let{nocase:s=!0}=e;super(t,external_node_path_namespaceObject.win32,"\\",{...e,nocase:s}),this.nocase=s;for(let i=this.cwd;i;i=i.parent)i.nocase=this.nocase}parseRootPath(t){return external_node_path_namespaceObject.win32.parse(t).root.toUpperCase()}newRoot(t){return new Pt(this.rootPath,U,void 0,this.roots,this.nocase,this.childrenCache(),{fs:t})}isAbsolute(t){return t.startsWith("/")||t.startsWith("\\")||/^[a-z]:(\/|\\)/i.test(t)}},rt=class extends It{sep="/";constructor(t=process.cwd(),e={}){let{nocase:s=!1}=e;super(t,external_node_path_namespaceObject.posix,"/",{...e,nocase:s}),this.nocase=s}parseRootPath(t){return"/"}newRoot(t){return new jt(this.rootPath,U,void 0,this.roots,this.nocase,this.childrenCache(),{fs:t})}isAbsolute(t){return t.startsWith("/")}},St=class extends rt{constructor(t=process.cwd(),e={}){let{nocase:s=!0}=e;super(t,{...e,nocase:s})}},Cr=process.platform==="win32"?Pt:jt,Xe=process.platform==="win32"?it:process.platform==="darwin"?St:rt;var Di=n=>n.length>=1,Mi=n=>n.length>=1,Ni=Symbol.for("nodejs.util.inspect.custom"),nt=class n{#t;#s;#n;length;#r;#o;#S;#w;#c;#h;#u=!0;constructor(t,e,s,i){if(!Di(t))throw new TypeError("empty pattern list");if(!Mi(e))throw new TypeError("empty glob list");if(e.length!==t.length)throw new TypeError("mismatched pattern list and glob list lengths");if(this.length=t.length,s<0||s>=this.length)throw new TypeError("index out of range");if(this.#t=t,this.#s=e,this.#n=s,this.#r=i,this.#n===0){if(this.isUNC()){let[r,o,h,a,...l]=this.#t,[u,c,d,f,...m]=this.#s;l[0]===""&&(l.shift(),m.shift());let p=[r,o,h,a,""].join("/"),w=[u,c,d,f,""].join("/");this.#t=[p,...l],this.#s=[w,...m],this.length=this.#t.length}else if(this.isDrive()||this.isAbsolute()){let[r,...o]=this.#t,[h,...a]=this.#s;o[0]===""&&(o.shift(),a.shift());let l=r+"/",u=h+"/";this.#t=[l,...o],this.#s=[u,...a],this.length=this.#t.length}}}[Ni](){return"Pattern <"+this.#s.slice(this.#n).join("/")+">"}pattern(){return this.#t[this.#n]}isString(){return typeof this.#t[this.#n]=="string"}isGlobstar(){return this.#t[this.#n]===A}isRegExp(){return this.#t[this.#n]instanceof RegExp}globString(){return this.#S=this.#S||(this.#n===0?this.isAbsolute()?this.#s[0]+this.#s.slice(1).join("/"):this.#s.join("/"):this.#s.slice(this.#n).join("/"))}hasMore(){return this.length>this.#n+1}rest(){return this.#o!==void 0?this.#o:this.hasMore()?(this.#o=new n(this.#t,this.#s,this.#n+1,this.#r),this.#o.#h=this.#h,this.#o.#c=this.#c,this.#o.#w=this.#w,this.#o):this.#o=null}isUNC(){let t=this.#t;return this.#c!==void 0?this.#c:this.#c=this.#r==="win32"&&this.#n===0&&t[0]===""&&t[1]===""&&typeof t[2]=="string"&&!!t[2]&&typeof t[3]=="string"&&!!t[3]}isDrive(){let t=this.#t;return this.#w!==void 0?this.#w:this.#w=this.#r==="win32"&&this.#n===0&&this.length>1&&typeof t[0]=="string"&&/^[a-z]:$/i.test(t[0])}isAbsolute(){let t=this.#t;return this.#h!==void 0?this.#h:this.#h=t[0]===""&&t.length>1||this.isDrive()||this.isUNC()}root(){let t=this.#t[0];return typeof t=="string"&&this.isAbsolute()&&this.#n===0?t:""}checkFollowGlobstar(){return!(this.#n===0||!this.isGlobstar()||!this.#u)}markFollowGlobstar(){return this.#n===0||!this.isGlobstar()||!this.#u?!1:(this.#u=!1,!0)}};var _i=typeof process=="object"&&process&&typeof process.platform=="string"?process.platform:"linux",ot=class{relative;relativeChildren;absolute;absoluteChildren;platform;mmopts;constructor(t,{nobrace:e,nocase:s,noext:i,noglobstar:r,platform:o=_i}){this.relative=[],this.absolute=[],this.relativeChildren=[],this.absoluteChildren=[],this.platform=o,this.mmopts={dot:!0,nobrace:e,nocase:s,noext:i,noglobstar:r,optimizationLevel:2,platform:o,nocomment:!0,nonegate:!0};for(let h of t)this.add(h)}add(t){let e=new D(t,this.mmopts);for(let s=0;s<e.set.length;s++){let i=e.set[s],r=e.globParts[s];if(!i||!r)throw new Error("invalid pattern object");for(;i[0]==="."&&r[0]===".";)i.shift(),r.shift();let o=new nt(i,r,0,this.platform),h=new D(o.globString(),this.mmopts),a=r[r.length-1]==="**",l=o.isAbsolute();l?this.absolute.push(h):this.relative.push(h),a&&(l?this.absoluteChildren.push(h):this.relativeChildren.push(h))}}ignored(t){let e=t.fullpath(),s=`${e}/`,i=t.relative()||".",r=`${i}/`;for(let o of this.relative)if(o.match(i)||o.match(r))return!0;for(let o of this.absolute)if(o.match(e)||o.match(s))return!0;return!1}childrenIgnored(t){let e=t.fullpath()+"/",s=(t.relative()||".")+"/";for(let i of this.relativeChildren)if(i.match(s))return!0;for(let i of this.absoluteChildren)if(i.match(e))return!0;return!1}};var oe=class n{store;constructor(t=new Map){this.store=t}copy(){return new n(new Map(this.store))}hasWalked(t,e){return this.store.get(t.fullpath())?.has(e.globString())}storeWalked(t,e){let s=t.fullpath(),i=this.store.get(s);i?i.add(e.globString()):this.store.set(s,new Set([e.globString()]))}},he=class{store=new Map;add(t,e,s){let i=(e?2:0)|(s?1:0),r=this.store.get(t);this.store.set(t,r===void 0?i:i&r)}entries(){return[...this.store.entries()].map(([t,e])=>[t,!!(e&2),!!(e&1)])}},ae=class{store=new Map;add(t,e){if(!t.canReaddir())return;let s=this.store.get(t);s?s.find(i=>i.globString()===e.globString())||s.push(e):this.store.set(t,[e])}get(t){let e=this.store.get(t);if(!e)throw new Error("attempting to walk unknown path");return e}entries(){return this.keys().map(t=>[t,this.store.get(t)])}keys(){return[...this.store.keys()].filter(t=>t.canReaddir())}},Et=class n{hasWalkedCache;matches=new he;subwalks=new ae;patterns;follow;dot;opts;constructor(t,e){this.opts=t,this.follow=!!t.follow,this.dot=!!t.dot,this.hasWalkedCache=e?e.copy():new oe}processPatterns(t,e){this.patterns=e;let s=e.map(i=>[t,i]);for(let[i,r]of s){this.hasWalkedCache.storeWalked(i,r);let o=r.root(),h=r.isAbsolute()&&this.opts.absolute!==!1;if(o){i=i.resolve(o==="/"&&this.opts.root!==void 0?this.opts.root:o);let c=r.rest();if(c)r=c;else{this.matches.add(i,!0,!1);continue}}if(i.isENOENT())continue;let a,l,u=!1;for(;typeof(a=r.pattern())=="string"&&(l=r.rest());)i=i.resolve(a),r=l,u=!0;if(a=r.pattern(),l=r.rest(),u){if(this.hasWalkedCache.hasWalked(i,r))continue;this.hasWalkedCache.storeWalked(i,r)}if(typeof a=="string"){let c=a===".."||a===""||a===".";this.matches.add(i.resolve(a),h,c);continue}else if(a===A){(!i.isSymbolicLink()||this.follow||r.checkFollowGlobstar())&&this.subwalks.add(i,r);let c=l?.pattern(),d=l?.rest();if(!l||(c===""||c===".")&&!d)this.matches.add(i,h,c===""||c===".");else if(c===".."){let f=i.parent||i;d?this.hasWalkedCache.hasWalked(f,d)||this.subwalks.add(f,d):this.matches.add(f,h,!0)}}else a instanceof RegExp&&this.subwalks.add(i,r)}return this}subwalkTargets(){return this.subwalks.keys()}child(){return new n(this.opts,this.hasWalkedCache)}filterEntries(t,e){let s=this.subwalks.get(t),i=this.child();for(let r of e)for(let o of s){let h=o.isAbsolute(),a=o.pattern(),l=o.rest();a===A?i.testGlobstar(r,o,l,h):a instanceof RegExp?i.testRegExp(r,a,l,h):i.testString(r,a,l,h)}return i}testGlobstar(t,e,s,i){if((this.dot||!t.name.startsWith("."))&&(e.hasMore()||this.matches.add(t,i,!1),t.canReaddir()&&(this.follow||!t.isSymbolicLink()?this.subwalks.add(t,e):t.isSymbolicLink()&&(s&&e.checkFollowGlobstar()?this.subwalks.add(t,s):e.markFollowGlobstar()&&this.subwalks.add(t,e)))),s){let r=s.pattern();if(typeof r=="string"&&r!==".."&&r!==""&&r!==".")this.testString(t,r,s.rest(),i);else if(r===".."){let o=t.parent||t;this.subwalks.add(o,s)}else r instanceof RegExp&&this.testRegExp(t,r,s.rest(),i)}}testRegExp(t,e,s,i){e.test(t.name)&&(s?this.subwalks.add(t,s):this.matches.add(t,i,!1))}testString(t,e,s,i){t.isNamed(e)&&(s?this.subwalks.add(t,s):this.matches.add(t,i,!1))}};var Li=(n,t)=>typeof n=="string"?new ot([n],t):Array.isArray(n)?new ot(n,t):n,zt=class{path;patterns;opts;seen=new Set;paused=!1;aborted=!1;#t=[];#s;#n;signal;maxDepth;includeChildMatches;constructor(t,e,s){if(this.patterns=t,this.path=e,this.opts=s,this.#n=!s.posix&&s.platform==="win32"?"\\":"/",this.includeChildMatches=s.includeChildMatches!==!1,(s.ignore||!this.includeChildMatches)&&(this.#s=Li(s.ignore??[],s),!this.includeChildMatches&&typeof this.#s.add!="function")){let i="cannot ignore child matches, ignore lacks add() method.";throw new Error(i)}this.maxDepth=s.maxDepth||1/0,s.signal&&(this.signal=s.signal,this.signal.addEventListener("abort",()=>{this.#t.length=0}))}#r(t){return this.seen.has(t)||!!this.#s?.ignored?.(t)}#o(t){return!!this.#s?.childrenIgnored?.(t)}pause(){this.paused=!0}resume(){if(this.signal?.aborted)return;this.paused=!1;let t;for(;!this.paused&&(t=this.#t.shift());)t()}onResume(t){this.signal?.aborted||(this.paused?this.#t.push(t):t())}async matchCheck(t,e){if(e&&this.opts.nodir)return;let s;if(this.opts.realpath){if(s=t.realpathCached()||await t.realpath(),!s)return;t=s}let r=t.isUnknown()||this.opts.stat?await t.lstat():t;if(this.opts.follow&&this.opts.nodir&&r?.isSymbolicLink()){let o=await r.realpath();o&&(o.isUnknown()||this.opts.stat)&&await o.lstat()}return this.matchCheckTest(r,e)}matchCheckTest(t,e){return t&&(this.maxDepth===1/0||t.depth()<=this.maxDepth)&&(!e||t.canReaddir())&&(!this.opts.nodir||!t.isDirectory())&&(!this.opts.nodir||!this.opts.follow||!t.isSymbolicLink()||!t.realpathCached()?.isDirectory())&&!this.#r(t)?t:void 0}matchCheckSync(t,e){if(e&&this.opts.nodir)return;let s;if(this.opts.realpath){if(s=t.realpathCached()||t.realpathSync(),!s)return;t=s}let r=t.isUnknown()||this.opts.stat?t.lstatSync():t;if(this.opts.follow&&this.opts.nodir&&r?.isSymbolicLink()){let o=r.realpathSync();o&&(o?.isUnknown()||this.opts.stat)&&o.lstatSync()}return this.matchCheckTest(r,e)}matchFinish(t,e){if(this.#r(t))return;if(!this.includeChildMatches&&this.#s?.add){let r=`${t.relativePosix()}/**`;this.#s.add(r)}let s=this.opts.absolute===void 0?e:this.opts.absolute;this.seen.add(t);let i=this.opts.mark&&t.isDirectory()?this.#n:"";if(this.opts.withFileTypes)this.matchEmit(t);else if(s){let r=this.opts.posix?t.fullpathPosix():t.fullpath();this.matchEmit(r+i)}else{let r=this.opts.posix?t.relativePosix():t.relative(),o=this.opts.dotRelative&&!r.startsWith(".."+this.#n)?"."+this.#n:"";this.matchEmit(r?o+r+i:"."+i)}}async match(t,e,s){let i=await this.matchCheck(t,s);i&&this.matchFinish(i,e)}matchSync(t,e,s){let i=this.matchCheckSync(t,s);i&&this.matchFinish(i,e)}walkCB(t,e,s){this.signal?.aborted&&s(),this.walkCB2(t,e,new Et(this.opts),s)}walkCB2(t,e,s,i){if(this.#o(t))return i();if(this.signal?.aborted&&i(),this.paused){this.onResume(()=>this.walkCB2(t,e,s,i));return}s.processPatterns(t,e);let r=1,o=()=>{--r===0&&i()};for(let[h,a,l]of s.matches.entries())this.#r(h)||(r++,this.match(h,a,l).then(()=>o()));for(let h of s.subwalkTargets()){if(this.maxDepth!==1/0&&h.depth()>=this.maxDepth)continue;r++;let a=h.readdirCached();h.calledReaddir()?this.walkCB3(h,a,s,o):h.readdirCB((l,u)=>this.walkCB3(h,u,s,o),!0)}o()}walkCB3(t,e,s,i){s=s.filterEntries(t,e);let r=1,o=()=>{--r===0&&i()};for(let[h,a,l]of s.matches.entries())this.#r(h)||(r++,this.match(h,a,l).then(()=>o()));for(let[h,a]of s.subwalks.entries())r++,this.walkCB2(h,a,s.child(),o);o()}walkCBSync(t,e,s){this.signal?.aborted&&s(),this.walkCB2Sync(t,e,new Et(this.opts),s)}walkCB2Sync(t,e,s,i){if(this.#o(t))return i();if(this.signal?.aborted&&i(),this.paused){this.onResume(()=>this.walkCB2Sync(t,e,s,i));return}s.processPatterns(t,e);let r=1,o=()=>{--r===0&&i()};for(let[h,a,l]of s.matches.entries())this.#r(h)||this.matchSync(h,a,l);for(let h of s.subwalkTargets()){if(this.maxDepth!==1/0&&h.depth()>=this.maxDepth)continue;r++;let a=h.readdirSync();this.walkCB3Sync(h,a,s,o)}o()}walkCB3Sync(t,e,s,i){s=s.filterEntries(t,e);let r=1,o=()=>{--r===0&&i()};for(let[h,a,l]of s.matches.entries())this.#r(h)||this.matchSync(h,a,l);for(let[h,a]of s.subwalks.entries())r++,this.walkCB2Sync(h,a,s.child(),o);o()}},xt=class extends zt{matches=new Set;constructor(t,e,s){super(t,e,s)}matchEmit(t){this.matches.add(t)}async walk(){if(this.signal?.aborted)throw this.signal.reason;return this.path.isUnknown()&&await this.path.lstat(),await new Promise((t,e)=>{this.walkCB(this.path,this.patterns,()=>{this.signal?.aborted?e(this.signal.reason):t(this.matches)})}),this.matches}walkSync(){if(this.signal?.aborted)throw this.signal.reason;return this.path.isUnknown()&&this.path.lstatSync(),this.walkCBSync(this.path,this.patterns,()=>{if(this.signal?.aborted)throw this.signal.reason}),this.matches}},vt=class extends zt{results;constructor(t,e,s){super(t,e,s),this.results=new V({signal:this.signal,objectMode:!0}),this.results.on("drain",()=>this.resume()),this.results.on("resume",()=>this.resume())}matchEmit(t){this.results.write(t),this.results.flowing||this.pause()}stream(){let t=this.path;return t.isUnknown()?t.lstat().then(()=>{this.walkCB(t,this.patterns,()=>this.results.end())}):this.walkCB(t,this.patterns,()=>this.results.end()),this.results}streamSync(){return this.path.isUnknown()&&this.path.lstatSync(),this.walkCBSync(this.path,this.patterns,()=>this.results.end()),this.results}};var Pi=typeof process=="object"&&process&&typeof process.platform=="string"?process.platform:"linux",I=class{absolute;cwd;root;dot;dotRelative;follow;ignore;magicalBraces;mark;matchBase;maxDepth;nobrace;nocase;nodir;noext;noglobstar;pattern;platform;realpath;scurry;stat;signal;windowsPathsNoEscape;withFileTypes;includeChildMatches;opts;patterns;constructor(t,e){if(!e)throw new TypeError("glob options required");if(this.withFileTypes=!!e.withFileTypes,this.signal=e.signal,this.follow=!!e.follow,this.dot=!!e.dot,this.dotRelative=!!e.dotRelative,this.nodir=!!e.nodir,this.mark=!!e.mark,e.cwd?(e.cwd instanceof URL||e.cwd.startsWith("file://"))&&(e.cwd=(0,external_node_url_.fileURLToPath)(e.cwd)):this.cwd="",this.cwd=e.cwd||"",this.root=e.root,this.magicalBraces=!!e.magicalBraces,this.nobrace=!!e.nobrace,this.noext=!!e.noext,this.realpath=!!e.realpath,this.absolute=e.absolute,this.includeChildMatches=e.includeChildMatches!==!1,this.noglobstar=!!e.noglobstar,this.matchBase=!!e.matchBase,this.maxDepth=typeof e.maxDepth=="number"?e.maxDepth:1/0,this.stat=!!e.stat,this.ignore=e.ignore,this.withFileTypes&&this.absolute!==void 0)throw new Error("cannot set absolute and withFileTypes:true");if(typeof t=="string"&&(t=[t]),this.windowsPathsNoEscape=!!e.windowsPathsNoEscape||e.allowWindowsEscape===!1,this.windowsPathsNoEscape&&(t=t.map(a=>a.replace(/\\/g,"/"))),this.matchBase){if(e.noglobstar)throw new TypeError("base matching requires globstar");t=t.map(a=>a.includes("/")?a:`./**/${a}`)}if(this.pattern=t,this.platform=e.platform||Pi,this.opts={...e,platform:this.platform},e.scurry){if(this.scurry=e.scurry,e.nocase!==void 0&&e.nocase!==e.scurry.nocase)throw new Error("nocase option contradicts provided scurry option")}else{let a=e.platform==="win32"?it:e.platform==="darwin"?St:e.platform?rt:Xe;this.scurry=new a(this.cwd,{nocase:e.nocase,fs:e.fs})}this.nocase=this.scurry.nocase;let s=this.platform==="darwin"||this.platform==="win32",i={braceExpandMax:1e4,...e,dot:this.dot,matchBase:this.matchBase,nobrace:this.nobrace,nocase:this.nocase,nocaseMagicOnly:s,nocomment:!0,noext:this.noext,nonegate:!0,optimizationLevel:2,platform:this.platform,windowsPathsNoEscape:this.windowsPathsNoEscape,debug:!!this.opts.debug},r=this.pattern.map(a=>new D(a,i)),[o,h]=r.reduce((a,l)=>(a[0].push(...l.set),a[1].push(...l.globParts),a),[[],[]]);this.patterns=o.map((a,l)=>{let u=h[l];if(!u)throw new Error("invalid pattern object");return new nt(a,u,0,this.platform)})}async walk(){return[...await new xt(this.patterns,this.scurry.cwd,{...this.opts,maxDepth:this.maxDepth!==1/0?this.maxDepth+this.scurry.cwd.depth():1/0,platform:this.platform,nocase:this.nocase,includeChildMatches:this.includeChildMatches}).walk()]}walkSync(){return[...new xt(this.patterns,this.scurry.cwd,{...this.opts,maxDepth:this.maxDepth!==1/0?this.maxDepth+this.scurry.cwd.depth():1/0,platform:this.platform,nocase:this.nocase,includeChildMatches:this.includeChildMatches}).walkSync()]}stream(){return new vt(this.patterns,this.scurry.cwd,{...this.opts,maxDepth:this.maxDepth!==1/0?this.maxDepth+this.scurry.cwd.depth():1/0,platform:this.platform,nocase:this.nocase,includeChildMatches:this.includeChildMatches}).stream()}streamSync(){return new vt(this.patterns,this.scurry.cwd,{...this.opts,maxDepth:this.maxDepth!==1/0?this.maxDepth+this.scurry.cwd.depth():1/0,platform:this.platform,nocase:this.nocase,includeChildMatches:this.includeChildMatches}).streamSync()}iterateSync(){return this.streamSync()[Symbol.iterator]()}[Symbol.iterator](){return this.iterateSync()}iterate(){return this.stream()[Symbol.asyncIterator]()}[Symbol.asyncIterator](){return this.iterate()}};var le=(n,t={})=>{Array.isArray(n)||(n=[n]);for(let e of n)if(new D(e,t).hasMagic())return!0;return!1};function Bt(n,t={}){return new I(n,t).streamSync()}function Qe(n,t={}){return new I(n,t).stream()}function ts(n,t={}){return new I(n,t).walkSync()}async function Je(n,t={}){return new I(n,t).walk()}function Ut(n,t={}){return new I(n,t).iterateSync()}function es(n,t={}){return new I(n,t).iterate()}var ji=Bt,Ii=Object.assign(Qe,{sync:Bt}),zi=Ut,Bi=Object.assign(es,{sync:Ut}),Ui=Object.assign(ts,{stream:Bt,iterate:Ut}),Ze=Object.assign(Je,{glob:Je,globSync:ts,sync:Ui,globStream:Qe,stream:Ii,globStreamSync:Bt,streamSync:ji,globIterate:es,iterate:Bi,globIterateSync:Ut,iterateSync:zi,Glob:I,hasMagic:le,escape:tt,unescape:W});Ze.glob=Ze;
+//# sourceMappingURL=index.min.js.map
 
-/**
- * Returns a copy with defaults filled in.
- */
-function getOptions(copy) {
-    const result = {
-        followSymbolicLinks: true,
-        implicitDescendants: true,
-        matchDirectories: true,
-        omitBrokenSymbolicLinks: true,
-        excludeHiddenFiles: false
-    };
-    if (copy) {
-        if (typeof copy.followSymbolicLinks === 'boolean') {
-            result.followSymbolicLinks = copy.followSymbolicLinks;
-            core_debug(`followSymbolicLinks '${result.followSymbolicLinks}'`);
-        }
-        if (typeof copy.implicitDescendants === 'boolean') {
-            result.implicitDescendants = copy.implicitDescendants;
-            core_debug(`implicitDescendants '${result.implicitDescendants}'`);
-        }
-        if (typeof copy.matchDirectories === 'boolean') {
-            result.matchDirectories = copy.matchDirectories;
-            core_debug(`matchDirectories '${result.matchDirectories}'`);
-        }
-        if (typeof copy.omitBrokenSymbolicLinks === 'boolean') {
-            result.omitBrokenSymbolicLinks = copy.omitBrokenSymbolicLinks;
-            core_debug(`omitBrokenSymbolicLinks '${result.omitBrokenSymbolicLinks}'`);
-        }
-        if (typeof copy.excludeHiddenFiles === 'boolean') {
-            result.excludeHiddenFiles = copy.excludeHiddenFiles;
-            core_debug(`excludeHiddenFiles '${result.excludeHiddenFiles}'`);
-        }
-    }
-    return result;
-}
-//# sourceMappingURL=internal-glob-options-helper.js.map
-;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/internal-path-helper.js
-
-
-const internal_path_helper_IS_WINDOWS = process.platform === 'win32';
-/**
- * Similar to path.dirname except normalizes the path separators and slightly better handling for Windows UNC paths.
- *
- * For example, on Linux/macOS:
- * - `/               => /`
- * - `/hello          => /`
- *
- * For example, on Windows:
- * - `C:\             => C:\`
- * - `C:\hello        => C:\`
- * - `C:              => C:`
- * - `C:hello         => C:`
- * - `\               => \`
- * - `\hello          => \`
- * - `\\hello         => \\hello`
- * - `\\hello\world   => \\hello\world`
- */
-function dirname(p) {
-    // Normalize slashes and trim unnecessary trailing slash
-    p = safeTrimTrailingSeparator(p);
-    // Windows UNC root, e.g. \\hello or \\hello\world
-    if (internal_path_helper_IS_WINDOWS && /^\\\\[^\\]+(\\[^\\]+)?$/.test(p)) {
-        return p;
-    }
-    // Get dirname
-    let result = external_path_.dirname(p);
-    // Trim trailing slash for Windows UNC root, e.g. \\hello\world\
-    if (internal_path_helper_IS_WINDOWS && /^\\\\[^\\]+\\[^\\]+\\$/.test(result)) {
-        result = safeTrimTrailingSeparator(result);
-    }
-    return result;
-}
-/**
- * Roots the path if not already rooted. On Windows, relative roots like `\`
- * or `C:` are expanded based on the current working directory.
- */
-function ensureAbsoluteRoot(root, itemPath) {
-    external_assert_(root, `ensureAbsoluteRoot parameter 'root' must not be empty`);
-    external_assert_(itemPath, `ensureAbsoluteRoot parameter 'itemPath' must not be empty`);
-    // Already rooted
-    if (hasAbsoluteRoot(itemPath)) {
-        return itemPath;
-    }
-    // Windows
-    if (internal_path_helper_IS_WINDOWS) {
-        // Check for itemPath like C: or C:foo
-        if (itemPath.match(/^[A-Z]:[^\\/]|^[A-Z]:$/i)) {
-            let cwd = process.cwd();
-            external_assert_(cwd.match(/^[A-Z]:\\/i), `Expected current directory to start with an absolute drive root. Actual '${cwd}'`);
-            // Drive letter matches cwd? Expand to cwd
-            if (itemPath[0].toUpperCase() === cwd[0].toUpperCase()) {
-                // Drive only, e.g. C:
-                if (itemPath.length === 2) {
-                    // Preserve specified drive letter case (upper or lower)
-                    return `${itemPath[0]}:\\${cwd.substr(3)}`;
-                }
-                // Drive + path, e.g. C:foo
-                else {
-                    if (!cwd.endsWith('\\')) {
-                        cwd += '\\';
-                    }
-                    // Preserve specified drive letter case (upper or lower)
-                    return `${itemPath[0]}:\\${cwd.substr(3)}${itemPath.substr(2)}`;
-                }
-            }
-            // Different drive
-            else {
-                return `${itemPath[0]}:\\${itemPath.substr(2)}`;
-            }
-        }
-        // Check for itemPath like \ or \foo
-        else if (internal_path_helper_normalizeSeparators(itemPath).match(/^\\$|^\\[^\\]/)) {
-            const cwd = process.cwd();
-            external_assert_(cwd.match(/^[A-Z]:\\/i), `Expected current directory to start with an absolute drive root. Actual '${cwd}'`);
-            return `${cwd[0]}:\\${itemPath.substr(1)}`;
-        }
-    }
-    external_assert_(hasAbsoluteRoot(root), `ensureAbsoluteRoot parameter 'root' must have an absolute root`);
-    // Otherwise ensure root ends with a separator
-    if (root.endsWith('/') || (internal_path_helper_IS_WINDOWS && root.endsWith('\\'))) {
-        // Intentionally empty
-    }
-    else {
-        // Append separator
-        root += external_path_.sep;
-    }
-    return root + itemPath;
-}
-/**
- * On Linux/macOS, true if path starts with `/`. On Windows, true for paths like:
- * `\\hello\share` and `C:\hello` (and using alternate separator).
- */
-function hasAbsoluteRoot(itemPath) {
-    external_assert_(itemPath, `hasAbsoluteRoot parameter 'itemPath' must not be empty`);
-    // Normalize separators
-    itemPath = internal_path_helper_normalizeSeparators(itemPath);
-    // Windows
-    if (internal_path_helper_IS_WINDOWS) {
-        // E.g. \\hello\share or C:\hello
-        return itemPath.startsWith('\\\\') || /^[A-Z]:\\/i.test(itemPath);
-    }
-    // E.g. /hello
-    return itemPath.startsWith('/');
-}
-/**
- * On Linux/macOS, true if path starts with `/`. On Windows, true for paths like:
- * `\`, `\hello`, `\\hello\share`, `C:`, and `C:\hello` (and using alternate separator).
- */
-function hasRoot(itemPath) {
-    external_assert_(itemPath, `isRooted parameter 'itemPath' must not be empty`);
-    // Normalize separators
-    itemPath = internal_path_helper_normalizeSeparators(itemPath);
-    // Windows
-    if (internal_path_helper_IS_WINDOWS) {
-        // E.g. \ or \hello or \\hello
-        // E.g. C: or C:\hello
-        return itemPath.startsWith('\\') || /^[A-Z]:/i.test(itemPath);
-    }
-    // E.g. /hello
-    return itemPath.startsWith('/');
-}
-/**
- * Removes redundant slashes and converts `/` to `\` on Windows
- */
-function internal_path_helper_normalizeSeparators(p) {
-    p = p || '';
-    // Windows
-    if (internal_path_helper_IS_WINDOWS) {
-        // Convert slashes on Windows
-        p = p.replace(/\//g, '\\');
-        // Remove redundant slashes
-        const isUnc = /^\\\\+[^\\]/.test(p); // e.g. \\hello
-        return (isUnc ? '\\' : '') + p.replace(/\\\\+/g, '\\'); // preserve leading \\ for UNC
-    }
-    // Remove redundant slashes
-    return p.replace(/\/\/+/g, '/');
-}
-/**
- * Normalizes the path separators and trims the trailing separator (when safe).
- * For example, `/foo/ => /foo` but `/ => /`
- */
-function safeTrimTrailingSeparator(p) {
-    // Short-circuit if empty
-    if (!p) {
-        return '';
-    }
-    // Normalize separators
-    p = internal_path_helper_normalizeSeparators(p);
-    // No trailing slash
-    if (!p.endsWith(external_path_.sep)) {
-        return p;
-    }
-    // Check '/' on Linux/macOS and '\' on Windows
-    if (p === external_path_.sep) {
-        return p;
-    }
-    // On Windows check if drive root. E.g. C:\
-    if (internal_path_helper_IS_WINDOWS && /^[A-Z]:\\$/i.test(p)) {
-        return p;
-    }
-    // Otherwise trim trailing slash
-    return p.substr(0, p.length - 1);
-}
-//# sourceMappingURL=internal-path-helper.js.map
-;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/internal-match-kind.js
-/**
- * Indicates whether a pattern matches a path
- */
-var MatchKind;
-(function (MatchKind) {
-    /** Not matched */
-    MatchKind[MatchKind["None"] = 0] = "None";
-    /** Matched if the path is a directory */
-    MatchKind[MatchKind["Directory"] = 1] = "Directory";
-    /** Matched if the path is a regular file */
-    MatchKind[MatchKind["File"] = 2] = "File";
-    /** Matched */
-    MatchKind[MatchKind["All"] = 3] = "All";
-})(MatchKind || (MatchKind = {}));
-//# sourceMappingURL=internal-match-kind.js.map
-;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/internal-pattern-helper.js
-
-
-const internal_pattern_helper_IS_WINDOWS = process.platform === 'win32';
-/**
- * Given an array of patterns, returns an array of paths to search.
- * Duplicates and paths under other included paths are filtered out.
- */
-function getSearchPaths(patterns) {
-    // Ignore negate patterns
-    patterns = patterns.filter(x => !x.negate);
-    // Create a map of all search paths
-    const searchPathMap = {};
-    for (const pattern of patterns) {
-        const key = internal_pattern_helper_IS_WINDOWS
-            ? pattern.searchPath.toUpperCase()
-            : pattern.searchPath;
-        searchPathMap[key] = 'candidate';
-    }
-    const result = [];
-    for (const pattern of patterns) {
-        // Check if already included
-        const key = internal_pattern_helper_IS_WINDOWS
-            ? pattern.searchPath.toUpperCase()
-            : pattern.searchPath;
-        if (searchPathMap[key] === 'included') {
-            continue;
-        }
-        // Check for an ancestor search path
-        let foundAncestor = false;
-        let tempKey = key;
-        let parent = dirname(tempKey);
-        while (parent !== tempKey) {
-            if (searchPathMap[parent]) {
-                foundAncestor = true;
-                break;
-            }
-            tempKey = parent;
-            parent = dirname(tempKey);
-        }
-        // Include the search pattern in the result
-        if (!foundAncestor) {
-            result.push(pattern.searchPath);
-            searchPathMap[key] = 'included';
-        }
-    }
-    return result;
-}
-/**
- * Matches the patterns against the path
- */
-function internal_pattern_helper_match(patterns, itemPath) {
-    let result = MatchKind.None;
-    for (const pattern of patterns) {
-        if (pattern.negate) {
-            result &= ~pattern.match(itemPath);
-        }
-        else {
-            result |= pattern.match(itemPath);
-        }
-    }
-    return result;
-}
-/**
- * Checks whether to descend further into the directory
- */
-function internal_pattern_helper_partialMatch(patterns, itemPath) {
-    return patterns.some(x => !x.negate && x.partialMatch(itemPath));
-}
-//# sourceMappingURL=internal-pattern-helper.js.map
-// EXTERNAL MODULE: ./node_modules/minimatch/minimatch.js
-var minimatch = __nccwpck_require__(3772);
-;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/internal-path.js
-
-
-
-const internal_path_IS_WINDOWS = process.platform === 'win32';
-/**
- * Helper class for parsing paths into segments
- */
-class Path {
-    /**
-     * Constructs a Path
-     * @param itemPath Path or array of segments
-     */
-    constructor(itemPath) {
-        this.segments = [];
-        // String
-        if (typeof itemPath === 'string') {
-            external_assert_(itemPath, `Parameter 'itemPath' must not be empty`);
-            // Normalize slashes and trim unnecessary trailing slash
-            itemPath = safeTrimTrailingSeparator(itemPath);
-            // Not rooted
-            if (!hasRoot(itemPath)) {
-                this.segments = itemPath.split(external_path_.sep);
-            }
-            // Rooted
-            else {
-                // Add all segments, while not at the root
-                let remaining = itemPath;
-                let dir = dirname(remaining);
-                while (dir !== remaining) {
-                    // Add the segment
-                    const basename = external_path_.basename(remaining);
-                    this.segments.unshift(basename);
-                    // Truncate the last segment
-                    remaining = dir;
-                    dir = dirname(remaining);
-                }
-                // Remainder is the root
-                this.segments.unshift(remaining);
-            }
-        }
-        // Array
-        else {
-            // Must not be empty
-            external_assert_(itemPath.length > 0, `Parameter 'itemPath' must not be an empty array`);
-            // Each segment
-            for (let i = 0; i < itemPath.length; i++) {
-                let segment = itemPath[i];
-                // Must not be empty
-                external_assert_(segment, `Parameter 'itemPath' must not contain any empty segments`);
-                // Normalize slashes
-                segment = internal_path_helper_normalizeSeparators(itemPath[i]);
-                // Root segment
-                if (i === 0 && hasRoot(segment)) {
-                    segment = safeTrimTrailingSeparator(segment);
-                    external_assert_(segment === dirname(segment), `Parameter 'itemPath' root segment contains information for multiple segments`);
-                    this.segments.push(segment);
-                }
-                // All other segments
-                else {
-                    // Must not contain slash
-                    external_assert_(!segment.includes(external_path_.sep), `Parameter 'itemPath' contains unexpected path separators`);
-                    this.segments.push(segment);
-                }
-            }
-        }
-    }
-    /**
-     * Converts the path to it's string representation
-     */
-    toString() {
-        // First segment
-        let result = this.segments[0];
-        // All others
-        let skipSlash = result.endsWith(external_path_.sep) || (internal_path_IS_WINDOWS && /^[A-Z]:$/i.test(result));
-        for (let i = 1; i < this.segments.length; i++) {
-            if (skipSlash) {
-                skipSlash = false;
-            }
-            else {
-                result += external_path_.sep;
-            }
-            result += this.segments[i];
-        }
-        return result;
-    }
-}
-//# sourceMappingURL=internal-path.js.map
-;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/internal-pattern.js
-
-
-
-
-
-
-
-const { Minimatch } = minimatch;
-const internal_pattern_IS_WINDOWS = process.platform === 'win32';
-class Pattern {
-    constructor(patternOrNegate, isImplicitPattern = false, segments, homedir) {
-        /**
-         * Indicates whether matches should be excluded from the result set
-         */
-        this.negate = false;
-        // Pattern overload
-        let pattern;
-        if (typeof patternOrNegate === 'string') {
-            pattern = patternOrNegate.trim();
-        }
-        // Segments overload
-        else {
-            // Convert to pattern
-            segments = segments || [];
-            external_assert_(segments.length, `Parameter 'segments' must not empty`);
-            const root = Pattern.getLiteral(segments[0]);
-            external_assert_(root && hasAbsoluteRoot(root), `Parameter 'segments' first element must be a root path`);
-            pattern = new Path(segments).toString().trim();
-            if (patternOrNegate) {
-                pattern = `!${pattern}`;
-            }
-        }
-        // Negate
-        while (pattern.startsWith('!')) {
-            this.negate = !this.negate;
-            pattern = pattern.substr(1).trim();
-        }
-        // Normalize slashes and ensures absolute root
-        pattern = Pattern.fixupPattern(pattern, homedir);
-        // Segments
-        this.segments = new Path(pattern).segments;
-        // Trailing slash indicates the pattern should only match directories, not regular files
-        this.trailingSeparator = internal_path_helper_normalizeSeparators(pattern)
-            .endsWith(external_path_.sep);
-        pattern = safeTrimTrailingSeparator(pattern);
-        // Search path (literal path prior to the first glob segment)
-        let foundGlob = false;
-        const searchSegments = this.segments
-            .map(x => Pattern.getLiteral(x))
-            .filter(x => !foundGlob && !(foundGlob = x === ''));
-        this.searchPath = new Path(searchSegments).toString();
-        // Root RegExp (required when determining partial match)
-        this.rootRegExp = new RegExp(Pattern.regExpEscape(searchSegments[0]), internal_pattern_IS_WINDOWS ? 'i' : '');
-        this.isImplicitPattern = isImplicitPattern;
-        // Create minimatch
-        const minimatchOptions = {
-            dot: true,
-            nobrace: true,
-            nocase: internal_pattern_IS_WINDOWS,
-            nocomment: true,
-            noext: true,
-            nonegate: true
-        };
-        pattern = internal_pattern_IS_WINDOWS ? pattern.replace(/\\/g, '/') : pattern;
-        this.minimatch = new Minimatch(pattern, minimatchOptions);
-    }
-    /**
-     * Matches the pattern against the specified path
-     */
-    match(itemPath) {
-        // Last segment is globstar?
-        if (this.segments[this.segments.length - 1] === '**') {
-            // Normalize slashes
-            itemPath = internal_path_helper_normalizeSeparators(itemPath);
-            // Append a trailing slash. Otherwise Minimatch will not match the directory immediately
-            // preceding the globstar. For example, given the pattern `/foo/**`, Minimatch returns
-            // false for `/foo` but returns true for `/foo/`. Append a trailing slash to handle that quirk.
-            if (!itemPath.endsWith(external_path_.sep) && this.isImplicitPattern === false) {
-                // Note, this is safe because the constructor ensures the pattern has an absolute root.
-                // For example, formats like C: and C:foo on Windows are resolved to an absolute root.
-                itemPath = `${itemPath}${external_path_.sep}`;
-            }
-        }
-        else {
-            // Normalize slashes and trim unnecessary trailing slash
-            itemPath = safeTrimTrailingSeparator(itemPath);
-        }
-        // Match
-        if (this.minimatch.match(itemPath)) {
-            return this.trailingSeparator ? MatchKind.Directory : MatchKind.All;
-        }
-        return MatchKind.None;
-    }
-    /**
-     * Indicates whether the pattern may match descendants of the specified path
-     */
-    partialMatch(itemPath) {
-        // Normalize slashes and trim unnecessary trailing slash
-        itemPath = safeTrimTrailingSeparator(itemPath);
-        // matchOne does not handle root path correctly
-        if (dirname(itemPath) === itemPath) {
-            return this.rootRegExp.test(itemPath);
-        }
-        return this.minimatch.matchOne(itemPath.split(internal_pattern_IS_WINDOWS ? /\\+/ : /\/+/), this.minimatch.set[0], true);
-    }
-    /**
-     * Escapes glob patterns within a path
-     */
-    static globEscape(s) {
-        return (internal_pattern_IS_WINDOWS ? s : s.replace(/\\/g, '\\\\')) // escape '\' on Linux/macOS
-            .replace(/(\[)(?=[^/]+\])/g, '[[]') // escape '[' when ']' follows within the path segment
-            .replace(/\?/g, '[?]') // escape '?'
-            .replace(/\*/g, '[*]'); // escape '*'
-    }
-    /**
-     * Normalizes slashes and ensures absolute root
-     */
-    static fixupPattern(pattern, homedir) {
-        // Empty
-        external_assert_(pattern, 'pattern cannot be empty');
-        // Must not contain `.` segment, unless first segment
-        // Must not contain `..` segment
-        const literalSegments = new Path(pattern).segments.map(x => Pattern.getLiteral(x));
-        external_assert_(literalSegments.every((x, i) => (x !== '.' || i === 0) && x !== '..'), `Invalid pattern '${pattern}'. Relative pathing '.' and '..' is not allowed.`);
-        // Must not contain globs in root, e.g. Windows UNC path \\foo\b*r
-        external_assert_(!hasRoot(pattern) || literalSegments[0], `Invalid pattern '${pattern}'. Root segment must not contain globs.`);
-        // Normalize slashes
-        pattern = internal_path_helper_normalizeSeparators(pattern);
-        // Replace leading `.` segment
-        if (pattern === '.' || pattern.startsWith(`.${external_path_.sep}`)) {
-            pattern = Pattern.globEscape(process.cwd()) + pattern.substr(1);
-        }
-        // Replace leading `~` segment
-        else if (pattern === '~' || pattern.startsWith(`~${external_path_.sep}`)) {
-            homedir = homedir || external_os_namespaceObject.homedir();
-            external_assert_(homedir, 'Unable to determine HOME directory');
-            external_assert_(hasAbsoluteRoot(homedir), `Expected HOME directory to be a rooted path. Actual '${homedir}'`);
-            pattern = Pattern.globEscape(homedir) + pattern.substr(1);
-        }
-        // Replace relative drive root, e.g. pattern is C: or C:foo
-        else if (internal_pattern_IS_WINDOWS &&
-            (pattern.match(/^[A-Z]:$/i) || pattern.match(/^[A-Z]:[^\\]/i))) {
-            let root = ensureAbsoluteRoot('C:\\dummy-root', pattern.substr(0, 2));
-            if (pattern.length > 2 && !root.endsWith('\\')) {
-                root += '\\';
-            }
-            pattern = Pattern.globEscape(root) + pattern.substr(2);
-        }
-        // Replace relative root, e.g. pattern is \ or \foo
-        else if (internal_pattern_IS_WINDOWS && (pattern === '\\' || pattern.match(/^\\[^\\]/))) {
-            let root = ensureAbsoluteRoot('C:\\dummy-root', '\\');
-            if (!root.endsWith('\\')) {
-                root += '\\';
-            }
-            pattern = Pattern.globEscape(root) + pattern.substr(1);
-        }
-        // Otherwise ensure absolute root
-        else {
-            pattern = ensureAbsoluteRoot(Pattern.globEscape(process.cwd()), pattern);
-        }
-        return internal_path_helper_normalizeSeparators(pattern);
-    }
-    /**
-     * Attempts to unescape a pattern segment to create a literal path segment.
-     * Otherwise returns empty string.
-     */
-    static getLiteral(segment) {
-        let literal = '';
-        for (let i = 0; i < segment.length; i++) {
-            const c = segment[i];
-            // Escape
-            if (c === '\\' && !internal_pattern_IS_WINDOWS && i + 1 < segment.length) {
-                literal += segment[++i];
-                continue;
-            }
-            // Wildcard
-            else if (c === '*' || c === '?') {
-                return '';
-            }
-            // Character set
-            else if (c === '[' && i + 1 < segment.length) {
-                let set = '';
-                let closed = -1;
-                for (let i2 = i + 1; i2 < segment.length; i2++) {
-                    const c2 = segment[i2];
-                    // Escape
-                    if (c2 === '\\' && !internal_pattern_IS_WINDOWS && i2 + 1 < segment.length) {
-                        set += segment[++i2];
-                        continue;
-                    }
-                    // Closed
-                    else if (c2 === ']') {
-                        closed = i2;
-                        break;
-                    }
-                    // Otherwise
-                    else {
-                        set += c2;
-                    }
-                }
-                // Closed?
-                if (closed >= 0) {
-                    // Cannot convert
-                    if (set.length > 1) {
-                        return '';
-                    }
-                    // Convert to literal
-                    if (set) {
-                        literal += set;
-                        i = closed;
-                        continue;
-                    }
-                }
-                // Otherwise fall thru
-            }
-            // Append
-            literal += c;
-        }
-        return literal;
-    }
-    /**
-     * Escapes regexp special characters
-     * https://javascript.info/regexp-escaping
-     */
-    static regExpEscape(s) {
-        return s.replace(/[[\\^$.|?*+()]/g, '\\$&');
-    }
-}
-//# sourceMappingURL=internal-pattern.js.map
-;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/internal-search-state.js
-class SearchState {
-    constructor(path, level) {
-        this.path = path;
-        this.level = level;
-    }
-}
-//# sourceMappingURL=internal-search-state.js.map
-;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/internal-globber.js
-var internal_globber_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __asyncValues = (undefined && undefined.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
-var __await = (undefined && undefined.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
-var __asyncGenerator = (undefined && undefined.__asyncGenerator) || function (thisArg, _arguments, generator) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var g = generator.apply(thisArg, _arguments || []), i, q = [];
-    return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function () { return this; }, i;
-    function awaitReturn(f) { return function (v) { return Promise.resolve(v).then(f, reject); }; }
-    function verb(n, f) { if (g[n]) { i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; if (f) i[n] = f(i[n]); } }
-    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
-    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
-    function fulfill(value) { resume("next", value); }
-    function reject(value) { resume("throw", value); }
-    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
-};
-
-
-
-
-
-
-
-
-const internal_globber_IS_WINDOWS = process.platform === 'win32';
-class DefaultGlobber {
-    constructor(options) {
-        this.patterns = [];
-        this.searchPaths = [];
-        this.options = getOptions(options);
-    }
-    getSearchPaths() {
-        // Return a copy
-        return this.searchPaths.slice();
-    }
-    glob() {
-        return internal_globber_awaiter(this, void 0, void 0, function* () {
-            var _a, e_1, _b, _c;
-            const result = [];
-            try {
-                for (var _d = true, _e = __asyncValues(this.globGenerator()), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
-                    _c = _f.value;
-                    _d = false;
-                    const itemPath = _c;
-                    result.push(itemPath);
-                }
-            }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-            finally {
-                try {
-                    if (!_d && !_a && (_b = _e.return)) yield _b.call(_e);
-                }
-                finally { if (e_1) throw e_1.error; }
-            }
-            return result;
-        });
-    }
-    globGenerator() {
-        return __asyncGenerator(this, arguments, function* globGenerator_1() {
-            // Fill in defaults options
-            const options = getOptions(this.options);
-            // Implicit descendants?
-            const patterns = [];
-            for (const pattern of this.patterns) {
-                patterns.push(pattern);
-                if (options.implicitDescendants &&
-                    (pattern.trailingSeparator ||
-                        pattern.segments[pattern.segments.length - 1] !== '**')) {
-                    patterns.push(new Pattern(pattern.negate, true, pattern.segments.concat('**')));
-                }
-            }
-            // Push the search paths
-            const stack = [];
-            for (const searchPath of getSearchPaths(patterns)) {
-                core_debug(`Search path '${searchPath}'`);
-                // Exists?
-                try {
-                    // Intentionally using lstat. Detection for broken symlink
-                    // will be performed later (if following symlinks).
-                    yield __await(external_fs_namespaceObject.promises.lstat(searchPath));
-                }
-                catch (err) {
-                    if (err.code === 'ENOENT') {
-                        continue;
-                    }
-                    throw err;
-                }
-                stack.unshift(new SearchState(searchPath, 1));
-            }
-            // Search
-            const traversalChain = []; // used to detect cycles
-            while (stack.length) {
-                // Pop
-                const item = stack.pop();
-                // Match?
-                const match = internal_pattern_helper_match(patterns, item.path);
-                const partialMatch = !!match || internal_pattern_helper_partialMatch(patterns, item.path);
-                if (!match && !partialMatch) {
-                    continue;
-                }
-                // Stat
-                const stats = yield __await(DefaultGlobber.stat(item, options, traversalChain)
-                // Broken symlink, or symlink cycle detected, or no longer exists
-                );
-                // Broken symlink, or symlink cycle detected, or no longer exists
-                if (!stats) {
-                    continue;
-                }
-                // Hidden file or directory?
-                if (options.excludeHiddenFiles && external_path_.basename(item.path).match(/^\./)) {
-                    continue;
-                }
-                // Directory
-                if (stats.isDirectory()) {
-                    // Matched
-                    if (match & MatchKind.Directory && options.matchDirectories) {
-                        yield yield __await(item.path);
-                    }
-                    // Descend?
-                    else if (!partialMatch) {
-                        continue;
-                    }
-                    // Push the child items in reverse
-                    const childLevel = item.level + 1;
-                    const childItems = (yield __await(external_fs_namespaceObject.promises.readdir(item.path))).map(x => new SearchState(external_path_.join(item.path, x), childLevel));
-                    stack.push(...childItems.reverse());
-                }
-                // File
-                else if (match & MatchKind.File) {
-                    yield yield __await(item.path);
-                }
-            }
-        });
-    }
-    /**
-     * Constructs a DefaultGlobber
-     */
-    static create(patterns, options) {
-        return internal_globber_awaiter(this, void 0, void 0, function* () {
-            const result = new DefaultGlobber(options);
-            if (internal_globber_IS_WINDOWS) {
-                patterns = patterns.replace(/\r\n/g, '\n');
-                patterns = patterns.replace(/\r/g, '\n');
-            }
-            const lines = patterns.split('\n').map(x => x.trim());
-            for (const line of lines) {
-                // Empty or comment
-                if (!line || line.startsWith('#')) {
-                    continue;
-                }
-                // Pattern
-                else {
-                    result.patterns.push(new Pattern(line));
-                }
-            }
-            result.searchPaths.push(...getSearchPaths(result.patterns));
-            return result;
-        });
-    }
-    static stat(item, options, traversalChain) {
-        return internal_globber_awaiter(this, void 0, void 0, function* () {
-            // Note:
-            // `stat` returns info about the target of a symlink (or symlink chain)
-            // `lstat` returns info about a symlink itself
-            let stats;
-            if (options.followSymbolicLinks) {
-                try {
-                    // Use `stat` (following symlinks)
-                    stats = yield external_fs_namespaceObject.promises.stat(item.path);
-                }
-                catch (err) {
-                    if (err.code === 'ENOENT') {
-                        if (options.omitBrokenSymbolicLinks) {
-                            core_debug(`Broken symlink '${item.path}'`);
-                            return undefined;
-                        }
-                        throw new Error(`No information found for the path '${item.path}'. This may indicate a broken symbolic link.`);
-                    }
-                    throw err;
-                }
-            }
-            else {
-                // Use `lstat` (not following symlinks)
-                stats = yield external_fs_namespaceObject.promises.lstat(item.path);
-            }
-            // Note, isDirectory() returns false for the lstat of a symlink
-            if (stats.isDirectory() && options.followSymbolicLinks) {
-                // Get the realpath
-                const realPath = yield external_fs_namespaceObject.promises.realpath(item.path);
-                // Fixup the traversal chain to match the item level
-                while (traversalChain.length >= item.level) {
-                    traversalChain.pop();
-                }
-                // Test for a cycle
-                if (traversalChain.some((x) => x === realPath)) {
-                    core_debug(`Symlink cycle detected for path '${item.path}' and realpath '${realPath}'`);
-                    return undefined;
-                }
-                // Update the traversal chain
-                traversalChain.push(realPath);
-            }
-            return stats;
-        });
-    }
-}
-//# sourceMappingURL=internal-globber.js.map
-// EXTERNAL MODULE: external "stream"
-var external_stream_ = __nccwpck_require__(2203);
-// EXTERNAL MODULE: external "util"
-var external_util_ = __nccwpck_require__(9023);
-;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/internal-hash-files.js
-var internal_hash_files_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var internal_hash_files_asyncValues = (undefined && undefined.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
-
-
-
-
-
-
-function hashFiles(globber_1, currentWorkspace_1) {
-    return internal_hash_files_awaiter(this, arguments, void 0, function* (globber, currentWorkspace, verbose = false) {
-        var _a, e_1, _b, _c;
-        var _d;
-        const writeDelegate = verbose ? core.info : core.debug;
-        let hasMatch = false;
-        const githubWorkspace = currentWorkspace
-            ? currentWorkspace
-            : ((_d = process.env['GITHUB_WORKSPACE']) !== null && _d !== void 0 ? _d : process.cwd());
-        const result = crypto.createHash('sha256');
-        let count = 0;
-        try {
-            for (var _e = true, _f = internal_hash_files_asyncValues(globber.globGenerator()), _g; _g = yield _f.next(), _a = _g.done, !_a; _e = true) {
-                _c = _g.value;
-                _e = false;
-                const file = _c;
-                writeDelegate(file);
-                if (!file.startsWith(`${githubWorkspace}${path.sep}`)) {
-                    writeDelegate(`Ignore '${file}' since it is not under GITHUB_WORKSPACE.`);
-                    continue;
-                }
-                if (fs.statSync(file).isDirectory()) {
-                    writeDelegate(`Skip directory '${file}'.`);
-                    continue;
-                }
-                const hash = crypto.createHash('sha256');
-                const pipeline = util.promisify(stream.pipeline);
-                yield pipeline(fs.createReadStream(file), hash);
-                result.write(hash.digest());
-                count++;
-                if (!hasMatch) {
-                    hasMatch = true;
-                }
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (!_e && !_a && (_b = _f.return)) yield _b.call(_f);
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-        result.end();
-        if (hasMatch) {
-            writeDelegate(`Found ${count} files to hash.`);
-            return result.digest('hex');
-        }
-        else {
-            writeDelegate(`No matches found for glob`);
-            return '';
-        }
-    });
-}
-//# sourceMappingURL=internal-hash-files.js.map
-;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/glob.js
-var glob_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-
-
-/**
- * Constructs a globber
- *
- * @param patterns  Patterns separated by newlines
- * @param options   Glob options
- */
-function create(patterns, options) {
-    return glob_awaiter(this, void 0, void 0, function* () {
-        return yield DefaultGlobber.create(patterns, options);
-    });
-}
-/**
- * Computes the sha256 hash of a glob
- *
- * @param patterns  Patterns separated by newlines
- * @param currentWorkspace  Workspace used when matching files
- * @param options   Glob options
- * @param verbose   Enables verbose logging
- */
-function glob_hashFiles(patterns_1) {
-    return glob_awaiter(this, arguments, void 0, function* (patterns, currentWorkspace = '', options, verbose = false) {
-        let followSymbolicLinks = true;
-        if (options && typeof options.followSymbolicLinks === 'boolean') {
-            followSymbolicLinks = options.followSymbolicLinks;
-        }
-        const globber = yield create(patterns, { followSymbolicLinks });
-        return _hashFiles(globber, currentWorkspace, verbose);
-    });
-}
-//# sourceMappingURL=glob.js.map
 // EXTERNAL MODULE: ./node_modules/xml-js/lib/index.js
 var xml_js_lib = __nccwpck_require__(3675);
 ;// CONCATENATED MODULE: ./lib/testParser.js
@@ -41118,15 +39101,17 @@ async function resolvePath(workspace, transformedFileName, excludeSources, follo
     }
     core_debug(`Resolving path for ${fileName} in ${workspacePath}`);
     const normalizedFilename = fileName.replace(/^\.\//, ''); // strip relative prefix (./)
-    const globber = await create(`${workspacePath}**/${normalizedFilename}.*`, {
-        followSymbolicLinks: followSymlink
+    const globPattern = `${workspacePath}**/${normalizedFilename}.*`;
+    const results = await Ze(globPattern, {
+        follow: followSymlink
     });
-    const searchPath = globber.getSearchPaths() ? globber.getSearchPaths()[0] : '';
-    for await (const result of globber.globGenerator()) {
-        core_debug(`Matched file: ${result}`);
-        const found = excludeSources.find(v => result.includes(v));
+    for (const result of results) {
+        const absolutePath = external_path_namespaceObject.resolve(result);
+        core_debug(`Matched file: ${absolutePath}`);
+        const found = excludeSources.find(v => absolutePath.includes(v));
         if (!found) {
-            const path = result.slice(searchPath.length + 1);
+            const searchPath = external_path_namespaceObject.resolve(workspacePath || '.');
+            const path = external_path_namespaceObject.relative(searchPath, absolutePath);
             core_debug(`Resolved path: ${path}`);
             resolvePathCache[fileName] = path;
             return path;
@@ -41143,7 +39128,7 @@ async function resolvePath(workspace, transformedFileName, excludeSources, follo
  * https://github.com/mikepenz/action-junit-report/
  */
 async function parseFile(file, suiteRegex = '', // no-op
-includePassed = false, annotateNotice = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/'], checkTitleTemplate = undefined, breadCrumbDelimiter = '/', testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false, globalAnnotations = [], resolveIgnoreClassname = false) {
+includePassed = false, annotateNotice = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/', '/node_modules/'], checkTitleTemplate = undefined, breadCrumbDelimiter = '/', testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false, globalAnnotations = [], resolveIgnoreClassname = false) {
     core_debug(`Parsing file ${file}`);
     const data = external_fs_namespaceObject.readFileSync(file, 'utf8');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41166,7 +39151,7 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
     const testResult = await parseSuite(testsuite, suiteRegex, // no-op
     '', breadCrumbDelimiter, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations, resolveIgnoreClassname);
     if (testResult !== undefined && !testResult.name) {
-        testResult.name = external_path_.basename(file);
+        testResult.name = external_path_namespaceObject.basename(file);
     }
     return testResult;
 }
@@ -41353,7 +39338,7 @@ async function createTestCaseAnnotation(testcase, failure, failureIndex, totalFa
         title = `${title} (failure ${failureIndex + 1}/${totalFailures})`;
     }
     // optionally attach the prefix to the path
-    resolvedPath = testFilesPrefix ? external_path_.join(testFilesPrefix, resolvedPath) : resolvedPath;
+    resolvedPath = testFilesPrefix ? external_path_namespaceObject.join(testFilesPrefix, resolvedPath) : resolvedPath;
     const testTimeString = testTime > 0 ? ` ${testTime}s` : '';
     info(`${resolvedPath}:${pos.line} | ${message.split('\n', 1)[0]}${testTimeString}`);
     return {
@@ -41488,7 +39473,7 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
 async function parseTestReports(checkName, summary, reportPaths, suiteRegex, // no-op
 includePassed = false, annotateNotice = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, breadCrumbDelimiter, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false, resolveIgnoreClassname = false) {
     core_debug(`Process test report for: ${reportPaths} (${checkName})`);
-    const globber = await create(reportPaths, { followSymbolicLinks: followSymlink });
+    const files = await Ze(reportPaths, { follow: followSymlink });
     const globalAnnotations = [];
     const testResults = [];
     let totalCount = 0;
@@ -41498,7 +39483,7 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
     let retried = 0;
     let time = 0;
     let foundFiles = 0;
-    for await (const file of globber.globGenerator()) {
+    for (const file of files) {
         foundFiles++;
         core_debug(`Parsing report file: ${file}`);
         const testResult = await parseFile(file, suiteRegex, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError, globalAnnotations, resolveIgnoreClassname);
