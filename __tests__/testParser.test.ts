@@ -1709,6 +1709,38 @@ describe('parseTestReports', () => {
     expect(skippedAnnotations).toHaveLength(1)
   })
 
+  it('should handle multiple errors per test case correctly', async () => {
+    const testResult = await parseFile('test_results/multiple_failures/test_multiple_errors.xml', '', true)
+    expect(testResult).toBeDefined()
+    const {totalCount, skippedCount, failedCount, passedCount, globalAnnotations} = testResult!!
+
+    expect(totalCount).toBe(3)
+    expect(skippedCount).toBe(0)
+    expect(failedCount).toBe(2)
+    expect(passedCount).toBe(1)
+
+    const failureAnnotations = globalAnnotations.filter(annotation => annotation.annotation_level === 'failure')
+    expect(failureAnnotations).toHaveLength(4)
+
+    const multipleErrorAnnotations = failureAnnotations.filter(annotation =>
+      annotation.title.includes('testWithMultipleErrors')
+    )
+    expect(multipleErrorAnnotations).toHaveLength(2)
+    expect(multipleErrorAnnotations[0].title).toBe('src/test.ts.testWithMultipleErrors (failure 1/2)')
+    expect(multipleErrorAnnotations[0].message).toBe('First timeout')
+    expect(multipleErrorAnnotations[0].start_line).toBe(101)
+    expect(multipleErrorAnnotations[1].title).toBe('src/test.ts.testWithMultipleErrors (failure 2/2)')
+    expect(multipleErrorAnnotations[1].message).toBe('Second timeout')
+    expect(multipleErrorAnnotations[1].start_line).toBe(102)
+
+    const mixedAnnotations = failureAnnotations.filter(annotation => annotation.title.includes('testWithFailureAndError'))
+    expect(mixedAnnotations).toHaveLength(2)
+    expect(mixedAnnotations[0].message).toBe('Assertion failed')
+    expect(mixedAnnotations[0].start_line).toBe(55)
+    expect(mixedAnnotations[1].message).toBe('Unhandled error')
+    expect(mixedAnnotations[1].start_line).toBe(88)
+  })
+
   it('parse corrupt test output', async () => {
     const result = await parseTestReports(
       '',
