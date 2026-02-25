@@ -4,11 +4,11 @@
     <testcase name="testWithMultipleErrors" classname="com.example.MultipleErrorsTest" time="0.02">
       <error message="First timeout" type="TimeoutError" file="src/test.ts" line="101">
         <![CDATA[TimeoutError: First timeout
-        at com.example.MultipleErrorsTest.testWithMultipleErrors(MultipleErrorsTest.java:101)]]
+        at com.example.MultipleErrorsTest.testWithMultipleErrors(MultipleErrorsTest.java:101)]]>
       </error>
       <error message="Second timeout" type="TimeoutError" file="src/test.ts" line="102">
         <![CDATA[TimeoutError: Second timeout
-        at com.example.MultipleErrorsTest.testWithMultipleErrors(MultipleErrorsTest.java:102)]]
+        at com.example.MultipleErrorsTest.testWithMultipleErrors(MultipleErrorsTest.java:102)]]>
       </error>
     </testcase>
     <testcase name="testWithFailureAndError" classname="com.example.MultipleErrorsTest" time="0.01">

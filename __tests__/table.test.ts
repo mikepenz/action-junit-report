@@ -423,7 +423,7 @@ describe('buildSummaryTables', () => {
       [
         {data: '', header: true},
         {data: 'Tests', header: true},
-        {data: 'Passed ✅', header: true},
+        {data: 'Passed ☑️', header: true},
         {data: 'Skipped', header: true},
         {data: 'Failed ❌️', header: true},
         {data: 'Time ⏱', header: true}
