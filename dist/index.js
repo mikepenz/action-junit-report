@@ -39262,19 +39262,14 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
 /**
  * Helper function to create an annotation for a test case
  */
-async function createTestCaseAnnotation(testcase, failure, failureIndex, totalFailures, suiteName, suiteFile, suiteLine, breadCrumb, testTime, skip, success, annotationLevel, flakyFailuresCount, annotateNotice, failed, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, resolveIgnoreClassname) {
-    // Extract stack trace based on whether we have a failure or error
-    const stackTrace = ((failure && failure._cdata) ||
-        (failure && failure._text) ||
-        (testcase.error && testcase.error._cdata) ||
-        (testcase.error && testcase.error._text) ||
-        '')
+async function createTestCaseAnnotation(testcase, issue, failureIndex, totalFailures, suiteName, suiteFile, suiteLine, breadCrumb, testTime, skip, success, annotationLevel, flakyFailuresCount, annotateNotice, failed, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, resolveIgnoreClassname) {
+    // Extract stack trace from a failure/error node.
+    const stackTrace = ((issue && issue._cdata) || (issue && issue._text) || '')
         .toString()
         .trim();
     const stackTraceMessage = truncateStackTraces ? stackTrace.split('\n').slice(0, 2).join('\n') : stackTrace;
-    // Extract message based on failure or error
-    const message = ((failure && failure._attributes && failure._attributes.message) ||
-        (testcase.error && testcase.error._attributes && testcase.error._attributes.message) ||
+    // Extract message from a failure/error node.
+    const message = ((issue && issue._attributes && issue._attributes.message) ||
         stackTraceMessage ||
         testcase._attributes.name).trim();
     // Determine class name for resolution
@@ -39283,7 +39278,7 @@ async function createTestCaseAnnotation(testcase, failure, failureIndex, totalFa
         resolveClassname = testcase._attributes.classname;
     }
     // Resolve file and line information
-    const pos = await resolveFileAndLine(testcase._attributes.file || failure?._attributes?.file || suiteFile, testcase._attributes.line || failure?._attributes?.line || suiteLine, resolveClassname, stackTrace);
+    const pos = await resolveFileAndLine(testcase._attributes.file || issue?._attributes?.file || suiteFile, testcase._attributes.line || issue?._attributes?.line || suiteLine, resolveClassname, stackTrace);
     // Apply transformations to filename
     let transformedFileName = pos.fileName;
     for (const r of transformer) {
@@ -39357,6 +39352,11 @@ async function createTestCaseAnnotation(testcase, failure, failureIndex, totalFa
     };
 }
 async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testcases, includePassed = false, annotateNotice = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, truncateStackTraces, limit = -1, resolveIgnoreClassname = false) {
+    const toIssueArray = (value) => {
+        if (!value)
+            return [];
+        return Array.isArray(value) ? value : [value];
+    };
     const annotations = [];
     let totalCount = 0;
     let skippedCount = 0;
@@ -39412,7 +39412,10 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
         // fish the time-taken out of the test case attributes, if present
         const testTime = testcase._attributes.time === undefined ? 0 : parseFloat(testcase._attributes.time);
         time += testTime;
-        const testFailure = testcase.failure || testcase.error; // test failed
+        const failureIssues = toIssueArray(testcase.failure);
+        const errorIssues = toIssueArray(testcase.error);
+        const issues = [...failureIssues, ...errorIssues];
+        const testFailure = issues.length > 0; // test failed
         const skip = testcase.skipped || testcase._attributes.status === 'disabled' || testcase._attributes.status === 'ignored';
         const failed = testFailure && !skip; // test failure, but was skipped -> don't fail if a ignored test failed
         const success = !testFailure; // not a failure -> thus a success
@@ -39436,13 +39439,11 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
         if (annotationLevel !== 'failure' && !includePassed && flakyFailuresCount === 0) {
             continue;
         }
-        // in some definitions `failure` may be an array
-        const failures = testcase.failure ? (Array.isArray(testcase.failure) ? testcase.failure : [testcase.failure]) : [];
-        // Handle multiple failures or single case (success/skip/error)
-        const failuresToProcess = failures.length > 0 ? failures : [null]; // Process at least once for non-failure cases
-        for (let failureIndex = 0; failureIndex < failuresToProcess.length; failureIndex++) {
-            const failure = failuresToProcess[failureIndex];
-            const annotation = await createTestCaseAnnotation(testcase, failure, failureIndex, failures.length, suiteName, suiteFile, suiteLine, breadCrumb, testTime, skip, success, annotationLevel, flakyFailuresCount, annotateNotice, failed, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, resolveIgnoreClassname);
+        // Handle multiple failures/errors or single case (success/skip).
+        const issuesToProcess = issues.length > 0 ? issues : [null]; // Process at least once for non-failure cases
+        for (let failureIndex = 0; failureIndex < issuesToProcess.length; failureIndex++) {
+            const issue = issuesToProcess[failureIndex];
+            const annotation = await createTestCaseAnnotation(testcase, issue, failureIndex, issues.length, suiteName, suiteFile, suiteLine, breadCrumb, testTime, skip, success, annotationLevel, flakyFailuresCount, annotateNotice, failed, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, resolveIgnoreClassname);
             annotations.push(annotation);
             if (limit >= 0 && annotations.length >= limit)
                 break;
