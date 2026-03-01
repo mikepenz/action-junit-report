@@ -41,7 +41,7 @@
     "@eslint/eslintrc": "^3.3.4",
     "@eslint/js": "^10.0.1",
     "@types/eslint-scope": "^9.1.0",
-    "@types/node": "^25.3.0",
+    "@types/node": "^25.3.3",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
     "@vercel/ncc": "^0.38.4",
@@ -56,7 +56,9 @@
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18",
-    "webpack": "^5.105.2"
+    "webpack": "^5.105.3"
   },
-  "overrides": {}
+  "overrides": {
+    "serialize-javascript": "^7.0.3"
+  }
 }
