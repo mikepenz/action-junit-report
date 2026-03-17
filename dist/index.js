@@ -912,9 +912,13 @@ class DecodedURL extends URL {
     clearBuffers(parser)
     parser.q = parser.c = ''
     parser.bufferCheckPosition = sax.MAX_BUFFER_LENGTH
+    parser.encoding = null;
     parser.opt = opt || {}
     parser.opt.lowercase = parser.opt.lowercase || parser.opt.lowercasetags
     parser.looseCase = parser.opt.lowercase ? 'toLowerCase' : 'toUpperCase'
+    parser.opt.maxEntityCount = parser.opt.maxEntityCount || 512
+    parser.opt.maxEntityDepth = parser.opt.maxEntityDepth || 4
+    parser.entityCount = parser.entityDepth = 0
     parser.tags = []
     parser.closed = parser.closedRoot = parser.sawRoot = false
     parser.tag = parser.error = null
@@ -1053,6 +1057,39 @@ class DecodedURL extends URL {
     return new SAXStream(strict, opt)
   }
 
+  function determineBufferEncoding(data, isEnd) {
+    // BOM-based detection is the most reliable signal when present.
+    if (data.length >= 2) {
+      if (data[0] === 0xff && data[1] === 0xfe) {
+        return 'utf-16le'
+      }
+
+      if (data[0] === 0xfe && data[1] === 0xff) {
+        return 'utf-16be'
+      }
+    }
+
+    if (data.length >= 3 && data[0] === 0xef && data[1] === 0xbb && data[2] === 0xbf) {
+      return 'utf8'
+    }
+
+    if (data.length >= 4) {
+      // XML documents without a BOM still start with "<?xml", which is enough
+      // to distinguish UTF-16LE/BE from UTF-8 by looking at the zero bytes.
+      if (data[0] === 0x3c && data[1] === 0x00 && data[2] === 0x3f && data[3] === 0x00) {
+        return 'utf-16le'
+      }
+
+      if (data[0] === 0x00 && data[1] === 0x3c && data[2] === 0x00 && data[3] === 0x3f) {
+        return 'utf-16be'
+      }
+
+      return 'utf8'
+    }
+
+    return isEnd ? 'utf8' : null
+  }
+
   function SAXStream(strict, opt) {
     if (!(this instanceof SAXStream)) {
       return new SAXStream(strict, opt)
@@ -1079,7 +1116,7 @@ class DecodedURL extends URL {
     }
 
     this._decoder = null
-
+    this._decoderBuffer = null
     streamWraps.forEach(function (ev) {
       Object.defineProperty(me, 'on' + ev, {
         get: function () {
@@ -1105,16 +1142,47 @@ class DecodedURL extends URL {
     },
   })
 
+  SAXStream.prototype._decodeBuffer = function (data, isEnd) {
+    if (this._decoderBuffer) {
+      // Keep incomplete leading bytes until we have enough data to infer the
+      // stream encoding, then decode the buffered prefix together with the next chunk.
+      data = Buffer.concat([this._decoderBuffer, data])
+      this._decoderBuffer = null
+    }
+
+    if (!this._decoder) {
+      var encoding = determineBufferEncoding(data, isEnd)
+      if (!encoding) {
+        // A very short first chunk may not contain enough bytes to detect the
+        // encoding yet, so defer decoding until the next write/end call.
+        this._decoderBuffer = data
+        return ''
+      }
+
+      // Store the detected transport encoding so strict mode can compare it
+      // with the optional encoding declared in the XML prolog later on.
+      this._parser.encoding = encoding
+      this._decoder = new TextDecoder(encoding)
+    }
+
+    return this._decoder.decode(data, { stream: !isEnd })
+  }
+
   SAXStream.prototype.write = function (data) {
     if (
       typeof Buffer === 'function' &&
       typeof Buffer.isBuffer === 'function' &&
       Buffer.isBuffer(data)
     ) {
-      if (!this._decoder) {
-        this._decoder = new TextDecoder('utf8')
+      data = this._decodeBuffer(data, false)
+    } else if (this._decoderBuffer) {
+      // Flush any buffered binary prefix before handling a string chunk.
+      // This only matters if the caller mixes Buffer and string writes (used in test).
+      var remaining = this._decodeBuffer(Buffer.alloc(0), true)
+      if (remaining) {
+        this._parser.write(remaining)
+        this.emit('data', remaining)
       }
-      data = this._decoder.decode(data, { stream: true })
     }
 
     this._parser.write(data.toString())
@@ -1127,7 +1195,13 @@ class DecodedURL extends URL {
       this.write(chunk)
     }
     // Flush any remaining decoded data from the TextDecoder
-    if (this._decoder) {
+    if (this._decoderBuffer) {
+      var finalChunk = this._decodeBuffer(Buffer.alloc(0), true)
+      if (finalChunk) {
+        this._parser.write(finalChunk)
+        this.emit('data', finalChunk)
+      }
+    } else if (this._decoder) {
       var remaining = this._decoder.decode()
       if (remaining) {
         this._parser.write(remaining)
@@ -1518,6 +1592,59 @@ class DecodedURL extends URL {
 
   function emit(parser, event, data) {
     parser[event] && parser[event](data)
+  }
+
+  function getDeclaredEncoding(body) {
+    var match = body && body.match(/(?:^|\s)encoding\s*=\s*(['"])([^'"]+)\1/i)
+    return match ? match[2] : null
+  }
+
+  function normalizeEncodingName(encoding) {
+    if (!encoding) {
+      return null
+    }
+
+    return encoding.toLowerCase().replace(/[^a-z0-9]/g, '')
+  }
+
+  function encodingsMatch(detectedEncoding, declaredEncoding) {
+    const detected = normalizeEncodingName(detectedEncoding)
+    const declared = normalizeEncodingName(declaredEncoding)
+
+    if (!detected || !declared) {
+      return true
+    }
+
+    if (declared === 'utf16') {
+      return detected === 'utf16le' || detected === 'utf16be'
+    }
+
+    return detected === declared
+  }
+
+  function validateXmlDeclarationEncoding(parser, data) {
+    if (
+      !parser.strict ||
+      !parser.encoding ||
+      !data ||
+      data.name !== 'xml'
+    ) {
+      return
+    }
+
+    var declaredEncoding = getDeclaredEncoding(data.body)
+    if (
+      declaredEncoding &&
+      !encodingsMatch(parser.encoding, declaredEncoding)
+    ) {
+      strictFail(
+        parser,
+        'XML declaration encoding ' +
+          declaredEncoding +
+          ' does not match detected stream encoding ' +
+          parser.encoding.toUpperCase()
+      )
+    }
   }
 
   function emitNode(parser, nodeType, data) {
@@ -2225,10 +2352,12 @@ class DecodedURL extends URL {
 
         case S.PROC_INST_ENDING:
           if (c === '>') {
-            emitNode(parser, 'onprocessinginstruction', {
+            const procInstEndData = {
               name: parser.procInstName,
               body: parser.procInstBody,
-            })
+            }
+            validateXmlDeclarationEncoding(parser, procInstEndData)
+            emitNode(parser, 'onprocessinginstruction', procInstEndData)
             parser.procInstName = parser.procInstBody = ''
             parser.state = S.TEXT
           } else {
@@ -2460,9 +2589,24 @@ class DecodedURL extends URL {
               parser.opt.unparsedEntities &&
               !Object.values(sax.XML_ENTITIES).includes(parsedEntity)
             ) {
+              if ((parser.entityCount += 1) > parser.opt.maxEntityCount) {
+                error(
+                  parser,
+                  'Parsed entity count exceeds max entity count'
+                )
+              }
+
+              if ((parser.entityDepth += 1) > parser.opt.maxEntityDepth) {
+                error(
+                  parser,
+                  'Parsed entity depth exceeds max entity depth'
+                )
+              }
+
               parser.entity = ''
               parser.state = returnState
               parser.write(parsedEntity)
+              parser.entityDepth -= 1
             } else {
               parser[buffer] += parsedEntity
               parser.entity = ''
@@ -5481,6 +5625,24 @@ class SecureProxyConnectionError extends UndiciError {
   [kSecureProxyConnectionError] = true
 }
 
+const kMessageSizeExceededError = Symbol.for('undici.error.UND_ERR_WS_MESSAGE_SIZE_EXCEEDED')
+class MessageSizeExceededError extends UndiciError {
+  constructor (message) {
+    super(message)
+    this.name = 'MessageSizeExceededError'
+    this.message = message || 'Max decompressed message size exceeded'
+    this.code = 'UND_ERR_WS_MESSAGE_SIZE_EXCEEDED'
+  }
+
+  static [Symbol.hasInstance] (instance) {
+    return instance && instance[kMessageSizeExceededError] === true
+  }
+
+  get [kMessageSizeExceededError] () {
+    return true
+  }
+}
+
 module.exports = {
   AbortError,
   HTTPParserError,
@@ -5504,7 +5666,8 @@ module.exports = {
   ResponseExceededMaxSizeError,
   RequestRetryError,
   ResponseError,
-  SecureProxyConnectionError
+  SecureProxyConnectionError,
+  MessageSizeExceededError
 }
 
 
@@ -5579,6 +5742,10 @@ class Request {
 
     if (upgrade && typeof upgrade !== 'string') {
       throw new InvalidArgumentError('upgrade must be a string')
+    }
+
+    if (upgrade && !isValidHeaderValue(upgrade)) {
+      throw new InvalidArgumentError('invalid upgrade header')
     }
 
     if (headersTimeout != null && (!Number.isFinite(headersTimeout) || headersTimeout < 0)) {
@@ -5875,13 +6042,19 @@ function processHeader (request, key, val) {
     val = `${val}`
   }
 
-  if (request.host === null && headerName === 'host') {
+  if (headerName === 'host') {
+    if (request.host !== null) {
+      throw new InvalidArgumentError('duplicate host header')
+    }
     if (typeof val !== 'string') {
       throw new InvalidArgumentError('invalid host header')
     }
     // Consumed by Client
     request.host = val
-  } else if (request.contentLength === null && headerName === 'content-length') {
+  } else if (headerName === 'content-length') {
+    if (request.contentLength !== null) {
+      throw new InvalidArgumentError('duplicate content-length header')
+    }
     request.contentLength = parseInt(val, 10)
     if (!Number.isFinite(request.contentLength)) {
       throw new InvalidArgumentError('invalid content-length header')
@@ -28598,10 +28771,14 @@ module.exports = {
 
 const { createInflateRaw, Z_DEFAULT_WINDOWBITS } = __nccwpck_require__(8522)
 const { isValidClientWindowBits } = __nccwpck_require__(8625)
+const { MessageSizeExceededError } = __nccwpck_require__(8707)
 
 const tail = Buffer.from([0x00, 0x00, 0xff, 0xff])
 const kBuffer = Symbol('kBuffer')
 const kLength = Symbol('kLength')
+
+// Default maximum decompressed message size: 4 MB
+const kDefaultMaxDecompressedSize = 4 * 1024 * 1024
 
 class PerMessageDeflate {
   /** @type {import('node:zlib').InflateRaw} */
@@ -28609,6 +28786,15 @@ class PerMessageDeflate {
 
   #options = {}
 
+  /** @type {boolean} */
+  #aborted = false
+
+  /** @type {Function|null} */
+  #currentCallback = null
+
+  /**
+   * @param {Map<string, string>} extensions
+   */
   constructor (extensions) {
     this.#options.serverNoContextTakeover = extensions.has('server_no_context_takeover')
     this.#options.serverMaxWindowBits = extensions.get('server_max_window_bits')
@@ -28619,6 +28805,11 @@ class PerMessageDeflate {
     // 1.  Append 4 octets of 0x00 0x00 0xff 0xff to the tail end of the
     //     payload of the message.
     // 2.  Decompress the resulting data using DEFLATE.
+
+    if (this.#aborted) {
+      callback(new MessageSizeExceededError())
+      return
+    }
 
     if (!this.#inflate) {
       let windowBits = Z_DEFAULT_WINDOWBITS
@@ -28632,13 +28823,37 @@ class PerMessageDeflate {
         windowBits = Number.parseInt(this.#options.serverMaxWindowBits)
       }
 
-      this.#inflate = createInflateRaw({ windowBits })
+      try {
+        this.#inflate = createInflateRaw({ windowBits })
+      } catch (err) {
+        callback(err)
+        return
+      }
       this.#inflate[kBuffer] = []
       this.#inflate[kLength] = 0
 
       this.#inflate.on('data', (data) => {
-        this.#inflate[kBuffer].push(data)
+        if (this.#aborted) {
+          return
+        }
+
         this.#inflate[kLength] += data.length
+
+        if (this.#inflate[kLength] > kDefaultMaxDecompressedSize) {
+          this.#aborted = true
+          this.#inflate.removeAllListeners()
+          this.#inflate.destroy()
+          this.#inflate = null
+
+          if (this.#currentCallback) {
+            const cb = this.#currentCallback
+            this.#currentCallback = null
+            cb(new MessageSizeExceededError())
+          }
+          return
+        }
+
+        this.#inflate[kBuffer].push(data)
       })
 
       this.#inflate.on('error', (err) => {
@@ -28647,16 +28862,22 @@ class PerMessageDeflate {
       })
     }
 
+    this.#currentCallback = callback
     this.#inflate.write(chunk)
     if (fin) {
       this.#inflate.write(tail)
     }
 
     this.#inflate.flush(() => {
+      if (this.#aborted || !this.#inflate) {
+        return
+      }
+
       const full = Buffer.concat(this.#inflate[kBuffer], this.#inflate[kLength])
 
       this.#inflate[kBuffer].length = 0
       this.#inflate[kLength] = 0
+      this.#currentCallback = null
 
       callback(null, full)
     })
@@ -28710,6 +28931,10 @@ class ByteParser extends Writable {
   /** @type {Map<string, PerMessageDeflate>} */
   #extensions
 
+  /**
+   * @param {import('./websocket').WebSocket} ws
+   * @param {Map<string, string>|null} extensions
+   */
   constructor (ws, extensions) {
     super()
 
@@ -28852,6 +29077,7 @@ class ByteParser extends Writable {
 
         const buffer = this.consume(8)
         const upper = buffer.readUInt32BE(0)
+        const lower = buffer.readUInt32BE(4)
 
         // 2^31 is the maximum bytes an arraybuffer can contain
         // on 32-bit systems. Although, on 64-bit systems, this is
@@ -28859,14 +29085,12 @@ class ByteParser extends Writable {
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Invalid_array_length
         // https://source.chromium.org/chromium/chromium/src/+/main:v8/src/common/globals.h;drc=1946212ac0100668f14eb9e2843bdd846e510a1e;bpv=1;bpt=1;l=1275
         // https://source.chromium.org/chromium/chromium/src/+/main:v8/src/objects/js-array-buffer.h;l=34;drc=1946212ac0100668f14eb9e2843bdd846e510a1e
-        if (upper > 2 ** 31 - 1) {
+        if (upper !== 0 || lower > 2 ** 31 - 1) {
           failWebsocketConnection(this.ws, 'Received payload length > 2^31 bytes.')
           return
         }
 
-        const lower = buffer.readUInt32BE(4)
-
-        this.#info.payloadLength = (upper << 8) + lower
+        this.#info.payloadLength = lower
         this.#state = parserStates.READ_DATA
       } else if (this.#state === parserStates.READ_DATA) {
         if (this.#byteOffset < this.#info.payloadLength) {
@@ -28896,7 +29120,7 @@ class ByteParser extends Writable {
           } else {
             this.#extensions.get('permessage-deflate').decompress(body, this.#info.fin, (error, data) => {
               if (error) {
-                closeWebSocketConnection(this.ws, 1007, error.message, error.message.length)
+                failWebsocketConnection(this.ws, error.message)
                 return
               }
 
@@ -29500,6 +29724,12 @@ function parseExtensions (extensions) {
  * @param {string} value
  */
 function isValidClientWindowBits (value) {
+  // Must have at least one character
+  if (value.length === 0) {
+    return false
+  }
+
+  // Check all characters are ASCII digits
   for (let i = 0; i < value.length; i++) {
     const byte = value.charCodeAt(i)
 
@@ -29508,7 +29738,9 @@ function isValidClientWindowBits (value) {
     }
   }
 
-  return true
+  // Check numeric range: zlib requires windowBits in range 8-15
+  const num = Number.parseInt(value, 10)
+  return num >= 8 && num <= 15
 }
 
 // https://nodejs.org/api/intl.html#detecting-internationalization-support
@@ -29986,7 +30218,7 @@ class WebSocket extends EventTarget {
    * @see https://websockets.spec.whatwg.org/#feedback-from-the-protocol
    */
   #onConnectionEstablished (response, parsedExtensions) {
-    // processResponse is called when the "response’s header list has been received and initialized."
+    // processResponse is called when the "response's header list has been received and initialized."
     // once this happens, the connection is open
     this[kResponse] = response
 
@@ -35015,14 +35247,26 @@ var endpoint = withDefaults(null, DEFAULTS);
 // EXTERNAL MODULE: ./node_modules/fast-content-type-parse/index.js
 var fast_content_type_parse = __nccwpck_require__(1120);
 ;// CONCATENATED MODULE: ./node_modules/json-with-bigint/json-with-bigint.js
+const intRegex = /^-?\d+$/;
 const noiseValue = /^-?\d+n+$/; // Noise - strings that match the custom format before being converted to it
 const originalStringify = JSON.stringify;
 const originalParse = JSON.parse;
+const customFormat = /^-?\d+n$/;
 
-/*
-  Function to serialize value to a JSON string.
-  Converts BigInt values to a custom format (strings with digits and "n" at the end) and then converts them to proper big integers in a JSON string.
-*/
+const bigIntsStringify = /([\[:])?"(-?\d+)n"($|([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
+const noiseStringify =
+  /([\[:])?("-?\d+n+)n("$|"([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
+
+/** @typedef {(key: string, value: any, context?: { source: string }) => any} Reviver */
+
+/**
+ * Function to serialize value to a JSON string.
+ * Converts BigInt values to a custom format (strings with digits and "n" at the end) and then converts them to proper big integers in a JSON string.
+ * @param {*} value - The value to convert to a JSON string.
+ * @param {(Function|Array<string>|null)} [replacer] - A function that alters the behavior of the stringification process, or an array of strings to indicate properties to exclude.
+ * @param {(string|number)} [space] - A string or number to specify indentation or pretty-printing.
+ * @returns {string} The JSON string representation.
+ */
 const JSONStringify = (value, replacer, space) => {
   if ("rawJSON" in JSON) {
     return originalStringify(
@@ -35036,14 +35280,12 @@ const JSONStringify = (value, replacer, space) => {
 
         return value;
       },
-      space
+      space,
     );
   }
 
   if (!value) return originalStringify(value, replacer, space);
 
-  const bigInts = /([\[:])?"(-?\d+)n"($|([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
-  const noise = /([\[:])?("-?\d+n+)n("$|"([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
   const convertedToCustomJSON = originalStringify(
     value,
     (key, value) => {
@@ -35060,33 +35302,51 @@ const JSONStringify = (value, replacer, space) => {
 
       return value;
     },
-    space
+    space,
   );
-  const processedJSON = convertedToCustomJSON.replace(bigInts, "$1$2$3"); // Delete one "n" off the end of every BigInt value
-  const denoisedJSON = processedJSON.replace(noise, "$1$2$3"); // Remove one "n" off the end of every noisy string
+  const processedJSON = convertedToCustomJSON.replace(
+    bigIntsStringify,
+    "$1$2$3",
+  ); // Delete one "n" off the end of every BigInt value
+  const denoisedJSON = processedJSON.replace(noiseStringify, "$1$2$3"); // Remove one "n" off the end of every noisy string
 
   return denoisedJSON;
 };
 
-/*
-  Function to check if the JSON.parse's context.source feature is supported.
-*/
+/**
+ * Support for JSON.parse's context.source feature detection.
+ * @type {boolean}
+ */
 const isContextSourceSupported = () =>
   JSON.parse("1", (_, __, context) => !!context && context.source === "1");
 
-/*
-  Faster (2x) and simpler function to parse JSON.
-  Based on JSON.parse's context.source feature, which is not universally available now.
-  Does not support the legacy custom format, used in the first version of this library.
-*/
-const JSONParseV2 = (text, reviver) => {
-  const intRegex = /^-?\d+$/;
+/**
+ * Convert marked big numbers to BigInt
+ * @type {Reviver}
+ */
+const convertMarkedBigIntsReviver = (key, value, context, userReviver) => {
+  const isCustomFormatBigInt =
+    typeof value === "string" && value.match(customFormat);
+  if (isCustomFormatBigInt) return BigInt(value.slice(0, -1));
 
+  const isNoiseValue = typeof value === "string" && value.match(noiseValue);
+  if (isNoiseValue) return value.slice(0, -1);
+
+  if (typeof userReviver !== "function") return value;
+  return userReviver(key, value, context);
+};
+
+/**
+ * Faster (2x) and simpler function to parse JSON.
+ * Based on JSON.parse's context.source feature, which is not universally available now.
+ * Does not support the legacy custom format, used in the first version of this library.
+ */
+const JSONParseV2 = (text, reviver) => {
   return JSON.parse(text, (key, value, context) => {
     const isBigNumber =
       typeof value === "number" &&
       (value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER);
-    const isInt = intRegex.test(context.source);
+    const isInt = context && intRegex.test(context.source);
     const isBigInt = isBigNumber && isInt;
 
     if (isBigInt) return BigInt(context.source);
@@ -35097,22 +35357,21 @@ const JSONParseV2 = (text, reviver) => {
   });
 };
 
-/*
-  Function to parse JSON.
-  If JSON has number values greater than Number.MAX_SAFE_INTEGER, we convert those values to a custom format, then parse them to BigInt values.
-  Other types of values are not affected and parsed as native JSON.parse() would parse them.
-*/
+const MAX_INT = Number.MAX_SAFE_INTEGER.toString();
+const MAX_DIGITS = MAX_INT.length;
+const stringsOrLargeNumbers =
+  /"(?:\\.|[^"])*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
+const noiseValueWithQuotes = /^"-?\d+n+"$/; // Noise - strings that match the custom format before being converted to it
+
+/**
+ * Function to parse JSON.
+ * If JSON has number values greater than Number.MAX_SAFE_INTEGER, we convert those values to a custom format, then parse them to BigInt values.
+ * Other types of values are not affected and parsed as native JSON.parse() would parse them.
+ */
 const JSONParse = (text, reviver) => {
   if (!text) return originalParse(text, reviver);
 
   if (isContextSourceSupported()) return JSONParseV2(text, reviver); // Shortcut to a faster (2x) and simpler version
-
-  const MAX_INT = Number.MAX_SAFE_INTEGER.toString();
-  const MAX_DIGITS = MAX_INT.length;
-  const stringsOrLargeNumbers =
-    /"(?:\\.|[^"])*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
-  const noiseValueWithQuotes = /^"-?\d+n+"$/; // Noise - strings that match the custom format before being converted to it
-  const customFormat = /^-?\d+n$/;
 
   // Find and mark big numbers with "n"
   const serializedData = text.replace(
@@ -35133,27 +35392,15 @@ const JSONParse = (text, reviver) => {
         return text;
 
       return '"' + text + 'n"';
-    }
+    },
   );
 
-  // Convert marked big numbers to BigInt
-  return originalParse(serializedData, (key, value, context) => {
-    const isCustomFormatBigInt =
-      typeof value === "string" && Boolean(value.match(customFormat));
-
-    if (isCustomFormatBigInt)
-      return BigInt(value.substring(0, value.length - 1));
-
-    const isNoiseValue =
-      typeof value === "string" && Boolean(value.match(noiseValue));
-
-    if (isNoiseValue) return value.substring(0, value.length - 1); // Remove one "n" off the end of the noisy string
-
-    if (typeof reviver !== "function") return value;
-
-    return reviver(key, value, context);
-  });
+  return originalParse(serializedData, (key, value, context) =>
+    convertMarkedBigIntsReviver(key, value, context, reviver),
+  );
 };
+
+
 
 ;// CONCATENATED MODULE: ./node_modules/@octokit/request-error/dist-src/index.js
 class RequestError extends Error {
