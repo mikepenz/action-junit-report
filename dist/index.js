@@ -34403,7 +34403,7 @@ function exportVariable(name, val) {
  * ```
  */
 function core_setSecret(secret) {
-    issueCommand('add-mask', {}, secret);
+    command_issueCommand('add-mask', {}, secret);
 }
 /**
  * Prepends inputPath to the PATH (for this action and future actions)
@@ -39935,6 +39935,8 @@ async function run() {
     try {
         startGroup(`📘 Reading input values`);
         const token = getInput('token') || getInput('github_token') || process.env.GITHUB_TOKEN;
+        if (token)
+            core_setSecret(token);
         if (!token) {
             setFailed('❌ A token is required to execute this action');
             return;
