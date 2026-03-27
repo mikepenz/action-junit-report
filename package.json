@@ -38,12 +38,11 @@
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.4",
+    "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
-    "@types/eslint-scope": "^9.1.0",
-    "@types/node": "^25.3.3",
-    "@typescript-eslint/eslint-plugin": "^8.56.1",
-    "@typescript-eslint/parser": "^8.56.1",
+    "@types/node": "^25.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.2",
+    "@typescript-eslint/parser": "^8.57.2",
     "@vercel/ncc": "^0.38.4",
     "eslint": "^10.1.0",
     "eslint-import-resolver-typescript": "^4.4.4",
@@ -55,10 +54,11 @@
     "nock": "^14.0.11",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18",
+    "vitest": "^4.1.2",
     "webpack": "^5.105.3"
   },
   "overrides": {
-    "serialize-javascript": "^7.0.3"
+    "serialize-javascript": "^7.0.3",
+    "brace-expansion": "^5.0.5"
   }
 }
