@@ -22,6 +22,9 @@
       "ESNext",
       "ES2021.String",
       "dom"
+    ],
+    "types": [
+      "node"
     ]
   },
   "exclude": [
