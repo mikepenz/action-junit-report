@@ -11,6 +11,7 @@ export async function run(): Promise<void> {
     core.startGroup(`📘 Reading input values`)
 
     const token = core.getInput('token') || core.getInput('github_token') || process.env.GITHUB_TOKEN
+    if (token) core.setSecret(token)
     if (!token) {
       core.setFailed('❌ A token is required to execute this action')
       return
