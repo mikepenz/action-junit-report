@@ -60,7 +60,7 @@
   "overrides": {
     "serialize-javascript": "7.0.7",
     "brace-expansion": "5.0.7",
-    "vite": "8.1.4",
+    "vite": "8.1.5",
     "undici": "8.7.0"
   }
 }
