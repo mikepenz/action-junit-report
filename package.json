@@ -44,7 +44,7 @@
     "@typescript-eslint/eslint-plugin": "8.65.0",
     "@typescript-eslint/parser": "8.65.0",
     "@vercel/ncc": "0.44.1",
-    "eslint": "10.7.0",
+    "eslint": "10.8.0",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-github": "6.1.1",
     "eslint-plugin-import": "2.32.0",
@@ -55,7 +55,7 @@
     "prettier": "3.9.6",
     "typescript": "6.0.3",
     "vitest": "4.1.10",
-    "webpack": "5.108.4"
+    "webpack": "5.109.0"
   },
   "overrides": {
     "brace-expansion": "5.0.8",
