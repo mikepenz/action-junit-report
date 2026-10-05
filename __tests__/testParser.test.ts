@@ -17,6 +17,16 @@ describe('resolveFileAndLine', () => {
     expect(line).toBe(1)
   })
 
+  it('should use a path classname as file name instead of its last dotted segment', async () => {
+    const {fileName} = await resolveFileAndLine(
+      null,
+      null,
+      'src/tests/utils/failed-summary.spec.ts',
+      'not a stacktrace'
+    )
+    expect(fileName).toBe('src/tests/utils/failed-summary.spec.ts')
+  })
+
   it('should parse correctly fileName and line for a Java file', async () => {
     const {fileName, line} = await resolveFileAndLine(
       null,
