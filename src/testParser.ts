@@ -461,9 +461,7 @@ async function createTestCaseAnnotation(
   resolveIgnoreClassname: boolean
 ): Promise<Annotation> {
   // Extract stack trace from a failure/error node.
-  const stackTrace: string = ((issue && issue._cdata) || (issue && issue._text) || '')
-    .toString()
-    .trim()
+  const stackTrace: string = ((issue && issue._cdata) || (issue && issue._text) || '').toString().trim()
 
   const stackTraceMessage = truncateStackTraces ? stackTrace.split('\n').slice(0, 2).join('\n') : stackTrace
 

@@ -1733,7 +1733,9 @@ describe('parseTestReports', () => {
     expect(multipleErrorAnnotations[1].message).toBe('Second timeout')
     expect(multipleErrorAnnotations[1].start_line).toBe(102)
 
-    const mixedAnnotations = failureAnnotations.filter(annotation => annotation.title.includes('testWithFailureAndError'))
+    const mixedAnnotations = failureAnnotations.filter(annotation =>
+      annotation.title.includes('testWithFailureAndError')
+    )
     expect(mixedAnnotations).toHaveLength(2)
     expect(mixedAnnotations[0].message).toBe('Assertion failed')
     expect(mixedAnnotations[0].start_line).toBe(55)
