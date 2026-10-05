@@ -52211,6 +52211,9 @@ function buildTable(rows) {
         .join('');
     return wrap('table', tableBody);
 }
+function escapeHtml(value) {
+    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 /**
  * Wraps content in an HTML tag, adding any HTML attributes
  *
@@ -52383,7 +52386,7 @@ async function updateChecks(octokit, check_run_id, title, summary, annotations) 
     core_debug(JSON.stringify(updateCheckRequest, null, 2));
     await octokit.rest.checks.update(updateCheckRequest);
 }
-async function attachSummary(table, detailsTable, flakySummary, checkInfos = [], summaryText) {
+async function attachSummary(table, detailsTable, flakySummary, checkInfos = [], summaryText, failedSection = '') {
     // Add summary text if provided
     if (summaryText) {
         summary.addRaw(summaryText);
@@ -52393,6 +52396,9 @@ async function attachSummary(table, detailsTable, flakySummary, checkInfos = [],
     }
     if (detailsTable.length > 1) {
         summary.addTable(detailsTable);
+    }
+    if (failedSection) {
+        summary.addRaw(failedSection, true);
     }
     if (flakySummary.length > 1) {
         summary.addTable(flakySummary);
@@ -52410,7 +52416,7 @@ async function attachSummary(table, detailsTable, flakySummary, checkInfos = [],
 function buildCommentIdentifier(checkName) {
     return `<!-- Summary comment for ${JSON.stringify(checkName)} by mikepenz/action-junit-report -->`;
 }
-async function attachComment(octokit, checkName, updateComment, table, detailsTable, flakySummary, checkInfos = [], prId) {
+async function attachComment(octokit, checkName, updateComment, table, detailsTable, flakySummary, checkInfos = [], prId, renderFailures = () => '') {
     // Use provided prId or fall back to context issue number
     const issueNumber = prId ? parseInt(prId, 10) : annotator_context.issue.number;
     if (!issueNumber) {
@@ -52422,24 +52428,32 @@ async function attachComment(octokit, checkName, updateComment, table, detailsTa
         return;
     }
     const identifier = buildCommentIdentifier(checkName);
-    let comment = buildTable(table);
+    let head = buildTable(table);
     if (detailsTable.length > 1) {
-        comment += '\n\n';
-        comment += buildTable(detailsTable);
+        head += '\n\n';
+        head += buildTable(detailsTable);
     }
+    let tail = '';
     if (flakySummary.length > 1) {
-        comment += '\n\n';
-        comment += buildTable(flakySummary);
+        tail += '\n\n';
+        tail += buildTable(flakySummary);
     }
     // Add check links to the job summary if any checks were created
     if (checkInfos.length > 0) {
         const links = checkInfos.map(checkInfo => {
             return buildLink(`View ${checkInfo.name}`, checkInfo.url);
         });
-        comment += buildList(links);
-        comment += `\n\n`;
+        tail += buildList(links);
+        tail += `\n\n`;
     }
-    comment += `\n\n${identifier}`;
+    tail += `\n\n${identifier}`;
+    let comment = head;
+    const failedSection = renderFailures(65536 - head.length - tail.length - 2);
+    if (failedSection) {
+        comment += '\n\n';
+        comment += failedSection;
+    }
+    comment += tail;
     const priorComment = updateComment ? await findPriorComment(octokit, identifier, issueNumber) : undefined;
     if (priorComment) {
         await octokit.rest.issues.updateComment({
@@ -59909,7 +59923,7 @@ function escapeEmoji(input) {
 ;// CONCATENATED MODULE: ./lib/table.js
 
 
-function buildSummaryTables(testResults, includePassed, includeSkipped, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite = false, includeEmptyInSummary = true, includeTimeInSummary = true, simplifiedSummary = false) {
+function buildSummaryTables(testResults, includePassed, includeSkipped, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite = false, includeEmptyInSummary = true, includeTimeInSummary = true, simplifiedSummary = false, failedSummary = true, failedSummaryLogs = false) {
     // only include a warning icon if there are skipped tests
     const hasPassed = testResults.some(testResult => testResult.passed > 0);
     const hasSkipped = testResults.some(testResult => testResult.skipped > 0);
@@ -59917,7 +59931,7 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
     const hasTests = testResults.some(testResult => testResult.totalCount > 0);
     if (skipSuccessSummary && !hasFailed) {
         // if we have skip success summary enabled, and we don't have any test failures, return empty tables
-        return [[], [], []];
+        return [[], [], [], () => ''];
     }
     const passedHeader = hasTests ? (hasPassed ? (hasFailed ? 'Passed ☑️' : 'Passed ✅') : 'Passed') : 'Passed ❌️';
     const skippedHeader = hasSkipped ? 'Skipped ⚠️' : 'Skipped';
@@ -59962,6 +59976,10 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
     if (flakySummary && includeTimeInSummary) {
         flakyTable[0].push({ data: timeHeader, header: true });
     }
+    // failed tests are rendered as collapsible blocks with their logs, instead of rows in the details table
+    const inlineFailures = detailedSummary && failedSummary && failedSummaryLogs;
+    const excludeFailed = !failedSummary || inlineFailures;
+    const failedEntries = [];
     const colspan = includeTimeInSummary ? '3' : '2';
     for (const testResult of testResults) {
         const row = [
@@ -59975,9 +59993,15 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
             row.push(toFormatedTime(testResult.time));
         }
         table.push(row);
+        const failures = inlineFailures ? groupFailures(collectAnnotations(testResult)) : [];
+        for (const group of failures)
+            failedEntries.push([testResult.checkName, group]);
         const annotations = testResult.globalAnnotations.filter(annotation => (includePassed || annotation.status !== 'success' || annotation.retries > 0) &&
             (includeSkipped || annotation.status !== 'skipped'));
-        if (annotations.length === 0) {
+        const detailAnnotations = excludeFailed
+            ? annotations.filter(annotation => annotation.status !== 'failure')
+            : annotations;
+        if (annotations.length === 0 && failures.length === 0) {
             if (!includePassed) {
                 info(`⚠️ No annotations found for ${testResult.checkName}. If you want to include passed results in this table please configure 'include_passed' as 'true'`);
             }
@@ -59987,9 +60011,10 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
         }
         else {
             if (detailedSummary) {
+                const headingIndex = detailsTable.length;
                 detailsTable.push([{ data: `<strong>${testResult.checkName}</strong>`, colspan }]);
                 if (!groupSuite) {
-                    for (const annotation of annotations) {
+                    for (const annotation of detailAnnotations) {
                         // Skip passed tests (including flaky ones) in details table when includePassed is false
                         // Note: skipped tests have status='skipped' and are handled separately by includeSkipped
                         if (!includePassed && annotation.status === 'success') {
@@ -60011,8 +60036,11 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
                 }
                 else {
                     for (const internalTestResult of testResult.testResults) {
-                        appendDetailsTable(internalTestResult, detailsTable, includePassed, includeSkipped, includeTimeInSummary, passedDetailIcon, skippedDetailIcon);
+                        appendDetailsTable(internalTestResult, detailsTable, includePassed, includeSkipped, includeTimeInSummary, passedDetailIcon, skippedDetailIcon, excludeFailed);
                     }
+                }
+                if (excludeFailed && detailsTable.length === headingIndex + 1) {
+                    detailsTable.pop();
                 }
             }
             if (flakySummary) {
@@ -60030,13 +60058,147 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
             }
         }
     }
-    return [table, detailsTable, flakyTable];
+    // drop the details table when failed tests were its only content, leaving just the header
+    if (excludeFailed && detailsTable.length === 1) {
+        detailsTable.length = 0;
+    }
+    return [
+        table,
+        detailsTable,
+        flakyTable,
+        maxLength => buildFailedSection(failedEntries, includeTimeInSummary, maxLength)
+    ];
 }
-function appendDetailsTable(testResult, detailsTable, includePassed, includeSkipped, includeTimeInSummary, passedDetailIcon, skippedDetailIcon) {
+// Render for each destination's remaining budget, keeping titles before spending space on logs.
+function buildFailedSection(groups, includeTimeInSummary, maxLength = 50000) {
+    if (groups.length === 0)
+        return '';
+    const limit = Math.min(maxLength, 50000);
+    const header = '<p><strong>Failed tests</strong></p>';
+    const omittedNotice = (count) => `<p><em>Logs omitted for ${count} failed tests (size limit)</em></p>`;
+    const hiddenNotice = (count) => `<p><em>… ${count} more failed tests not shown (size limit)</em></p>`;
+    const budget = limit - omittedNotice(groups.length).length - hiddenNotice(groups.length).length - 2;
+    if (budget < header.length)
+        return hiddenNotice(groups.length).length <= limit ? hiddenNotice(groups.length) : '';
+    const titles = [];
+    const rendered = [];
+    let used = header.length;
+    for (const [checkName, [first]] of groups) {
+        if (checkName.length > budget)
+            break;
+        const context = `<strong>${escapeHtml(checkName)}</strong> › `;
+        const testTitle = buildFailedTitle(first, includeTimeInSummary, budget - context.length);
+        if (testTitle === undefined)
+            break;
+        const title = context + testTitle;
+        const entry = `<p>❌ ${title}</p>`;
+        if (used + entry.length + 1 > budget)
+            break;
+        titles.push(title);
+        rendered.push(entry);
+        used += entry.length + 1;
+    }
+    let omittedLogs = 0;
+    for (let i = 0; i < rendered.length; i++) {
+        const prefix = `<details><summary>❌ ${titles[i]}</summary><br><pre>`;
+        const suffix = '</pre></details>';
+        const logs = buildFailedLogs(groups[i][1], budget - used + rendered[i].length - prefix.length - suffix.length);
+        if (logs === undefined) {
+            omittedLogs++;
+        }
+        else {
+            const entry = prefix + logs + suffix;
+            used += entry.length - rendered[i].length;
+            rendered[i] = entry;
+        }
+    }
+    const lines = [header, ...rendered];
+    if (omittedLogs)
+        lines.push(omittedNotice(omittedLogs));
+    if (titles.length < groups.length)
+        lines.push(hiddenNotice(groups.length - titles.length));
+    return lines.join('\n');
+}
+function buildFailedLogs(failures, budget) {
+    if (budget < 0)
+        return undefined;
+    let logs = '';
+    const seen = new Set();
+    for (const failure of failures) {
+        for (const part of [failure.message, failure.raw_details]) {
+            if (!part || seen.has(part))
+                continue;
+            const separator = logs ? '\n\n' : '';
+            if (logs.length + separator.length + part.length > budget)
+                return undefined;
+            const escaped = escapeHtml(part);
+            if (logs.length + separator.length + escaped.length > budget)
+                return undefined;
+            logs += separator + escaped;
+            seen.add(part);
+        }
+    }
+    return logs.trim();
+}
+function collectAnnotations(testResult) {
+    const collected = new Set(testResult.globalAnnotations);
+    const visit = (suite) => {
+        suite.annotations.forEach(annotation => collected.add(annotation));
+        suite.testResults.forEach(visit);
+    };
+    testResult.testResults.forEach(visit);
+    return [...collected];
+}
+// the parser numbers the failures of one testcase `(failure i/n)`, in order, each with its own source path
+function groupFailures(annotations) {
+    const failures = annotations.filter(annotation => annotation.status === 'failure');
+    const suffix = / \(failure (\d+)\/(\d+)\)$/;
+    const groups = [];
+    for (let i = 0; i < failures.length;) {
+        const match = failures[i].title.match(suffix);
+        let size = 1;
+        if (match && match[1] === '1') {
+            const total = Number(match[2]);
+            while (size < total && failures[i + size]?.title.match(suffix)?.slice(1).join('/') === `${size + 1}/${total}`) {
+                size++;
+            }
+        }
+        groups.push(failures.slice(i, i + size));
+        i += size;
+    }
+    return groups;
+}
+function buildFailedTitle(first, includeTimeInSummary, budget) {
+    if (first.path.length > budget)
+        return undefined;
+    const baseTitle = first.title.replace(/ \(failure \d+\/\d+\)$/, '');
+    // Normalize only for matching, preserving backslashes in the actual test name.
+    const path = first.path.replace(/\\/g, '/');
+    const normalizedTitle = baseTitle.replace(/\\/g, '/');
+    let prefix = path;
+    while (prefix && !normalizedTitle.startsWith(`${prefix}.`)) {
+        const separator = prefix.indexOf('/');
+        prefix = separator < 0 ? '' : prefix.slice(separator + 1);
+    }
+    const className = path.slice(path.lastIndexOf('/') + 1).replace(/\.[^.]*$/, '');
+    if (!prefix && className && normalizedTitle.startsWith(`${className}.`))
+        prefix = className;
+    const testName = prefix ? baseTitle.slice(prefix.length + 1) : baseTitle;
+    if (first.path.length + testName.length > budget)
+        return undefined;
+    const name = [first.path, testName]
+        .filter(Boolean)
+        .map(part => `<code>${escapeHtml(part)}</code>`)
+        .join(' › ');
+    return name + (includeTimeInSummary ? ` <i>(${toFormatedTime(first.time) || '0ms'})</i>` : '');
+}
+function appendDetailsTable(testResult, detailsTable, includePassed, includeSkipped, includeTimeInSummary, passedDetailIcon, skippedDetailIcon, excludeFailed) {
     const colspan = includeTimeInSummary ? '3' : '2';
     // For details table, don't include passed tests when includePassed is false (even if flaky)
     // Note: skipped tests have status='skipped' and are handled separately by includeSkipped
-    const annotations = testResult.annotations.filter(annotation => (includePassed || annotation.status !== 'success') && (includeSkipped || annotation.status !== 'skipped'));
+    const annotations = testResult.annotations.filter(annotation => (includePassed || annotation.status !== 'success') &&
+        (includeSkipped || annotation.status !== 'skipped') &&
+        !(excludeFailed && annotation.status === 'failure'));
     if (annotations.length > 0) {
         detailsTable.push([{ data: `<em>${testResult.name}</em>`, colspan }]);
         for (const annotation of annotations) {
@@ -60055,7 +60217,7 @@ function appendDetailsTable(testResult, detailsTable, includePassed, includeSkip
         }
     }
     for (const childTestResult of testResult.testResults) {
-        appendDetailsTable(childTestResult, detailsTable, includePassed, includeSkipped, includeTimeInSummary, passedDetailIcon, skippedDetailIcon);
+        appendDetailsTable(childTestResult, detailsTable, includePassed, includeSkipped, includeTimeInSummary, passedDetailIcon, skippedDetailIcon, excludeFailed);
     }
 }
 
@@ -60092,6 +60254,8 @@ async function run() {
         const jobSummary = getInput('job_summary') === 'true';
         const jobSummaryText = getInput('job_summary_text');
         const detailedSummary = getInput('detailed_summary') === 'true';
+        const failedSummary = getInput('failed_summary') !== 'false';
+        const failedSummaryLogs = getInput('failed_summary_logs') === 'true';
         const flakySummary = getInput('flaky_summary') === 'true';
         const verboseSummary = getInput('verbose_summary') === 'true';
         const skipSuccessSummary = getInput('skip_success_summary') === 'true';
@@ -60205,10 +60369,11 @@ async function run() {
             }
         }
         const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
-        const [table, detailTable, flakyTable] = buildSummaryTables(testResults, includePassed, includeSkipped, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite, includeEmptyInSummary, includeTimeInSummary, simplifiedSummary);
+        const [table, detailTable, flakyTable, renderFailures] = buildSummaryTables(testResults, includePassed, includeSkipped, detailedSummary, flakySummary, verboseSummary, skipSuccessSummary, groupSuite, includeEmptyInSummary, includeTimeInSummary, simplifiedSummary, failedSummary, failedSummaryLogs);
+        const failedSection = renderFailures();
         if (jobSummary && supportsJobSummary) {
             try {
-                await attachSummary(table, detailTable, flakyTable, checkInfos, jobSummaryText);
+                await attachSummary(table, detailTable, flakyTable, checkInfos, jobSummaryText, failedSection);
             }
             catch (error) {
                 core_error(`❌ Failed to set the summary using the provided token. (${error})`);
@@ -60222,10 +60387,10 @@ async function run() {
         }
         if (comment && (!skipCommentWithoutTests || mergedResult.totalCount > 0)) {
             const octokit = getOctokit(token);
-            await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable, checkInfos, prId);
+            await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable, checkInfos, prId, renderFailures);
         }
         setOutput('summary', buildTable(table));
-        setOutput('detailed_summary', buildTable(detailTable));
+        setOutput('detailed_summary', buildTable(detailTable) + failedSection);
         setOutput('flaky_summary', buildTable(flakyTable));
         // Set report URLs as output (newline-separated for multiple reports)
         const reportUrls = checkInfos.map(info => info.url).join('\n');
