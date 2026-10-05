@@ -38,13 +38,13 @@
     "xml-js": "1.6.11"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.3.6",
+    "@eslint/eslintrc": "3.3.7",
     "@eslint/js": "10.0.1",
-    "@types/node": "25.9.5",
-    "@typescript-eslint/eslint-plugin": "8.67.0",
-    "@typescript-eslint/parser": "8.67.0",
+    "@types/node": "25.9.9",
+    "@typescript-eslint/eslint-plugin": "8.71.0",
+    "@typescript-eslint/parser": "8.71.0",
     "@vercel/ncc": "0.45.0",
-    "eslint": "10.8.1",
+    "eslint": "10.11.0",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-github": "6.1.2",
     "eslint-plugin-import": "2.32.0",
@@ -52,10 +52,10 @@
     "glob": "13.0.6",
     "js-yaml": "5.4.2",
     "nock": "14.0.17",
-    "prettier": "3.9.6",
+    "prettier": "3.9.9",
     "typescript": "6.0.3",
     "vitest": "4.1.11",
-    "webpack": "5.109.2"
+    "webpack": "5.111.1"
   },
   "overrides": {
     "fast-uri": "4.1.5",
