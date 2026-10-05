@@ -61,7 +61,7 @@
     "fast-uri": "4.2.1",
     "js-yaml": "5.4.2",
     "nanoid": "6.0.1",
-    "undici": "8.10.2",
+    "undici": "8.11.2",
     "minimatch@3": {
       "brace-expansion": "1.1.21"
     },
