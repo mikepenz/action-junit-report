@@ -91,7 +91,10 @@ export async function resolveFileAndLine(
   className: string,
   output: string
 ): Promise<Position> {
-  let fileName = file ? file : className.split('.').slice(-1)[0]
+  // a classname ending with a file extension after a slash is already a file path (e.g. vitest/jest), not a dotted Java class
+  // (Go package paths contain slashes too, but their last segment has no extension)
+  const isFilePath = /\/[^/]*\.[A-Za-z0-9]+$/.test(className)
+  let fileName = file ? file : isFilePath ? className : className.split('.').slice(-1)[0]
   const lineNumber = safeParseInt(line)
   try {
     if (fileName && lineNumber) {
