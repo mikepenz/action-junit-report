@@ -102,6 +102,14 @@ inputs:
     description: 'Include table with all test results in summary'
     required: false
     default: 'false'
+  failed_summary:
+    description: 'Include the failed tests in the detailed summary, when `false` they are removed from it. Requires `detailed_summary`'
+    required: false
+    default: 'true'
+  failed_summary_logs:
+    description: 'Show failed tests as collapsible blocks with their error logs, instead of rows in the detailed summary table. Requires `detailed_summary` and `failed_summary`'
+    required: false
+    default: 'false'
   flaky_summary:
     description: 'Include table with all flaky results in summary'
     required: false
@@ -185,7 +193,7 @@ outputs:
   summary:
     description: 'The short summary of the junit report. In html format (as also constructed by GitHub for the summary).'
   detailed_summary:
-    description: 'The full table with all test results in a summary. In html format (as also constructed by GitHub for the summary).'
+    description: 'The detailed summary in HTML, including a table and optional collapsible failed-test logs.'
   flaky_summary:
     description: 'The full table with all flaky results in a summary. In html format (as also constructed by GitHub for the summary).'
   report_url:

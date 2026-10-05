@@ -162,6 +162,8 @@ jobs:
 | `job_summary`                | Optional. Enables the publishing of the job summary for the results. Defaults to `true`. May be required to disable [Enterprise Server](https://github.com/mikepenz/action-junit-report/issues/637) |
 | `job_summary_text`           | Optional. Additional text to include in the job summary prior to the tables. Defaults to empty string.                                                                                              |
 | `detailed_summary`           | Optional. Include table with all test results in the summary (Also applies to comment). Defaults to `false`.                                                                                        |
+| `failed_summary`             | Optional. Include the failed tests in the detailed summary, when `false` they are removed from it (Also applies to comment). Requires `detailed_summary`. Defaults to `true`. |
+| `failed_summary_logs`        | Optional. Show failed tests as collapsible blocks with the error message and stack trace after the table, instead of rows in the table. Requires `detailed_summary` and `failed_summary`. When `false`, failed tests stay in the table. Defaults to `false`. |
 | `flaky_summary`              | Optional. Include table with all flaky results in the summary (Also applies to comment). Defaults to `false`.                                                                                       |
 | `verbose_summary`            | Optional. Detail table will note if there were no test annotations for a test suite (Also applies to comment). Defaults to `true`.                                                                  |
 | `skip_success_summary`       | Optional. Skips the summary table if only successful tests were detected (Also applies to comment). Defaults to `false`.                                                                            |
@@ -241,7 +243,7 @@ A full set list of possible output values for this action.
 | `outputs.retried`          | The number of retried test cases.                                                                                   |
 | `outputs.failed`           | The number of failed test cases.                                                                                    |
 | `outputs.summary`          | The short summary of the junit report. In html format (as also constructed by GitHub for the summary).              |
-| `outputs.detailed_summary` | The full table with all test results in a summary. In html format (as also constructed by GitHub for the summary).  |
+| `outputs.detailed_summary` | The detailed summary in HTML, including a table and optional collapsible failed-test logs. |
 | `outputs.flaky_summary`    | The full table with all flaky results in a summary. In html format (as also constructed by GitHub for the summary). |
 | `outputs.report_url`       | The URL(s) to the test report(s). If multiple reports are created, they are separated by newlines.                  |
 
