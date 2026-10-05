@@ -1857,13 +1857,12 @@ describe('parseTestReports', () => {
 })
 
 describe('module reports', () => {
-  it('derives the module from the report path', () => {
-    expect(getModuleName('core/build/test-results/test/TEST-a.xml')).toBe('core')
-    expect(getModuleName('./services/api/build/test-results/test/TEST-a.xml')).toBe('services/api')
-    expect(getModuleName('a/b/target/surefire-reports/TEST-a.xml')).toBe('a/b')
-    expect(getModuleName('build/test-results/test/TEST-a.xml')).toBe('.')
-    expect(getModuleName('reports/unit/TEST-a.xml')).toBe('reports/unit')
-    expect(getModuleName('TEST-a.xml')).toBe('.')
+  it('derives the module from the first capture group', () => {
+    const regex = /^(.+?)\/build\//
+    expect(getModuleName('core/build/test-results/test/TEST-a.xml', regex)).toBe('core')
+    expect(getModuleName('./services/api/build/test-results/test/TEST-a.xml', regex)).toBe('services/api')
+    expect(getModuleName('reports/unit/TEST-a.xml', regex)).toBe('.')
+    expect(getModuleName('a/b/target/TEST-a.xml', /^(?:.*\/)?([^/]+)\/target\//)).toBe('b')
   })
 
   it('merges file results per module', async () => {
@@ -1880,7 +1879,7 @@ describe('module reports', () => {
       '/'
     )
     const modules = new Map<string, TestResult>()
-    addToModuleResults(modules, '', result.testResults)
+    addToModuleResults(modules, '', result.testResults, /^test_results\/([^/]+)\//)
     const total = [...modules.values()].reduce((sum, m) => sum + m.totalCount, 0)
     expect(total).toBe(result.totalCount)
     expect(modules.size).toBeGreaterThan(1)

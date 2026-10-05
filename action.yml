@@ -139,9 +139,9 @@ inputs:
     required: false
     default: 'false'
   module_reports:
-    description: 'If enabled, results are grouped per module (derived from the report path, e.g. `core` for `core/build/test-results/test/TEST-x.xml`) with one row per module in the summary. Default: false'
+    description: 'Regular expression applied to each report file path; its first capture group is the module name. Results are grouped per module with one row per module in the summary, e.g. `^(.+?)/build/`. Files not matching go to `.`. Default: disabled'
     required: false
-    default: 'false'
+    default: ''
   comment:
     description: 'Enables a comment being added to the PR with the summary tables (summary has to be enabled). Default: false'
     required: false

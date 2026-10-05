@@ -42,7 +42,8 @@ export async function run(): Promise<void> {
     const includeTimeInSummary = core.getInput('include_time_in_summary') === 'true'
     const simplifiedSummary = core.getInput('simplified_summary') === 'true'
     const groupSuite = core.getInput('group_suite') === 'true'
-    const moduleReports = core.getInput('module_reports') === 'true'
+    const moduleReports = core.getInput('module_reports')
+    const moduleRegex = moduleReports ? new RegExp(moduleReports) : undefined
     const comment = core.getInput('comment') === 'true'
     const updateComment = core.getInput('updateComment') === 'true'
     const jobName = core.getInput('job_name')
@@ -118,8 +119,8 @@ export async function run(): Promise<void> {
       mergedResult.retried += testResult.retried
       mergedResult.time += testResult.time
 
-      if (moduleReports) {
-        addToModuleResults(moduleResults, testResult.summary, testResult.testResults)
+      if (moduleRegex) {
+        addToModuleResults(moduleResults, testResult.summary, testResult.testResults, moduleRegex)
       } else if (groupReports) {
         testResults.push(testResult)
       } else {
@@ -141,7 +142,7 @@ export async function run(): Promise<void> {
       }
     }
 
-    if (moduleReports) {
+    if (moduleRegex) {
       testResults.push(...moduleResults.values())
     }
 
