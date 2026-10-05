@@ -282,6 +282,10 @@ export function getModuleName(file: string, moduleRegex: RegExp): string {
   return moduleRegex.exec(normalized)?.[1] || '.'
 }
 
+function collectAnnotations(result: ActualTestResult): Annotation[] {
+  return [...result.annotations, ...result.testResults.flatMap(collectAnnotations)]
+}
+
 /**
  * Merge the per-file results into one TestResult per module, keyed by module name.
  */
@@ -317,7 +321,7 @@ export function addToModuleResults(
     moduleResult.retried += actual.retriedCount
     moduleResult.time += actual.time
     moduleResult.foundFiles += 1
-    moduleResult.globalAnnotations.push(...actual.annotations)
+    moduleResult.globalAnnotations.push(...collectAnnotations(actual))
     moduleResult.testResults.push(actual)
   }
 }
