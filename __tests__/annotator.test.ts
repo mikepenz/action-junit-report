@@ -1,5 +1,7 @@
 import {vi, describe, it, expect, beforeEach, afterEach} from 'vitest'
 import {attachComment, buildCommentIdentifier} from '../src/annotator.js'
+import {buildSummaryTables} from '../src/table.js'
+import {parseTestReports} from '../src/testParser.js'
 
 /**
  *   Copyright 2024 Mike Penz
@@ -57,6 +59,43 @@ describe('attachComment', () => {
 
   afterEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('drops logs before hiding failures when tables leave little comment space', async () => {
+    const result = await parseTestReports(
+      'check',
+      '',
+      'test_results/multiple_failures/test_multiple_errors.xml',
+      '*',
+      true,
+      true,
+      false,
+      [],
+      undefined,
+      '/'
+    )
+    result.globalAnnotations[0].raw_details = 'x'.repeat(20000)
+    const [, , , renderFailures] = buildSummaryTables(
+      [result],
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true
+    )
+    await attachComment(mockOctokit, ['check'], false, [['x'.repeat(55000)]], [], [], [], '123', renderFailures)
+    const body = mockOctokit.rest.issues.createComment.mock.calls[0][0].body
+    expect(body.length).toBeLessThanOrEqual(65536)
+    expect(body).toContain('<code>testWithMultipleErrors</code>')
+    expect(body).toContain('<code>testWithFailureAndError</code>')
+    expect(body).toContain('Logs omitted for')
   })
 
   it('should use pr_id when provided and context.issue.number is not available', async () => {
