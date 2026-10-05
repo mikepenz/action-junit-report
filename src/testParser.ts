@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import {glob} from 'glob'
+import {glob} from 'glob/raw'
 import * as fs from 'fs'
 import * as parser from 'xml-js'
 import * as pathHelper from 'path'
