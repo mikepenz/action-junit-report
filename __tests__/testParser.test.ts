@@ -1885,4 +1885,24 @@ describe('module reports', () => {
     expect(modules.size).toBeGreaterThan(1)
     for (const [name, m] of modules) expect(m.checkName).toBe(name)
   })
+
+  it('keeps annotations from nested suites', async () => {
+    const result = await parseTestReports(
+      'Tests',
+      '',
+      'test_results/python/report.xml',
+      '',
+      false,
+      false,
+      false,
+      [],
+      undefined,
+      '/'
+    )
+    const modules = new Map<string, TestResult>()
+    addToModuleResults(modules, '', result.testResults, /^(.+)\//)
+    const annotations = [...modules.values()].flatMap(m => m.globalAnnotations)
+    expect(annotations.length).toBe(result.globalAnnotations.length)
+    expect(annotations.length).toBeGreaterThan(0)
+  })
 })
