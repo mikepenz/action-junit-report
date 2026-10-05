@@ -138,6 +138,10 @@ inputs:
     description: 'If enabled, will group the testcases by test suite in the `detailed_summary`'
     required: false
     default: 'false'
+  module_reports:
+    description: 'If enabled, results are grouped per module (derived from the report path, e.g. `core` for `core/build/test-results/test/TEST-x.xml`) with one row per module in the summary. Default: false'
+    required: false
+    default: 'false'
   comment:
     description: 'Enables a comment being added to the PR with the summary tables (summary has to be enabled). Default: false'
     required: false
