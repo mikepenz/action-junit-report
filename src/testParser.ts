@@ -7,6 +7,7 @@ import {applyTransformer, removePrefix} from './utils.js'
 
 export interface ActualTestResult {
   name: string
+  module?: string
   totalCount: number
   skippedCount: number
   failedCount: number
@@ -262,11 +263,72 @@ export async function parseFile(
     resolveIgnoreClassname
   )
 
-  if (testResult !== undefined && !testResult.name) {
-    testResult.name = pathHelper.basename(file)
+  if (testResult !== undefined) {
+    if (!testResult.name) {
+      testResult.name = pathHelper.basename(file)
+    }
+    testResult.module = getModuleName(file)
   }
 
   return testResult
+}
+
+const MODULE_MARKERS = ['/build/', '/target/']
+
+/**
+ * Derive the module of a report file: the path before the build output folder (Gradle/Maven),
+ * or the parent directory of the report when no build folder is found.
+ */
+export function getModuleName(file: string): string {
+  const normalized = file.replace(/\\/g, '/').replace(/^\.\//, '')
+  let index = -1
+  for (const marker of MODULE_MARKERS) {
+    const found = `/${normalized}`.indexOf(marker)
+    if (found >= 0 && (index < 0 || found < index)) index = found
+  }
+  if (index > 0) return `/${normalized}`.substring(1, index)
+  if (index === 0) return '.'
+  const dir = pathHelper.posix.dirname(normalized)
+  return dir === '' ? '.' : dir
+}
+
+/**
+ * Merge the per-file results into one TestResult per module, keyed by module name.
+ */
+export function addToModuleResults(
+  moduleResults: Map<string, TestResult>,
+  summary: string,
+  results: ActualTestResult[]
+): void {
+  for (const actual of results) {
+    const module = actual.module ?? '.'
+    let moduleResult = moduleResults.get(module)
+    if (!moduleResult) {
+      moduleResult = {
+        checkName: module,
+        summary,
+        totalCount: 0,
+        skipped: 0,
+        failed: 0,
+        passed: 0,
+        retried: 0,
+        time: 0,
+        foundFiles: 0,
+        globalAnnotations: [],
+        testResults: []
+      }
+      moduleResults.set(module, moduleResult)
+    }
+    moduleResult.totalCount += actual.totalCount
+    moduleResult.skipped += actual.skippedCount
+    moduleResult.failed += actual.failedCount
+    moduleResult.passed += actual.passedCount
+    moduleResult.retried += actual.retriedCount
+    moduleResult.time += actual.time
+    moduleResult.foundFiles += 1
+    moduleResult.globalAnnotations.push(...actual.annotations)
+    moduleResult.testResults.push(actual)
+  }
 }
 
 function templateVar(varName: string): string {

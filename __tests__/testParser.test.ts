@@ -1,5 +1,14 @@
-import {parseFile, parseTestReports, resolveFileAndLine, resolvePath, Transformer} from '../src/testParser.js'
+import {
+  addToModuleResults,
+  getModuleName,
+  parseFile,
+  parseTestReports,
+  resolveFileAndLine,
+  resolvePath,
+  Transformer
+} from '../src/testParser.js'
 import {describe, expect, it} from 'vitest'
+import {TestResult} from '../src/testParser.js'
 
 /**
  * Original test cases:
@@ -1844,5 +1853,37 @@ describe('parseTestReports', () => {
     // Both transformers should be applied: "python/test_sample" -> "test_sample" -> "sample"
     expect(filtered[0].title).toBe('sample | test_which_fails')
     expect(filtered[1].title).toBe('sample | test_with_error')
+  })
+})
+
+describe('module reports', () => {
+  it('derives the module from the report path', () => {
+    expect(getModuleName('core/build/test-results/test/TEST-a.xml')).toBe('core')
+    expect(getModuleName('./services/api/build/test-results/test/TEST-a.xml')).toBe('services/api')
+    expect(getModuleName('a/b/target/surefire-reports/TEST-a.xml')).toBe('a/b')
+    expect(getModuleName('build/test-results/test/TEST-a.xml')).toBe('.')
+    expect(getModuleName('reports/unit/TEST-a.xml')).toBe('reports/unit')
+    expect(getModuleName('TEST-a.xml')).toBe('.')
+  })
+
+  it('merges file results per module', async () => {
+    const result = await parseTestReports(
+      'Tests',
+      '',
+      'test_results/**/*.xml',
+      '',
+      false,
+      false,
+      false,
+      [],
+      undefined,
+      '/'
+    )
+    const modules = new Map<string, TestResult>()
+    addToModuleResults(modules, '', result.testResults)
+    const total = [...modules.values()].reduce((sum, m) => sum + m.totalCount, 0)
+    expect(total).toBe(result.totalCount)
+    expect(modules.size).toBeGreaterThan(1)
+    for (const [name, m] of modules) expect(m.checkName).toBe(name)
   })
 })
