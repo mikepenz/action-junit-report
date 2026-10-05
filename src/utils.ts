@@ -117,6 +117,10 @@ export function buildTable(rows: SummaryTableRow[]): string {
   return wrap('table', tableBody)
 }
 
+export function escapeHtml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
 /**
  * Wraps content in an HTML tag, adding any HTML attributes
  *
