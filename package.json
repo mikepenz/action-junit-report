@@ -38,33 +38,22 @@
     "xml-js": "1.6.11"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.3.7",
-    "@eslint/js": "10.0.1",
-    "@types/node": "25.9.9",
-    "@typescript-eslint/eslint-plugin": "8.71.0",
-    "@typescript-eslint/parser": "8.71.0",
+    "@types/node": "26.6.3",
+    "@typescript-eslint/eslint-plugin": "8.70.1",
+    "@typescript-eslint/parser": "8.70.1",
+    "@typescript/native": "npm:typescript@7.0.2",
     "@vercel/ncc": "0.45.0",
     "eslint": "10.11.0",
-    "eslint-import-resolver-typescript": "4.4.5",
-    "eslint-plugin-github": "6.1.2",
-    "eslint-plugin-import": "2.32.0",
-    "eslint-plugin-prettier": "5.5.6",
     "glob": "13.0.6",
-    "js-yaml": "5.4.2",
-    "nock": "14.0.17",
+    "globals": "17.12.0",
     "prettier": "3.9.9",
-    "typescript": "6.0.3",
-    "vitest": "4.1.11",
-    "webpack": "5.111.1"
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "vitest": "5.0.2"
   },
   "overrides": {
     "fast-uri": "4.2.1",
-    "js-yaml": "5.4.2",
     "nanoid": "6.0.1",
     "undici": "8.11.2",
-    "minimatch@3": {
-      "brace-expansion": "1.1.21"
-    },
     "minimatch@10": {
       "brace-expansion": "5.0.12"
     }

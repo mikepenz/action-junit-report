@@ -1,20 +1,6 @@
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import globals from "globals";
 import tsParser from "@typescript-eslint/parser";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
-import { FlatCompat } from "@eslint/eslintrc";
-import github from "eslint-plugin-github";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all
-});
-
 export default [{
   ignores: ["**/dist/", "**/lib/", "**/node_modules/"]
 }, {
@@ -22,7 +8,6 @@ export default [{
   files: ["src/**.ts", "__tests__/**.ts"],
 
   plugins: {
-    github,
     "@typescript-eslint": typescriptEslint
   },
 
@@ -41,13 +26,8 @@ export default [{
   },
 
   rules: {
-    "filenames/match-regex": "off",
-    "eslint-comments/no-use": "off",
-    "import/no-namespace": "off",
-    "import/named": "off",
     "no-unused-vars": "off",
     "sort-imports": "off",
-    "i18n-text/no-en": "off",
     "@typescript-eslint/no-unused-vars": "error",
 
     "@typescript-eslint/explicit-member-accessibility": ["error", {
@@ -87,17 +67,5 @@ export default [{
     "@typescript-eslint/restrict-plus-operands": "error",
     semi: "off",
     "@typescript-eslint/unbound-method": "error"
-  },
-
-  settings: {
-    "import/resolver": {
-      "typescript": {
-        "alwaysTryTypes": true
-      },
-      "node": {
-        "extensions": [".js", ".jsx", ".ts", ".tsx"],
-        "moduleDirectory": ["src", "node_modules"]
-      }
-    }
   }
 }];
