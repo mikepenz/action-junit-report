@@ -7,7 +7,7 @@ import {applyTransformer, removePrefix} from './utils.js'
 
 export interface ActualTestResult {
   name: string
-  module?: string
+  reportFile?: string
   totalCount: number
   skippedCount: number
   failedCount: number
@@ -267,29 +267,19 @@ export async function parseFile(
     if (!testResult.name) {
       testResult.name = pathHelper.basename(file)
     }
-    testResult.module = getModuleName(file)
+    testResult.reportFile = file
   }
 
   return testResult
 }
 
-const MODULE_MARKERS = ['/build/', '/target/']
-
 /**
- * Derive the module of a report file: the path before the build output folder (Gradle/Maven),
- * or the parent directory of the report when no build folder is found.
+ * Derive the module of a report file from the first capture group of the given regex,
+ * or `.` when the regex does not match.
  */
-export function getModuleName(file: string): string {
+export function getModuleName(file: string, moduleRegex: RegExp): string {
   const normalized = file.replace(/\\/g, '/').replace(/^\.\//, '')
-  let index = -1
-  for (const marker of MODULE_MARKERS) {
-    const found = `/${normalized}`.indexOf(marker)
-    if (found >= 0 && (index < 0 || found < index)) index = found
-  }
-  if (index > 0) return `/${normalized}`.substring(1, index)
-  if (index === 0) return '.'
-  const dir = pathHelper.posix.dirname(normalized)
-  return dir === '' ? '.' : dir
+  return moduleRegex.exec(normalized)?.[1] || '.'
 }
 
 /**
@@ -298,10 +288,11 @@ export function getModuleName(file: string): string {
 export function addToModuleResults(
   moduleResults: Map<string, TestResult>,
   summary: string,
-  results: ActualTestResult[]
+  results: ActualTestResult[],
+  moduleRegex: RegExp
 ): void {
   for (const actual of results) {
-    const module = actual.module ?? '.'
+    const module = getModuleName(actual.reportFile ?? '', moduleRegex)
     let moduleResult = moduleResults.get(module)
     if (!moduleResult) {
       moduleResult = {
