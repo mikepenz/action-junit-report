@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="suite &lt;img src=x&gt;" tests="6" failures="2" skipped="1">
+    <testcase name="image &lt;img src=x&gt;"><failure message="failed">trace</failure></testcase>
+    <testcase name="breakout &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&#10;&#10;[fake success](https://example.invalid)"><failure message="failed">trace</failure></testcase>
+    <testcase name="flaky &#x3c;img src=x&#x3e;"><flakyFailure message="retry">trace</flakyFailure></testcase>
+    <testcase name="literal &amp;lt;img src=x&amp;gt; &amp; ordinary &lt;value&gt;"/>
+    <testcase name="ordinary test"/>
+    <testsuite name="nested &lt;b&gt;suite&lt;/b&gt;">
+      <testcase name="nested &lt;img src=x&gt;"><skipped/></testcase>
+    </testsuite>
+</testsuite>

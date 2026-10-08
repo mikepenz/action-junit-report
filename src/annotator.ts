@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import {Annotation, TestResult} from './testParser.js'
 import * as github from '@actions/github'
-import {buildLink, buildList, buildTable} from './utils.js'
+import {buildLink, buildList, buildTable, escapeHtml} from './utils.js'
 import {SummaryTableRow} from './types.js'
 
 type GitHub = ReturnType<typeof github.getOctokit>
@@ -173,7 +173,7 @@ export async function attachSummary(
   // Add check links to the job summary if any checks were created
   if (checkInfos.length > 0) {
     const links = checkInfos.map(checkInfo => {
-      return buildLink(`View ${checkInfo.name}`, checkInfo.url)
+      return buildLink(`View ${escapeHtml(checkInfo.name)}`, checkInfo.url)
     })
     core.summary.addList(links)
   }
@@ -228,7 +228,7 @@ export async function attachComment(
   // Add check links to the job summary if any checks were created
   if (checkInfos.length > 0) {
     const links = checkInfos.map(checkInfo => {
-      return buildLink(`View ${checkInfo.name}`, checkInfo.url)
+      return buildLink(`View ${escapeHtml(checkInfo.name)}`, checkInfo.url)
     })
     tail += buildList(links)
     tail += `\n\n`

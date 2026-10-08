@@ -1,4 +1,4 @@
-import {buildTable, readTransformers, splitList} from '../src/utils.js'
+import {buildTable, escapeHtml, readTransformers, splitList} from '../src/utils.js'
 import {describe, expect, it} from 'vitest'
 
 /**
@@ -50,6 +50,21 @@ describe('readTransformers', () => {
         replaceValue: '.t'
       }
     ])
+  })
+})
+
+describe('escapeHtml', () => {
+  it.each(['\n', '\r\n', '\r'])('keeps Markdown payloads inside HTML text for %j line endings', newline => {
+    const escapedNewline = newline === '\n' ? '&#10;' : newline === '\r' ? '&#13;' : '&#13;&#10;'
+    expect(escapeHtml(`name${newline}${newline}![image](https://example.invalid)`)).toBe(
+      `name${escapedNewline}${escapedNewline}![image](https://example.invalid)`
+    )
+  })
+
+  it('preserves literal entities and ordinary text as HTML text', () => {
+    expect(escapeHtml('A & B <value> "quoted" &lt;tag&gt;')).toBe(
+      'A &amp; B &lt;value&gt; "quoted" &amp;lt;tag&amp;gt;'
+    )
   })
 })
 

@@ -52924,7 +52924,13 @@ function buildTable(rows) {
     return wrap('table', tableBody);
 }
 function escapeHtml(value) {
-    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Raw blank lines end HTML blocks in Markdown and can activate injected links or images.
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\r/g, '&#13;')
+        .replace(/\n/g, '&#10;');
 }
 /**
  * Wraps content in an HTML tag, adding any HTML attributes
@@ -53118,7 +53124,7 @@ async function attachSummary(table, detailsTable, flakySummary, checkInfos = [],
     // Add check links to the job summary if any checks were created
     if (checkInfos.length > 0) {
         const links = checkInfos.map(checkInfo => {
-            return buildLink(`View ${checkInfo.name}`, checkInfo.url);
+            return buildLink(`View ${escapeHtml(checkInfo.name)}`, checkInfo.url);
         });
         summary.addList(links);
     }
@@ -53153,7 +53159,7 @@ async function attachComment(octokit, checkName, updateComment, table, detailsTa
     // Add check links to the job summary if any checks were created
     if (checkInfos.length > 0) {
         const links = checkInfos.map(checkInfo => {
-            return buildLink(`View ${checkInfo.name}`, checkInfo.url);
+            return buildLink(`View ${escapeHtml(checkInfo.name)}`, checkInfo.url);
         });
         tail += buildList(links);
         tail += `\n\n`;
@@ -60693,7 +60699,7 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
     const colspan = includeTimeInSummary ? '3' : '2';
     for (const testResult of testResults) {
         const row = [
-            `${testResult.checkName}`,
+            escapeHtml(testResult.checkName),
             includeEmptyInSummary || testResult.totalCount > 0 ? `${testResult.totalCount} ran` : ``,
             includeEmptyInSummary || testResult.passed > 0 ? `${testResult.passed} ${passedIcon}` : ``,
             includeEmptyInSummary || testResult.skipped > 0 ? `${testResult.skipped} ${skippedIcon}` : ``,
@@ -60722,7 +60728,7 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
         else {
             if (detailedSummary) {
                 const headingIndex = detailsTable.length;
-                detailsTable.push([{ data: `<strong>${testResult.checkName}</strong>`, colspan }]);
+                detailsTable.push([{ data: `<strong>${escapeHtml(testResult.checkName)}</strong>`, colspan }]);
                 if (!groupSuite) {
                     for (const annotation of detailAnnotations) {
                         // Skip passed tests (including flaky ones) in details table when includePassed is false
@@ -60731,7 +60737,7 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
                             continue;
                         }
                         const detailsRow = [
-                            `${annotation.title}`,
+                            escapeHtml(annotation.title),
                             `${annotation.status === 'success'
                                 ? passedDetailIcon
                                 : annotation.status === 'skipped'
@@ -60756,9 +60762,9 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
             if (flakySummary) {
                 const flakyAnnotations = annotations.filter(annotation => annotation.retries > 0);
                 if (flakyAnnotations.length > 0) {
-                    flakyTable.push([{ data: `<strong>${testResult.checkName}</strong>`, colspan }]);
+                    flakyTable.push([{ data: `<strong>${escapeHtml(testResult.checkName)}</strong>`, colspan }]);
                     for (const annotation of flakyAnnotations) {
-                        const flakyRow = [`${annotation.title}`, `${annotation.retries}`];
+                        const flakyRow = [escapeHtml(annotation.title), `${annotation.retries}`];
                         if (includeTimeInSummary) {
                             flakyRow.push(toFormatedTime(annotation.time));
                         }
@@ -60910,10 +60916,10 @@ function appendDetailsTable(testResult, detailsTable, includePassed, includeSkip
         (includeSkipped || annotation.status !== 'skipped') &&
         !(excludeFailed && annotation.status === 'failure'));
     if (annotations.length > 0) {
-        detailsTable.push([{ data: `<em>${testResult.name}</em>`, colspan }]);
+        detailsTable.push([{ data: `<em>${escapeHtml(testResult.name)}</em>`, colspan }]);
         for (const annotation of annotations) {
             const row = [
-                `${annotation.title}`,
+                escapeHtml(annotation.title),
                 `${annotation.status === 'success'
                     ? passedDetailIcon
                     : annotation.status === 'skipped'
