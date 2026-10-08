@@ -86,7 +86,7 @@ export function buildSummaryTables(
   const colspan = includeTimeInSummary ? '3' : '2'
   for (const testResult of testResults) {
     const row = [
-      `${testResult.checkName}`,
+      escapeHtml(testResult.checkName),
       includeEmptyInSummary || testResult.totalCount > 0 ? `${testResult.totalCount} ran` : ``,
       includeEmptyInSummary || testResult.passed > 0 ? `${testResult.passed} ${passedIcon}` : ``,
       includeEmptyInSummary || testResult.skipped > 0 ? `${testResult.skipped} ${skippedIcon}` : ``,
@@ -121,7 +121,7 @@ export function buildSummaryTables(
     } else {
       if (detailedSummary) {
         const headingIndex = detailsTable.length
-        detailsTable.push([{data: `<strong>${testResult.checkName}</strong>`, colspan}])
+        detailsTable.push([{data: `<strong>${escapeHtml(testResult.checkName)}</strong>`, colspan}])
         if (!groupSuite) {
           for (const annotation of detailAnnotations) {
             // Skip passed tests (including flaky ones) in details table when includePassed is false
@@ -130,7 +130,7 @@ export function buildSummaryTables(
               continue
             }
             const detailsRow = [
-              `${annotation.title}`,
+              escapeHtml(annotation.title),
               `${
                 annotation.status === 'success'
                   ? passedDetailIcon
@@ -166,9 +166,9 @@ export function buildSummaryTables(
       if (flakySummary) {
         const flakyAnnotations = annotations.filter(annotation => annotation.retries > 0)
         if (flakyAnnotations.length > 0) {
-          flakyTable.push([{data: `<strong>${testResult.checkName}</strong>`, colspan}])
+          flakyTable.push([{data: `<strong>${escapeHtml(testResult.checkName)}</strong>`, colspan}])
           for (const annotation of flakyAnnotations) {
-            const flakyRow = [`${annotation.title}`, `${annotation.retries}`]
+            const flakyRow = [escapeHtml(annotation.title), `${annotation.retries}`]
             if (includeTimeInSummary) {
               flakyRow.push(toFormatedTime(annotation.time))
             }
@@ -329,10 +329,10 @@ function appendDetailsTable(
       !(excludeFailed && annotation.status === 'failure')
   )
   if (annotations.length > 0) {
-    detailsTable.push([{data: `<em>${testResult.name}</em>`, colspan}])
+    detailsTable.push([{data: `<em>${escapeHtml(testResult.name)}</em>`, colspan}])
     for (const annotation of annotations) {
       const row = [
-        `${annotation.title}`,
+        escapeHtml(annotation.title),
         `${
           annotation.status === 'success'
             ? passedDetailIcon
