@@ -138,6 +138,10 @@ inputs:
     description: 'If enabled, will group the testcases by test suite in the `detailed_summary`'
     required: false
     default: 'false'
+  module_reports:
+    description: 'Regular expression applied to each report file path; its first capture group is the module name. Results are grouped per module with one row per module in the summary, e.g. `^(.+?)/build/`. Files not matching go to `.`. Default: disabled'
+    required: false
+    default: ''
   comment:
     description: 'Enables a comment being added to the PR with the summary tables (summary has to be enabled). Default: false'
     required: false

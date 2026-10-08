@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {annotateTestResult, attachComment, attachSummary, CheckInfo} from './annotator.js'
-import {parseTestReports, TestResult} from './testParser.js'
+import {addToModuleResults, parseTestReports, TestResult} from './testParser.js'
 import {buildTable, readTransformers, retrieve, splitList} from './utils.js'
 import {GitHub} from '@actions/github/lib/utils'
 import {buildSummaryTables} from './table.js'
@@ -42,6 +42,8 @@ export async function run(): Promise<void> {
     const includeTimeInSummary = core.getInput('include_time_in_summary') === 'true'
     const simplifiedSummary = core.getInput('simplified_summary') === 'true'
     const groupSuite = core.getInput('group_suite') === 'true'
+    const moduleReports = core.getInput('module_reports')
+    const moduleRegex = moduleReports ? new RegExp(moduleReports) : undefined
     const comment = core.getInput('comment') === 'true'
     const updateComment = core.getInput('updateComment') === 'true'
     const jobName = core.getInput('job_name')
@@ -73,6 +75,7 @@ export async function run(): Promise<void> {
     const reportsCount = reportPaths.length
 
     const testResults: TestResult[] = []
+    const moduleResults = new Map<string, TestResult>()
     const mergedResult: TestResult = {
       checkName: '',
       summary: '',
@@ -116,7 +119,9 @@ export async function run(): Promise<void> {
       mergedResult.retried += testResult.retried
       mergedResult.time += testResult.time
 
-      if (groupReports) {
+      if (moduleRegex) {
+        addToModuleResults(moduleResults, testResult.summary, testResult.testResults, moduleRegex)
+      } else if (groupReports) {
         testResults.push(testResult)
       } else {
         for (const actualTestResult of testResult.testResults) {
@@ -135,6 +140,10 @@ export async function run(): Promise<void> {
           })
         }
       }
+    }
+
+    if (moduleRegex) {
+      testResults.push(...moduleResults.values())
     }
 
     core.setOutput('total', mergedResult.totalCount)
