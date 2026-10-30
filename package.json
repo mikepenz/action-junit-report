@@ -51,7 +51,7 @@
     "vitest": "5.0.2"
   },
   "overrides": {
-    "fast-uri": "4.2.2",
+    "fast-uri": "4.2.3",
     "nanoid": "6.0.2",
     "undici": "8.11.2",
     "minimatch@10": {
