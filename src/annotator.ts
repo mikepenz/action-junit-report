@@ -74,7 +74,15 @@ export async function annotateTestResult(
 
       core.debug(JSON.stringify(checks, null, 2))
 
-      const check_run_id = checks.data.check_runs[0].id
+      const checkRun = checks.data.check_runs[0]
+      if (!checkRun) {
+        core.warning(
+          `⚠️ No in progress check named '${jobName}' found for ${headSha}, skipped updating it with ${testResult.checkName}. Make sure 'job_name' matches the check name of the running job, including a custom job 'name' or matrix values.`
+        )
+        return undefined
+      }
+
+      const check_run_id = checkRun.id
       const checkUrl = `${github.context.serverUrl}/${github.context.repo.owner}/${github.context.repo.repo}/runs/${check_run_id}`
 
       if (checkAnnotations) {

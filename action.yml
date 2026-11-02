@@ -155,7 +155,7 @@ inputs:
     required: false
     default: 'false'
   job_name:
-    description: 'Specify the name of a check to update'
+    description: 'Specify the name of a check to update with `update_check`. Must match the check name of the running job, including a custom job `name` or matrix values.'
     required: false
     default: ${{ github.job }}
   annotations_limit:
