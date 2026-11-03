@@ -36,6 +36,33 @@ describe('resolveFileAndLine', () => {
     expect(fileName).toBe('src/tests/utils/failed-summary.spec.ts')
   })
 
+  it('should keep using the last dotted segment for a Java class name', async () => {
+    const {fileName} = await resolveFileAndLine(null, null, 'action.surefire.report.calc.CalcUtilsTest', 'x')
+    expect(fileName).toBe('CalcUtilsTest')
+  })
+
+  it('should not treat a Go package path as a file', async () => {
+    const {fileName} = await resolveFileAndLine(null, null, 'github.com/example/server/v8/channels/api4', 'x')
+    // unchanged legacy behavior: split on the dot of the host name
+    expect(fileName).toBe('com/example/server/v8/channels/api4')
+  })
+
+  it('should prefer the explicit file attribute over a path classname', async () => {
+    const {fileName} = await resolveFileAndLine('explicit.ts', null, 'src/a/b.spec.ts', 'x')
+    expect(fileName).toBe('explicit.ts')
+  })
+
+  it('should resolve the line from the stacktrace for a path classname', async () => {
+    const {fileName, line} = await resolveFileAndLine(
+      null,
+      null,
+      'src/a/b.spec.ts',
+      'AssertionError\n at Object.<anonymous> (src/a/b.spec.ts:42:7)'
+    )
+    expect(fileName).toBe('src/a/b.spec.ts')
+    expect(line).toBe(42)
+  })
+
   it('should parse correctly fileName and line for a Java file', async () => {
     const {fileName, line} = await resolveFileAndLine(
       null,
@@ -201,6 +228,28 @@ describe('parseFile', () => {
           'java.lang.AssertionError: \n\nExpected: <100.10>\n     but: was <100.11>\n\tat action.surefire.report.calc.CalcUtilsTest.test scale(CalcUtilsTest.kt:15)'
       }
     ])
+  })
+
+  it('should use a path-like classname as annotation path and title', async () => {
+    const testResult = await parseFile('test_results/vitest/report.xml', '', false, false, false, [], undefined)
+    const [a] = testResult!!.globalAnnotations
+    expect(a.path).toBe('src/tests/utils/failed-summary.spec.ts')
+    expect(a.title).toBe('src/tests/utils/failed-summary.spec.ts.renders summary')
+  })
+
+  it('should render CLASS_NAME and FILE_NAME for a path-like classname', async () => {
+    const testResult = await parseFile(
+      'test_results/vitest/report.xml',
+      '',
+      false,
+      false,
+      false,
+      [],
+      '{{FILE_NAME}}|{{CLASS_NAME}}|{{TEST_NAME}}'
+    )
+    expect(testResult!!.globalAnnotations[0].title).toBe(
+      'src/tests/utils/failed-summary.spec.ts|src/tests/utils/failed-summary.spec.ts|renders summary'
+    )
   })
 
   it('should skip after reaching annotations_limit', async () => {

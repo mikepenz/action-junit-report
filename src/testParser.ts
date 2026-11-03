@@ -80,6 +80,14 @@ export interface Transformer {
 }
 
 /**
+ * A classname ending with a file extension after a slash is already a file path (e.g. vitest/jest), not a dotted Java class.
+ * Go package paths contain slashes too, but their last segment has no extension.
+ */
+function lastClassSegment(className: string): string {
+  return /\/[^/]*\.[A-Za-z0-9]+$/.test(className) ? className : className.split('.').slice(-1)[0]
+}
+
+/**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
  *
@@ -92,10 +100,7 @@ export async function resolveFileAndLine(
   className: string,
   output: string
 ): Promise<Position> {
-  // a classname ending with a file extension after a slash is already a file path (e.g. vitest/jest), not a dotted Java class
-  // (Go package paths contain slashes too, but their last segment has no extension)
-  const isFilePath = /\/[^/]*\.[A-Za-z0-9]+$/.test(className)
-  let fileName = file ? file : isFilePath ? className : className.split('.').slice(-1)[0]
+  let fileName = file ? file : lastClassSegment(className)
   const lineNumber = safeParseInt(line)
   try {
     if (fileName && lineNumber) {
@@ -584,7 +589,7 @@ async function createTestCaseAnnotation(
     // ensure to not duplicate the test_name if file_name is equal
     const fileName = pos.fileName !== testcase._attributes.name ? transformedFileName : ''
     const baseClassName = testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name
-    const className = baseClassName.split('.').slice(-1)[0]
+    const className = lastClassSegment(baseClassName)
     title = checkTitleTemplate
       .replace(templateVar('FILE_NAME'), fileName)
       .replace(templateVar('BREAD_CRUMB'), breadCrumb ?? '')
