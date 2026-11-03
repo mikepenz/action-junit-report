@@ -57086,7 +57086,8 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
             const checkUrl = `${github_context.serverUrl}/${github_context.repo.owner}/${github_context.repo.repo}/runs/${check_run_id}`;
             if (checkAnnotations) {
                 info(`ℹ️ - ${testResult.checkName} - Updating checks (Annotations: ${annotations.length})`);
-                for (let i = 0; i < annotations.length; i = i + 50) {
+                // the first update also sets the title and summary, so it has to be sent even without annotations
+                for (let i = 0; i === 0 || i < annotations.length; i = i + 50) {
                     const sliced = annotations.slice(i, i + 50);
                     await updateChecks(octokit, check_run_id, title, testResult.summary, sliced);
                 }
