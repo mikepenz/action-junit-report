@@ -64178,6 +64178,13 @@ var xml_js_lib = __nccwpck_require__(3675);
 
 
 /**
+ * A classname ending with a file extension after a slash is already a file path (e.g. vitest/jest), not a dotted Java class.
+ * Go package paths contain slashes too, but their last segment has no extension.
+ */
+function lastClassSegment(className) {
+    return /\/[^/]*\.[A-Za-z0-9]+$/.test(className) ? className : className.split('.').slice(-1)[0];
+}
+/**
  * Copyright 2020 ScaCap
  * https://github.com/ScaCap/action-surefire-report/blob/master/utils.js#L6
  *
@@ -64185,7 +64192,7 @@ var xml_js_lib = __nccwpck_require__(3675);
  * https://github.com/mikepenz/action-junit-report/
  */
 async function resolveFileAndLine(file, line, className, output) {
-    let fileName = file ? file : className.split('.').slice(-1)[0];
+    let fileName = file ? file : lastClassSegment(className);
     const lineNumber = safeParseInt(line);
     try {
         if (fileName && lineNumber) {
@@ -64519,7 +64526,7 @@ async function createTestCaseAnnotation(testcase, issue, failureIndex, totalFail
         // ensure to not duplicate the test_name if file_name is equal
         const fileName = pos.fileName !== testcase._attributes.name ? transformedFileName : '';
         const baseClassName = testcase._attributes.classname ? testcase._attributes.classname : testcase._attributes.name;
-        const className = baseClassName.split('.').slice(-1)[0];
+        const className = lastClassSegment(baseClassName);
         title = checkTitleTemplate
             .replace(templateVar('FILE_NAME'), fileName)
             .replace(templateVar('BREAD_CRUMB'), breadCrumb ?? '')

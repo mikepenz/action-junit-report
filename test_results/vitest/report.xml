@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="2" failures="1" errors="0" time="0.01">
+    <testsuite name="src/tests/utils/failed-summary.spec.ts" timestamp="2026-01-01T00:00:00.000Z" hostname="host" tests="2" failures="1" errors="0" skipped="0" time="0.01">
+        <testcase classname="src/tests/utils/failed-summary.spec.ts" name="renders summary" time="0.005">
+            <failure message="expected 1 to be 2" type="AssertionError">AssertionError: expected 1 to be 2</failure>
+        </testcase>
+        <testcase classname="src/tests/utils/failed-summary.spec.ts" name="renders empty" time="0.005"></testcase>
+    </testsuite>
+</testsuites>
