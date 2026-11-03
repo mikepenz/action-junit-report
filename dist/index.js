@@ -57082,7 +57082,12 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
                 filter: 'latest'
             });
             core_debug(JSON.stringify(checks, null, 2));
-            const check_run_id = checks.data.check_runs[0].id;
+            const checkRun = checks.data.check_runs[0];
+            if (!checkRun) {
+                warning(`⚠️ No in progress check named '${jobName}' found for ${headSha}, skipped updating it with ${testResult.checkName}. Make sure 'job_name' matches the check name of the running job, including a custom job 'name' or matrix values.`);
+                return undefined;
+            }
+            const check_run_id = checkRun.id;
             const checkUrl = `${github_context.serverUrl}/${github_context.repo.owner}/${github_context.repo.repo}/runs/${check_run_id}`;
             if (checkAnnotations) {
                 info(`ℹ️ - ${testResult.checkName} - Updating checks (Annotations: ${annotations.length})`);

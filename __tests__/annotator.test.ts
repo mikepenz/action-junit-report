@@ -322,6 +322,7 @@ describe('annotateTestResult with update_check', () => {
   })
 
   beforeEach(() => {
+    mockWarning.mockClear()
     mockOctokit = {
       rest: {
         checks: {
@@ -370,5 +371,36 @@ describe('annotateTestResult with update_check', () => {
 
     expect(mockOctokit.rest.checks.update).toHaveBeenCalledTimes(1)
     expect(mockOctokit.rest.checks.update.mock.calls[0][0].output.annotations).toEqual([])
+  })
+
+  it('updates the in progress check matching job_name', async () => {
+    mockOctokit.rest.checks.listForRef.mockResolvedValue({data: {check_runs: [{id: 42}]}})
+
+    const checkInfo = await annotateTestResult(buildTestResult(0), 'token', 'sha', false, false, true, false, 'build')
+
+    expect(mockOctokit.rest.checks.listForRef).toHaveBeenCalledWith({
+      owner: 'test-owner',
+      repo: 'test-repo',
+      ref: 'sha',
+      check_name: 'build',
+      status: 'in_progress',
+      filter: 'latest'
+    })
+    expect(mockOctokit.rest.checks.update).toHaveBeenCalledTimes(1)
+    expect(mockOctokit.rest.checks.update.mock.calls[0][0].check_run_id).toBe(42)
+    expect(checkInfo).toEqual({name: 'JUnit Test Report', url: 'https://github.com/test-owner/test-repo/runs/42'})
+  })
+
+  it('warns and skips the update when no in progress check matches job_name', async () => {
+    mockOctokit.rest.checks.listForRef.mockResolvedValue({data: {check_runs: []}})
+
+    const checkInfo = await annotateTestResult(buildTestResult(0), 'token', 'sha', false, false, true, false, 'build')
+
+    expect(checkInfo).toBeUndefined()
+    expect(mockOctokit.rest.checks.update).not.toHaveBeenCalled()
+    expect(mockOctokit.rest.checks.create).not.toHaveBeenCalled()
+    expect(mockWarning).toHaveBeenCalledWith(
+      expect.stringContaining("No in progress check named 'build' found for sha")
+    )
   })
 })
