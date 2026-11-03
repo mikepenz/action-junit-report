@@ -1865,6 +1865,13 @@ describe('module reports', () => {
     expect(getModuleName('a/b/target/TEST-a.xml', /^(?:.*\/)?([^/]+)\/target\//)).toBe('b')
   })
 
+  it('matches absolute report paths relative to the workspace', () => {
+    const regex = /^(.+?)\/build\//
+    const abs = `${process.cwd()}/core/build/test-results/test/TEST-a.xml`
+    expect(getModuleName(abs, regex)).toBe('core')
+    expect(getModuleName('/elsewhere/core/build/TEST-a.xml', regex)).toBe('/elsewhere/core')
+  })
+
   it('merges file results per module', async () => {
     const result = await parseTestReports(
       'Tests',
@@ -1879,11 +1886,11 @@ describe('module reports', () => {
       '/'
     )
     const modules = new Map<string, TestResult>()
-    addToModuleResults(modules, '', result.testResults, /^test_results\/([^/]+)\//)
+    addToModuleResults(modules, 'Tests', '', result.testResults, /^test_results\/([^/]+)\//)
     const total = [...modules.values()].reduce((sum, m) => sum + m.totalCount, 0)
     expect(total).toBe(result.totalCount)
     expect(modules.size).toBeGreaterThan(1)
-    for (const [name, m] of modules) expect(m.checkName).toBe(name)
+    for (const [name, m] of modules) expect(m.checkName).toBe(`Tests | ${name}`)
   })
 
   it('keeps annotations from nested suites', async () => {
@@ -1900,7 +1907,7 @@ describe('module reports', () => {
       '/'
     )
     const modules = new Map<string, TestResult>()
-    addToModuleResults(modules, '', result.testResults, /^(.+)\//)
+    addToModuleResults(modules, 'Tests', '', result.testResults, /^(.+)\//)
     const annotations = [...modules.values()].flatMap(m => m.globalAnnotations)
     expect(annotations.length).toBe(result.globalAnnotations.length)
     expect(annotations.length).toBeGreaterThan(0)

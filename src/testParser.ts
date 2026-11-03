@@ -278,7 +278,13 @@ export async function parseFile(
  * or `.` when the regex does not match.
  */
 export function getModuleName(file: string, moduleRegex: RegExp): string {
-  const normalized = file.replace(/\\/g, '/').replace(/^\.\//, '')
+  // globbing an absolute pattern yields absolute paths: match against the path relative to the workspace instead
+  let relative = file
+  if (pathHelper.isAbsolute(file)) {
+    const rel = pathHelper.relative(process.env.GITHUB_WORKSPACE || process.cwd(), file)
+    if (!rel.startsWith('..') && !pathHelper.isAbsolute(rel)) relative = rel
+  }
+  const normalized = relative.replace(/\\/g, '/').replace(/^\.\//, '')
   return moduleRegex.exec(normalized)?.[1] || '.'
 }
 
@@ -291,6 +297,7 @@ function collectAnnotations(result: ActualTestResult): Annotation[] {
  */
 export function addToModuleResults(
   moduleResults: Map<string, TestResult>,
+  checkName: string,
   summary: string,
   results: ActualTestResult[],
   moduleRegex: RegExp
@@ -300,7 +307,7 @@ export function addToModuleResults(
     let moduleResult = moduleResults.get(module)
     if (!moduleResult) {
       moduleResult = {
-        checkName: module,
+        checkName: `${checkName} | ${module}`,
         summary,
         totalCount: 0,
         skipped: 0,
@@ -321,7 +328,8 @@ export function addToModuleResults(
     moduleResult.retried += actual.retriedCount
     moduleResult.time += actual.time
     moduleResult.foundFiles += 1
-    moduleResult.globalAnnotations.push(...collectAnnotations(actual))
+    // no spread: a large report would exceed the maximum number of arguments
+    for (const annotation of collectAnnotations(actual)) moduleResult.globalAnnotations.push(annotation)
     moduleResult.testResults.push(actual)
   }
 }

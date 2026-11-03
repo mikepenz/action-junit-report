@@ -64319,7 +64319,14 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
  * or `.` when the regex does not match.
  */
 function getModuleName(file, moduleRegex) {
-    const normalized = file.replace(/\\/g, '/').replace(/^\.\//, '');
+    // globbing an absolute pattern yields absolute paths: match against the path relative to the workspace instead
+    let relative = file;
+    if (external_path_namespaceObject.isAbsolute(file)) {
+        const rel = external_path_namespaceObject.relative(process.env.GITHUB_WORKSPACE || process.cwd(), file);
+        if (!rel.startsWith('..') && !external_path_namespaceObject.isAbsolute(rel))
+            relative = rel;
+    }
+    const normalized = relative.replace(/\\/g, '/').replace(/^\.\//, '');
     return moduleRegex.exec(normalized)?.[1] || '.';
 }
 function collectAnnotations(result) {
@@ -64328,13 +64335,13 @@ function collectAnnotations(result) {
 /**
  * Merge the per-file results into one TestResult per module, keyed by module name.
  */
-function addToModuleResults(moduleResults, summary, results, moduleRegex) {
+function addToModuleResults(moduleResults, checkName, summary, results, moduleRegex) {
     for (const actual of results) {
         const module = getModuleName(actual.reportFile ?? '', moduleRegex);
         let moduleResult = moduleResults.get(module);
         if (!moduleResult) {
             moduleResult = {
-                checkName: module,
+                checkName: `${checkName} | ${module}`,
                 summary,
                 totalCount: 0,
                 skipped: 0,
@@ -64355,7 +64362,9 @@ function addToModuleResults(moduleResults, summary, results, moduleRegex) {
         moduleResult.retried += actual.retriedCount;
         moduleResult.time += actual.time;
         moduleResult.foundFiles += 1;
-        moduleResult.globalAnnotations.push(...collectAnnotations(actual));
+        // no spread: a large report would exceed the maximum number of arguments
+        for (const annotation of collectAnnotations(actual))
+            moduleResult.globalAnnotations.push(annotation);
         moduleResult.testResults.push(actual);
     }
 }
@@ -65070,7 +65079,18 @@ async function run() {
         const simplifiedSummary = getInput('simplified_summary') === 'true';
         const groupSuite = getInput('group_suite') === 'true';
         const moduleReports = getInput('module_reports');
-        const moduleRegex = moduleReports ? new RegExp(moduleReports) : undefined;
+        let moduleRegex;
+        if (moduleReports) {
+            try {
+                moduleRegex = new RegExp(moduleReports);
+            }
+            catch (error) {
+                warning(`⚠️ Ignoring input 'module_reports': '${moduleReports}' is not a valid regular expression (${error})`);
+            }
+        }
+        if (moduleRegex && getInput('group_reports') === 'false') {
+            warning(`⚠️ 'module_reports' takes precedence over 'group_reports: false', results are grouped per module`);
+        }
         const comment = getInput('comment') === 'true';
         const updateComment = getInput('updateComment') === 'true';
         const jobName = getInput('job_name');
@@ -65121,7 +65141,7 @@ async function run() {
             mergedResult.retried += testResult.retried;
             mergedResult.time += testResult.time;
             if (moduleRegex) {
-                addToModuleResults(moduleResults, testResult.summary, testResult.testResults, moduleRegex);
+                addToModuleResults(moduleResults, testResult.checkName, testResult.summary, testResult.testResults, moduleRegex);
             }
             else if (groupReports) {
                 testResults.push(testResult);

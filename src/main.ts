@@ -43,7 +43,17 @@ export async function run(): Promise<void> {
     const simplifiedSummary = core.getInput('simplified_summary') === 'true'
     const groupSuite = core.getInput('group_suite') === 'true'
     const moduleReports = core.getInput('module_reports')
-    const moduleRegex = moduleReports ? new RegExp(moduleReports) : undefined
+    let moduleRegex: RegExp | undefined
+    if (moduleReports) {
+      try {
+        moduleRegex = new RegExp(moduleReports)
+      } catch (error) {
+        core.warning(`⚠️ Ignoring input 'module_reports': '${moduleReports}' is not a valid regular expression (${error})`)
+      }
+    }
+    if (moduleRegex && core.getInput('group_reports') === 'false') {
+      core.warning(`⚠️ 'module_reports' takes precedence over 'group_reports: false', results are grouped per module`)
+    }
     const comment = core.getInput('comment') === 'true'
     const updateComment = core.getInput('updateComment') === 'true'
     const jobName = core.getInput('job_name')
@@ -120,7 +130,7 @@ export async function run(): Promise<void> {
       mergedResult.time += testResult.time
 
       if (moduleRegex) {
-        addToModuleResults(moduleResults, testResult.summary, testResult.testResults, moduleRegex)
+        addToModuleResults(moduleResults, testResult.checkName, testResult.summary, testResult.testResults, moduleRegex)
       } else if (groupReports) {
         testResults.push(testResult)
       } else {
