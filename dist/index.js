@@ -65089,7 +65089,7 @@ async function run() {
             }
         }
         if (moduleRegex && getInput('group_reports') === 'false') {
-            warning(`⚠️ 'module_reports' takes precedence over 'group_reports: false', results are grouped per module`);
+            info(`ℹ️ 'module_reports' takes precedence over 'group_reports: false', results are grouped per module`);
         }
         const comment = getInput('comment') === 'true';
         const updateComment = getInput('updateComment') === 'true';

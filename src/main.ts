@@ -52,7 +52,7 @@ export async function run(): Promise<void> {
       }
     }
     if (moduleRegex && core.getInput('group_reports') === 'false') {
-      core.warning(`⚠️ 'module_reports' takes precedence over 'group_reports: false', results are grouped per module`)
+      core.info(`ℹ️ 'module_reports' takes precedence over 'group_reports: false', results are grouped per module`)
     }
     const comment = core.getInput('comment') === 'true'
     const updateComment = core.getInput('updateComment') === 'true'
