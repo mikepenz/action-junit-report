@@ -64306,10 +64306,67 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
     }
     const testResult = await parseSuite(testsuite, suiteRegex, // no-op
     '', breadCrumbDelimiter, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations, resolveIgnoreClassname);
-    if (testResult !== undefined && !testResult.name) {
-        testResult.name = external_path_namespaceObject.basename(file);
+    if (testResult !== undefined) {
+        if (!testResult.name) {
+            testResult.name = external_path_namespaceObject.basename(file);
+        }
+        testResult.reportFile = file;
     }
     return testResult;
+}
+/**
+ * Derive the module of a report file from the first capture group of the given regex,
+ * or `.` when the regex does not match.
+ */
+function getModuleName(file, moduleRegex) {
+    // globbing an absolute pattern yields absolute paths: match against the path relative to the workspace instead
+    let relative = file;
+    if (external_path_namespaceObject.isAbsolute(file)) {
+        const rel = external_path_namespaceObject.relative(process.env.GITHUB_WORKSPACE || process.cwd(), file);
+        if (!rel.startsWith('..') && !external_path_namespaceObject.isAbsolute(rel))
+            relative = rel;
+    }
+    const normalized = relative.replace(/\\/g, '/').replace(/^\.\//, '');
+    return moduleRegex.exec(normalized)?.[1] || '.';
+}
+function collectAnnotations(result) {
+    return [...result.annotations, ...result.testResults.flatMap(collectAnnotations)];
+}
+/**
+ * Merge the per-file results into one TestResult per module, keyed by module name.
+ */
+function addToModuleResults(moduleResults, checkName, summary, results, moduleRegex) {
+    for (const actual of results) {
+        const module = getModuleName(actual.reportFile ?? '', moduleRegex);
+        let moduleResult = moduleResults.get(module);
+        if (!moduleResult) {
+            moduleResult = {
+                checkName: `${checkName} | ${module}`,
+                summary,
+                totalCount: 0,
+                skipped: 0,
+                failed: 0,
+                passed: 0,
+                retried: 0,
+                time: 0,
+                foundFiles: 0,
+                globalAnnotations: [],
+                testResults: []
+            };
+            moduleResults.set(module, moduleResult);
+        }
+        moduleResult.totalCount += actual.totalCount;
+        moduleResult.skipped += actual.skippedCount;
+        moduleResult.failed += actual.failedCount;
+        moduleResult.passed += actual.passedCount;
+        moduleResult.retried += actual.retriedCount;
+        moduleResult.time += actual.time;
+        moduleResult.foundFiles += 1;
+        // no spread: a large report would exceed the maximum number of arguments
+        for (const annotation of collectAnnotations(actual))
+            moduleResult.globalAnnotations.push(annotation);
+        moduleResult.testResults.push(actual);
+    }
 }
 function templateVar(varName) {
     return `{{${varName}}}`;
@@ -64751,7 +64808,7 @@ function buildSummaryTables(testResults, includePassed, includeSkipped, detailed
             row.push(toFormatedTime(testResult.time));
         }
         table.push(row);
-        const failures = inlineFailures ? groupFailures(collectAnnotations(testResult)) : [];
+        const failures = inlineFailures ? groupFailures(table_collectAnnotations(testResult)) : [];
         for (const group of failures)
             failedEntries.push([testResult.checkName, group]);
         const annotations = testResult.globalAnnotations.filter(annotation => (includePassed || annotation.status !== 'success' || annotation.retries > 0) &&
@@ -64898,7 +64955,7 @@ function buildFailedLogs(failures, budget) {
     }
     return logs.trim();
 }
-function collectAnnotations(testResult) {
+function table_collectAnnotations(testResult) {
     const collected = new Set(testResult.globalAnnotations);
     const visit = (suite) => {
         suite.annotations.forEach(annotation => collected.add(annotation));
@@ -65021,6 +65078,19 @@ async function run() {
         const includeTimeInSummary = getInput('include_time_in_summary') === 'true';
         const simplifiedSummary = getInput('simplified_summary') === 'true';
         const groupSuite = getInput('group_suite') === 'true';
+        const moduleReports = getInput('module_reports');
+        let moduleRegex;
+        if (moduleReports) {
+            try {
+                moduleRegex = new RegExp(moduleReports);
+            }
+            catch (error) {
+                warning(`⚠️ Ignoring input 'module_reports': '${moduleReports}' is not a valid regular expression (${error})`);
+            }
+        }
+        if (moduleRegex && getInput('group_reports') === 'false') {
+            info(`ℹ️ 'module_reports' takes precedence over 'group_reports: false', results are grouped per module`);
+        }
         const comment = getInput('comment') === 'true';
         const updateComment = getInput('updateComment') === 'true';
         const jobName = getInput('job_name');
@@ -65047,6 +65117,7 @@ async function run() {
         startGroup(`📦 Process test results`);
         const reportsCount = reportPaths.length;
         const testResults = [];
+        const moduleResults = new Map();
         const mergedResult = {
             checkName: '',
             summary: '',
@@ -65069,7 +65140,10 @@ async function run() {
             mergedResult.passed += testResult.passed;
             mergedResult.retried += testResult.retried;
             mergedResult.time += testResult.time;
-            if (groupReports) {
+            if (moduleRegex) {
+                addToModuleResults(moduleResults, testResult.checkName, testResult.summary, testResult.testResults, moduleRegex);
+            }
+            else if (groupReports) {
                 testResults.push(testResult);
             }
             else {
@@ -65089,6 +65163,9 @@ async function run() {
                     });
                 }
             }
+        }
+        if (moduleRegex) {
+            testResults.push(...moduleResults.values());
         }
         setOutput('total', mergedResult.totalCount);
         setOutput('passed', mergedResult.passed);

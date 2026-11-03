@@ -7,6 +7,7 @@ import {applyTransformer, removePrefix} from './utils.js'
 
 export interface ActualTestResult {
   name: string
+  reportFile?: string
   totalCount: number
   skippedCount: number
   failedCount: number
@@ -262,11 +263,75 @@ export async function parseFile(
     resolveIgnoreClassname
   )
 
-  if (testResult !== undefined && !testResult.name) {
-    testResult.name = pathHelper.basename(file)
+  if (testResult !== undefined) {
+    if (!testResult.name) {
+      testResult.name = pathHelper.basename(file)
+    }
+    testResult.reportFile = file
   }
 
   return testResult
+}
+
+/**
+ * Derive the module of a report file from the first capture group of the given regex,
+ * or `.` when the regex does not match.
+ */
+export function getModuleName(file: string, moduleRegex: RegExp): string {
+  // globbing an absolute pattern yields absolute paths: match against the path relative to the workspace instead
+  let relative = file
+  if (pathHelper.isAbsolute(file)) {
+    const rel = pathHelper.relative(process.env.GITHUB_WORKSPACE || process.cwd(), file)
+    if (!rel.startsWith('..') && !pathHelper.isAbsolute(rel)) relative = rel
+  }
+  const normalized = relative.replace(/\\/g, '/').replace(/^\.\//, '')
+  return moduleRegex.exec(normalized)?.[1] || '.'
+}
+
+function collectAnnotations(result: ActualTestResult): Annotation[] {
+  return [...result.annotations, ...result.testResults.flatMap(collectAnnotations)]
+}
+
+/**
+ * Merge the per-file results into one TestResult per module, keyed by module name.
+ */
+export function addToModuleResults(
+  moduleResults: Map<string, TestResult>,
+  checkName: string,
+  summary: string,
+  results: ActualTestResult[],
+  moduleRegex: RegExp
+): void {
+  for (const actual of results) {
+    const module = getModuleName(actual.reportFile ?? '', moduleRegex)
+    let moduleResult = moduleResults.get(module)
+    if (!moduleResult) {
+      moduleResult = {
+        checkName: `${checkName} | ${module}`,
+        summary,
+        totalCount: 0,
+        skipped: 0,
+        failed: 0,
+        passed: 0,
+        retried: 0,
+        time: 0,
+        foundFiles: 0,
+        globalAnnotations: [],
+        testResults: []
+      }
+      moduleResults.set(module, moduleResult)
+    }
+    moduleResult.totalCount += actual.totalCount
+    moduleResult.skipped += actual.skippedCount
+    moduleResult.failed += actual.failedCount
+    moduleResult.passed += actual.passedCount
+    moduleResult.retried += actual.retriedCount
+    moduleResult.time += actual.time
+    moduleResult.foundFiles += 1
+    // no spread: a large report would exceed the maximum number of arguments
+    for (const annotation of collectAnnotations(actual)) moduleResult.globalAnnotations.push(annotation)
+    moduleResult.testResults.push(actual)
+  }
 }
 
 function templateVar(varName: string): string {
