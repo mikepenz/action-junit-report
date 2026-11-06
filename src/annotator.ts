@@ -123,6 +123,17 @@ export async function annotateTestResult(
       core.info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjustedAnnotations.length})`)
       const checkResponse = await octokit.rest.checks.create(createCheckRequest)
 
+      // a request accepts at most 50 annotations, the remaining ones are appended by updating the created check
+      try {
+        for (let i = 50; i < adjustedAnnotations.length; i = i + 50) {
+          const sliced = adjustedAnnotations.slice(i, i + 50)
+          await updateChecks(octokit, checkResponse.data.id, title, testResult.summary, sliced)
+        }
+      } catch (error) {
+        // the check exists at this point, keep its link and continue publishing the other results
+        core.warning(`⚠️ Failed to append all annotations to ${testResult.checkName}. (${error})`)
+      }
+
       // Return the check URL for use in job summary
       return {
         name: testResult.checkName,
