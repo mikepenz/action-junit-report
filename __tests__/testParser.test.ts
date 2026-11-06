@@ -5,8 +5,10 @@ import {
   parseTestReports,
   resolveFileAndLine,
   resolvePath,
-  Transformer
+  Transformer,
+  ungroupTestResult
 } from '../src/testParser.js'
+import {buildSummaryTables} from '../src/table.js'
 import {describe, expect, it} from 'vitest'
 import {TestResult} from '../src/testParser.js'
 
@@ -1970,5 +1972,77 @@ describe('module reports', () => {
     const annotations = [...modules.values()].flatMap(m => m.globalAnnotations)
     expect(annotations.length).toBe(result.globalAnnotations.length)
     expect(annotations.length).toBeGreaterThan(0)
+  })
+})
+
+describe('ungrouped reports', () => {
+  it('creates one result per report file', async () => {
+    const result = await parseTestReports(
+      'Tests',
+      'summary',
+      'test_results/tests/utils/**/*.xml',
+      '',
+      false,
+      false,
+      false,
+      [],
+      undefined,
+      '/'
+    )
+    const ungrouped = ungroupTestResult(result)
+    expect(ungrouped).toHaveLength(result.testResults.length)
+    expect(ungrouped.length).toBeGreaterThan(1)
+    for (const [i, fileResult] of ungrouped.entries()) {
+      const actual = result.testResults[i]
+      expect(fileResult.checkName).toBe(`Tests | ${actual.name}`)
+      expect(fileResult.summary).toBe('summary')
+      expect(fileResult.totalCount).toBe(actual.totalCount)
+      expect(fileResult.failed).toBe(actual.failedCount)
+      expect(fileResult.foundFiles).toBe(1)
+      expect(fileResult.testResults).toEqual([actual])
+    }
+    expect(ungrouped.reduce((sum, r) => sum + r.totalCount, 0)).toBe(result.totalCount)
+    expect(ungrouped.flatMap(r => r.globalAnnotations)).toEqual(result.globalAnnotations)
+  })
+
+  it('keeps annotations from nested suites', async () => {
+    // pytest wraps its suite into <testsuites>, the failures belong to the nested <testsuite>
+    const result = await parseTestReports(
+      'Tests',
+      '',
+      'test_results/python/report.xml',
+      '',
+      false,
+      false,
+      false,
+      [],
+      undefined,
+      '/'
+    )
+    const [fileResult] = ungroupTestResult(result)
+    expect(fileResult.failed).toBe(2)
+    expect(fileResult.globalAnnotations).toHaveLength(2)
+    expect(fileResult.globalAnnotations).toEqual(result.globalAnnotations)
+  })
+
+  it('keeps test cases of the root suite in the grouped details table', async () => {
+    // surefire reports have their test cases directly in the root <testsuite>
+    const result = await parseTestReports(
+      'Tests',
+      '',
+      'test_results/tests/utils/target/surefire-reports/TEST-action.surefire.report.calc.CalcUtilsTest.xml',
+      '',
+      false,
+      false,
+      false,
+      [],
+      undefined,
+      '/'
+    )
+    const [, detailTable] = buildSummaryTables(ungroupTestResult(result), false, false, true, false, false, false, true)
+    const titles = detailTable.slice(1).map(row => (typeof row[0] === 'string' ? row[0] : row[0].data))
+    expect(titles).toContain('<em>action.surefire.report.calc.CalcUtilsTest</em>')
+    expect(result.globalAnnotations.length).toBeGreaterThan(0)
+    for (const annotation of result.globalAnnotations) expect(titles).toContain(annotation.title)
   })
 })

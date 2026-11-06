@@ -342,6 +342,26 @@ export function addToModuleResults(
   }
 }
 
+/**
+ * Split the result of a single `report_paths` glob into one TestResult per report file,
+ * used when `group_reports` is disabled.
+ */
+export function ungroupTestResult(testResult: TestResult): TestResult[] {
+  return testResult.testResults.map(actual => ({
+    checkName: `${testResult.checkName} | ${actual.name}`,
+    summary: testResult.summary,
+    totalCount: actual.totalCount,
+    skipped: actual.skippedCount,
+    failed: actual.failedCount,
+    passed: actual.passedCount,
+    retried: actual.retriedCount,
+    time: actual.time,
+    foundFiles: 1,
+    globalAnnotations: collectAnnotations(actual),
+    testResults: [actual]
+  }))
+}
+
 function templateVar(varName: string): string {
   return `{{${varName}}}`
 }

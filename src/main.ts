@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {annotateTestResult, attachComment, attachSummary, CheckInfo} from './annotator.js'
-import {addToModuleResults, parseTestReports, TestResult} from './testParser.js'
+import {addToModuleResults, parseTestReports, TestResult, ungroupTestResult} from './testParser.js'
 import {buildTable, readTransformers, retrieve, splitList} from './utils.js'
 import {GitHub} from '@actions/github/lib/utils'
 import {buildSummaryTables} from './table.js'
@@ -134,21 +134,7 @@ export async function run(): Promise<void> {
       } else if (groupReports) {
         testResults.push(testResult)
       } else {
-        for (const actualTestResult of testResult.testResults) {
-          testResults.push({
-            checkName: `${testResult.checkName} | ${actualTestResult.name}`,
-            summary: testResult.summary,
-            totalCount: actualTestResult.totalCount,
-            skipped: actualTestResult.skippedCount,
-            failed: actualTestResult.failedCount,
-            passed: actualTestResult.passedCount,
-            retried: actualTestResult.retriedCount,
-            time: actualTestResult.time,
-            foundFiles: 1,
-            globalAnnotations: actualTestResult.annotations,
-            testResults: actualTestResult.testResults
-          })
-        }
+        testResults.push(...ungroupTestResult(testResult))
       }
     }
 
