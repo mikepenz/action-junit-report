@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import {Annotation, TestResult} from './testParser.js'
 import * as github from '@actions/github'
-import {buildLink, buildList, buildTable, escapeHtml} from './utils.js'
+import {buildLink, buildList, buildTable, escapeHtml, truncate, truncateBytes} from './utils.js'
 import {SummaryTableRow} from './types.js'
 
 type GitHub = ReturnType<typeof github.getOctokit>
@@ -9,6 +9,22 @@ const context = github.context
 
 // the Checks API accepts at most 50 annotations per request
 const MAX_ANNOTATIONS_PER_REQUEST = 50
+
+// maximum annotation sizes of the checks API: https://docs.github.com/en/rest/checks/runs#create-a-check-run
+const ANNOTATION_TITLE_MAX_LENGTH = 255
+const ANNOTATION_TEXT_MAX_BYTES = 65535
+
+/**
+ * Shortens the annotation fields to the sizes accepted by the checks API, one oversized annotation fails the whole request.
+ */
+function limitAnnotation(annotation: Annotation): Annotation {
+  return {
+    ...annotation,
+    title: truncate(annotation.title, ANNOTATION_TITLE_MAX_LENGTH),
+    message: truncateBytes(annotation.message, ANNOTATION_TEXT_MAX_BYTES),
+    raw_details: truncateBytes(annotation.raw_details, ANNOTATION_TEXT_MAX_BYTES)
+  }
+}
 
 export interface CheckInfo {
   name: string
@@ -117,7 +133,7 @@ export async function annotateTestResult(
         output: {
           title,
           summary: testResult.summary,
-          annotations: adjustedAnnotations.slice(0, MAX_ANNOTATIONS_PER_REQUEST)
+          annotations: adjustedAnnotations.slice(0, MAX_ANNOTATIONS_PER_REQUEST).map(limitAnnotation)
         }
       }
 
@@ -159,7 +175,7 @@ async function updateChecks(
     output: {
       title,
       summary,
-      annotations
+      annotations: annotations.map(limitAnnotation)
     }
   }
 

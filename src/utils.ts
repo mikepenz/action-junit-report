@@ -150,6 +150,29 @@ function wrap(tag: string, content: string | null, attrs: {[attribute: string]: 
 }
 
 /**
+ * Shortens the string to at most `maxLength` characters, marking the cut with `…`.
+ * Counts code points, so surrogate pairs are never split.
+ */
+export function truncate(value: string, maxLength: number): string {
+  if (value.length <= maxLength) return value
+  const chars = Array.from(value)
+  if (chars.length <= maxLength) return value
+  return `${chars.slice(0, maxLength - 1).join('')}…`
+}
+
+/**
+ * Shortens the string to at most `maxBytes` bytes in UTF-8, marking the cut with `…`.
+ * Only complete characters are kept.
+ */
+export function truncateBytes(value: string, maxBytes: number): string {
+  if (Buffer.byteLength(value, 'utf8') <= maxBytes) return value
+  const ellipsis = '…'
+  // encodeInto only writes complete characters, `read` is the length of the prefix that fits
+  const {read} = new TextEncoder().encodeInto(value, new Uint8Array(maxBytes - Buffer.byteLength(ellipsis, 'utf8')))
+  return `${value.slice(0, read)}${ellipsis}`
+}
+
+/**
  * Removes a specified prefix from the beginning of a string.
  *
  * @param {string} str - The original string.

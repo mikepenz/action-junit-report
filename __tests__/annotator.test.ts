@@ -479,3 +479,82 @@ describe('annotateTestResult creating a check', () => {
     expect(mockOctokit.rest.checks.update).not.toHaveBeenCalled()
   })
 })
+
+describe('annotateTestResult annotation limits', () => {
+  let mockOctokit: any
+
+  const buildOversizedTestResult = (): TestResult => ({
+    checkName: 'JUnit Test Report',
+    summary: '',
+    totalCount: 1,
+    skipped: 0,
+    failed: 1,
+    passed: 0,
+    retried: 0,
+    time: 0,
+    foundFiles: 1,
+    globalAnnotations: [
+      {
+        path: 'src/Test.java',
+        start_line: 1,
+        end_line: 1,
+        start_column: 0,
+        end_column: 0,
+        retries: 0,
+        annotation_level: 'failure',
+        status: 'failure',
+        title: `Test.${'t'.repeat(300)}`,
+        message: 'ä'.repeat(40000),
+        raw_details: 'x'.repeat(70000),
+        time: 0
+      }
+    ],
+    testResults: []
+  })
+
+  const expectWithinLimits = (annotations: any[]): void => {
+    expect(annotations).toHaveLength(1)
+    const [annotation] = annotations
+    expect(annotation.title).toHaveLength(255)
+    expect(annotation.title.startsWith('Test.ttt')).toBe(true)
+    expect(annotation.title.endsWith('…')).toBe(true)
+    expect(Buffer.byteLength(annotation.message, 'utf8')).toBeLessThanOrEqual(65535)
+    expect(annotation.message.startsWith('ää')).toBe(true)
+    expect(Buffer.byteLength(annotation.raw_details, 'utf8')).toBeLessThanOrEqual(65535)
+    expect(annotation.raw_details.endsWith('…')).toBe(true)
+  }
+
+  beforeEach(() => {
+    mockOctokit = {
+      rest: {
+        checks: {
+          listForRef: vi.fn().mockResolvedValue({data: {check_runs: [{id: 42}]}}),
+          update: vi.fn().mockResolvedValue({}),
+          create: vi.fn().mockResolvedValue({data: {id: 42}})
+        }
+      }
+    }
+    mockGetOctokit.mockReturnValue(mockOctokit)
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('shortens oversized annotation fields when creating a check', async () => {
+    const testResult = buildOversizedTestResult()
+    await annotateTestResult(testResult, 'token', 'sha', true, false, false, false, 'build')
+
+    expect(mockOctokit.rest.checks.create).toHaveBeenCalledTimes(1)
+    expectWithinLimits(mockOctokit.rest.checks.create.mock.calls[0][0].output.annotations)
+    // the summary tables keep the full details
+    expect(testResult.globalAnnotations[0].raw_details).toHaveLength(70000)
+  })
+
+  it('shortens oversized annotation fields when updating a check', async () => {
+    await annotateTestResult(buildOversizedTestResult(), 'token', 'sha', true, false, true, false, 'build')
+
+    expect(mockOctokit.rest.checks.update).toHaveBeenCalledTimes(1)
+    expectWithinLimits(mockOctokit.rest.checks.update.mock.calls[0][0].output.annotations)
+  })
+})

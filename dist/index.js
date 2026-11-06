@@ -56988,6 +56988,30 @@ function wrap(tag, content, attrs = {}) {
     return `<${tag}${htmlAttrs}>${content}</${tag}>`;
 }
 /**
+ * Shortens the string to at most `maxLength` characters, marking the cut with `…`.
+ * Counts code points, so surrogate pairs are never split.
+ */
+function truncate(value, maxLength) {
+    if (value.length <= maxLength)
+        return value;
+    const chars = Array.from(value);
+    if (chars.length <= maxLength)
+        return value;
+    return `${chars.slice(0, maxLength - 1).join('')}…`;
+}
+/**
+ * Shortens the string to at most `maxBytes` bytes in UTF-8, marking the cut with `…`.
+ * Only complete characters are kept.
+ */
+function truncateBytes(value, maxBytes) {
+    if (Buffer.byteLength(value, 'utf8') <= maxBytes)
+        return value;
+    const ellipsis = '…';
+    // encodeInto only writes complete characters, `read` is the length of the prefix that fits
+    const { read } = new TextEncoder().encodeInto(value, new Uint8Array(maxBytes - Buffer.byteLength(ellipsis, 'utf8')));
+    return `${value.slice(0, read)}${ellipsis}`;
+}
+/**
  * Removes a specified prefix from the beginning of a string.
  *
  * @param {string} str - The original string.
@@ -57037,6 +57061,20 @@ function toFormatedTime(timeS) {
 const annotator_context = github_context;
 // the Checks API accepts at most 50 annotations per request
 const MAX_ANNOTATIONS_PER_REQUEST = 50;
+// maximum annotation sizes of the checks API: https://docs.github.com/en/rest/checks/runs#create-a-check-run
+const ANNOTATION_TITLE_MAX_LENGTH = 255;
+const ANNOTATION_TEXT_MAX_BYTES = 65535;
+/**
+ * Shortens the annotation fields to the sizes accepted by the checks API, one oversized annotation fails the whole request.
+ */
+function limitAnnotation(annotation) {
+    return {
+        ...annotation,
+        title: truncate(annotation.title, ANNOTATION_TITLE_MAX_LENGTH),
+        message: truncateBytes(annotation.message, ANNOTATION_TEXT_MAX_BYTES),
+        raw_details: truncateBytes(annotation.raw_details, ANNOTATION_TEXT_MAX_BYTES)
+    };
+}
 async function annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName) {
     const annotations = testResult.globalAnnotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
     const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
@@ -57121,7 +57159,7 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
                 output: {
                     title,
                     summary: testResult.summary,
-                    annotations: adjustedAnnotations.slice(0, MAX_ANNOTATIONS_PER_REQUEST)
+                    annotations: adjustedAnnotations.slice(0, MAX_ANNOTATIONS_PER_REQUEST).map(limitAnnotation)
                 }
             };
             core_debug(JSON.stringify(createCheckRequest, null, 2));
@@ -57153,7 +57191,7 @@ async function updateChecks(octokit, check_run_id, title, summary, annotations) 
         output: {
             title,
             summary,
-            annotations
+            annotations: annotations.map(limitAnnotation)
         }
     };
     core_debug(JSON.stringify(updateCheckRequest, null, 2));
