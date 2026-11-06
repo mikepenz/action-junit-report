@@ -64426,6 +64426,25 @@ function addToModuleResults(moduleResults, checkName, summary, results, moduleRe
         moduleResult.testResults.push(actual);
     }
 }
+/**
+ * Split the result of a single `report_paths` glob into one TestResult per report file,
+ * used when `group_reports` is disabled.
+ */
+function ungroupTestResult(testResult) {
+    return testResult.testResults.map(actual => ({
+        checkName: `${testResult.checkName} | ${actual.name}`,
+        summary: testResult.summary,
+        totalCount: actual.totalCount,
+        skipped: actual.skippedCount,
+        failed: actual.failedCount,
+        passed: actual.passedCount,
+        retried: actual.retriedCount,
+        time: actual.time,
+        foundFiles: 1,
+        globalAnnotations: collectAnnotations(actual),
+        testResults: [actual]
+    }));
+}
 function templateVar(varName) {
     return `{{${varName}}}`;
 }
@@ -65205,21 +65224,7 @@ async function run() {
                 testResults.push(testResult);
             }
             else {
-                for (const actualTestResult of testResult.testResults) {
-                    testResults.push({
-                        checkName: `${testResult.checkName} | ${actualTestResult.name}`,
-                        summary: testResult.summary,
-                        totalCount: actualTestResult.totalCount,
-                        skipped: actualTestResult.skippedCount,
-                        failed: actualTestResult.failedCount,
-                        passed: actualTestResult.passedCount,
-                        retried: actualTestResult.retriedCount,
-                        time: actualTestResult.time,
-                        foundFiles: 1,
-                        globalAnnotations: actualTestResult.annotations,
-                        testResults: actualTestResult.testResults
-                    });
-                }
+                testResults.push(...ungroupTestResult(testResult));
             }
         }
         if (moduleRegex) {
