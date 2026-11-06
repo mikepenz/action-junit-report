@@ -57035,6 +57035,8 @@ function toFormatedTime(timeS) {
 
 
 const annotator_context = github_context;
+// the Checks API accepts at most 50 annotations per request
+const MAX_ANNOTATIONS_PER_REQUEST = 50;
 async function annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName) {
     const annotations = testResult.globalAnnotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
     const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
@@ -57092,8 +57094,8 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
             if (checkAnnotations) {
                 info(`ℹ️ - ${testResult.checkName} - Updating checks (Annotations: ${annotations.length})`);
                 // the first update also sets the title and summary, so it has to be sent even without annotations
-                for (let i = 0; i === 0 || i < annotations.length; i = i + 50) {
-                    const sliced = annotations.slice(i, i + 50);
+                for (let i = 0; i === 0 || i < annotations.length; i = i + MAX_ANNOTATIONS_PER_REQUEST) {
+                    const sliced = annotations.slice(i, i + MAX_ANNOTATIONS_PER_REQUEST);
                     await updateChecks(octokit, check_run_id, title, testResult.summary, sliced);
                 }
             }
@@ -57119,12 +57121,23 @@ async function annotateTestResult(testResult, token, headSha, checkAnnotations, 
                 output: {
                     title,
                     summary: testResult.summary,
-                    annotations: adjustedAnnotations.slice(0, 50)
+                    annotations: adjustedAnnotations.slice(0, MAX_ANNOTATIONS_PER_REQUEST)
                 }
             };
             core_debug(JSON.stringify(createCheckRequest, null, 2));
             info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjustedAnnotations.length})`);
             const checkResponse = await octokit.rest.checks.create(createCheckRequest);
+            // the remaining annotations are appended by updating the created check
+            try {
+                for (let i = MAX_ANNOTATIONS_PER_REQUEST; i < adjustedAnnotations.length; i = i + MAX_ANNOTATIONS_PER_REQUEST) {
+                    const sliced = adjustedAnnotations.slice(i, i + MAX_ANNOTATIONS_PER_REQUEST);
+                    await updateChecks(octokit, checkResponse.data.id, title, testResult.summary, sliced);
+                }
+            }
+            catch (error) {
+                // the check exists at this point, keep its link and continue publishing the other results
+                warning(`⚠️ Failed to append all annotations to ${testResult.checkName}. (${error})`);
+            }
             // Return the check URL for use in job summary
             return {
                 name: testResult.checkName,

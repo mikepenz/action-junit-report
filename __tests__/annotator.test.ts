@@ -291,35 +291,35 @@ describe('buildCommentIdentifier', () => {
   })
 })
 
+const buildTestResult = (annotationCount: number, totalCount = 100): TestResult => ({
+  checkName: 'JUnit Test Report',
+  summary: 'summary text',
+  totalCount,
+  skipped: 0,
+  failed: annotationCount,
+  passed: totalCount - annotationCount,
+  retried: 0,
+  time: 0,
+  foundFiles: 1,
+  globalAnnotations: Array.from({length: annotationCount}, (_, i) => ({
+    path: 'src/Test.java',
+    start_line: i + 1,
+    end_line: i + 1,
+    start_column: 0,
+    end_column: 0,
+    retries: 0,
+    annotation_level: 'failure' as const,
+    status: 'failure' as const,
+    title: `Test.test${i}`,
+    message: `failure ${i}`,
+    raw_details: '',
+    time: 0
+  })),
+  testResults: []
+})
+
 describe('annotateTestResult with update_check', () => {
   let mockOctokit: any
-
-  const buildTestResult = (annotationCount: number): TestResult => ({
-    checkName: 'JUnit Test Report',
-    summary: 'summary text',
-    totalCount: 100,
-    skipped: 0,
-    failed: annotationCount,
-    passed: 100 - annotationCount,
-    retried: 0,
-    time: 0,
-    foundFiles: 1,
-    globalAnnotations: Array.from({length: annotationCount}, (_, i) => ({
-      path: 'src/Test.java',
-      start_line: i + 1,
-      end_line: i + 1,
-      start_column: 0,
-      end_column: 0,
-      retries: 0,
-      annotation_level: 'failure' as const,
-      status: 'failure' as const,
-      title: `Test.test${i}`,
-      message: `failure ${i}`,
-      raw_details: '',
-      time: 0
-    })),
-    testResults: []
-  })
 
   beforeEach(() => {
     mockWarning.mockClear()
@@ -402,5 +402,80 @@ describe('annotateTestResult with update_check', () => {
     expect(mockWarning).toHaveBeenCalledWith(
       expect.stringContaining("No in progress check named 'build' found for sha")
     )
+  })
+})
+
+describe('annotateTestResult creating a check', () => {
+  let mockOctokit: any
+
+  beforeEach(() => {
+    mockOctokit = {
+      rest: {
+        checks: {
+          listForRef: vi.fn(),
+          update: vi.fn().mockResolvedValue({}),
+          create: vi.fn().mockResolvedValue({data: {id: 7}})
+        }
+      }
+    }
+    mockGetOctokit.mockReturnValue(mockOctokit)
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('creates the check with all annotations when there are at most 50', async () => {
+    const checkInfo = await annotateTestResult(buildTestResult(50), 'token', 'sha', true, false, false, false, 'build')
+
+    expect(mockOctokit.rest.checks.create).toHaveBeenCalledTimes(1)
+    expect(mockOctokit.rest.checks.create.mock.calls[0][0].output.annotations).toHaveLength(50)
+    expect(mockOctokit.rest.checks.update).not.toHaveBeenCalled()
+    expect(checkInfo).toEqual({name: 'JUnit Test Report', url: 'https://github.com/test-owner/test-repo/runs/7'})
+  })
+
+  it('appends the annotations beyond the first 50 to the created check', async () => {
+    const testResult = buildTestResult(120, 200)
+    await annotateTestResult(testResult, 'token', 'sha', true, false, false, false, 'build')
+
+    expect(mockOctokit.rest.checks.create).toHaveBeenCalledTimes(1)
+    const created = mockOctokit.rest.checks.create.mock.calls[0][0].output
+    expect(created.annotations).toEqual(testResult.globalAnnotations.slice(0, 50))
+
+    const updates = mockOctokit.rest.checks.update.mock.calls.map((call: any[]) => call[0])
+    expect(updates).toHaveLength(2)
+    for (const update of updates) {
+      expect(update.check_run_id).toBe(7)
+      expect(update.output.title).toBe(created.title)
+      expect(update.output.summary).toBe('summary text')
+    }
+    expect(updates[0].output.annotations).toEqual(testResult.globalAnnotations.slice(50, 100))
+    expect(updates[1].output.annotations).toEqual(testResult.globalAnnotations.slice(100))
+  })
+
+  it('keeps the created check when appending annotations fails', async () => {
+    mockOctokit.rest.checks.update.mockRejectedValue(new Error('Validation Failed'))
+
+    const checkInfo = await annotateTestResult(
+      buildTestResult(120, 200),
+      'token',
+      'sha',
+      true,
+      false,
+      false,
+      false,
+      'build'
+    )
+
+    expect(mockOctokit.rest.checks.update).toHaveBeenCalledTimes(1)
+    expect(mockWarning).toHaveBeenCalledWith(expect.stringContaining('Validation Failed'))
+    expect(checkInfo).toEqual({name: 'JUnit Test Report', url: 'https://github.com/test-owner/test-repo/runs/7'})
+  })
+
+  it('does not send annotations when check_annotations is disabled', async () => {
+    await annotateTestResult(buildTestResult(120, 200), 'token', 'sha', false, false, false, false, 'build')
+
+    expect(mockOctokit.rest.checks.create.mock.calls[0][0].output.annotations).toEqual([])
+    expect(mockOctokit.rest.checks.update).not.toHaveBeenCalled()
   })
 })
