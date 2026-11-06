@@ -7,6 +7,9 @@ import {SummaryTableRow} from './types.js'
 type GitHub = ReturnType<typeof github.getOctokit>
 const context = github.context
 
+// the Checks API accepts at most 50 annotations per request
+const MAX_ANNOTATIONS_PER_REQUEST = 50
+
 export interface CheckInfo {
   name: string
   url: string
@@ -88,8 +91,8 @@ export async function annotateTestResult(
       if (checkAnnotations) {
         core.info(`ℹ️ - ${testResult.checkName} - Updating checks (Annotations: ${annotations.length})`)
         // the first update also sets the title and summary, so it has to be sent even without annotations
-        for (let i = 0; i === 0 || i < annotations.length; i = i + 50) {
-          const sliced = annotations.slice(i, i + 50)
+        for (let i = 0; i === 0 || i < annotations.length; i = i + MAX_ANNOTATIONS_PER_REQUEST) {
+          const sliced = annotations.slice(i, i + MAX_ANNOTATIONS_PER_REQUEST)
           await updateChecks(octokit, check_run_id, title, testResult.summary, sliced)
         }
       } else {
@@ -114,7 +117,7 @@ export async function annotateTestResult(
         output: {
           title,
           summary: testResult.summary,
-          annotations: adjustedAnnotations.slice(0, 50)
+          annotations: adjustedAnnotations.slice(0, MAX_ANNOTATIONS_PER_REQUEST)
         }
       }
 
@@ -123,10 +126,10 @@ export async function annotateTestResult(
       core.info(`ℹ️ - ${testResult.checkName} - Creating check (Annotations: ${adjustedAnnotations.length})`)
       const checkResponse = await octokit.rest.checks.create(createCheckRequest)
 
-      // a request accepts at most 50 annotations, the remaining ones are appended by updating the created check
+      // the remaining annotations are appended by updating the created check
       try {
-        for (let i = 50; i < adjustedAnnotations.length; i = i + 50) {
-          const sliced = adjustedAnnotations.slice(i, i + 50)
+        for (let i = MAX_ANNOTATIONS_PER_REQUEST; i < adjustedAnnotations.length; i = i + MAX_ANNOTATIONS_PER_REQUEST) {
+          const sliced = adjustedAnnotations.slice(i, i + MAX_ANNOTATIONS_PER_REQUEST)
           await updateChecks(octokit, checkResponse.data.id, title, testResult.summary, sliced)
         }
       } catch (error) {
