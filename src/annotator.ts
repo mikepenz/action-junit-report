@@ -233,7 +233,8 @@ export async function attachComment(
   flakySummary: SummaryTableRow[],
   checkInfos: CheckInfo[] = [],
   prId?: string,
-  renderFailures: (maxLength?: number) => string = () => ''
+  renderFailures: (maxLength?: number) => string = () => '',
+  summaryText = ''
 ): Promise<void> {
   // Use provided prId or fall back to context issue number
   const issueNumber = prId ? parseInt(prId, 10) : context.issue.number
@@ -252,7 +253,9 @@ export async function attachComment(
 
   const identifier = buildCommentIdentifier(checkName)
 
-  let head = buildTable(table)
+  // start with the custom text like the job summary does
+  let head = summaryText ? `${summaryText}\n\n` : ''
+  head += buildTable(table)
   if (detailsTable.length > 1) {
     head += '\n\n'
     head += buildTable(detailsTable)
