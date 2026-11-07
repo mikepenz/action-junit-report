@@ -57227,7 +57227,7 @@ async function attachSummary(table, detailsTable, flakySummary, checkInfos = [],
 function buildCommentIdentifier(checkName) {
     return `<!-- Summary comment for ${JSON.stringify(checkName)} by mikepenz/action-junit-report -->`;
 }
-async function attachComment(octokit, checkName, updateComment, table, detailsTable, flakySummary, checkInfos = [], prId, renderFailures = () => '') {
+async function attachComment(octokit, checkName, updateComment, table, detailsTable, flakySummary, checkInfos = [], prId, renderFailures = () => '', summaryText = '') {
     // Use provided prId or fall back to context issue number
     const issueNumber = prId ? parseInt(prId, 10) : annotator_context.issue.number;
     if (!issueNumber) {
@@ -57239,7 +57239,9 @@ async function attachComment(octokit, checkName, updateComment, table, detailsTa
         return;
     }
     const identifier = buildCommentIdentifier(checkName);
-    let head = buildTable(table);
+    // start with the custom text like the job summary does
+    let head = summaryText ? `${summaryText}\n\n` : '';
+    head += buildTable(table);
     if (detailsTable.length > 1) {
         head += '\n\n';
         head += buildTable(detailsTable);
@@ -65285,7 +65287,7 @@ async function run() {
         }
         if (comment && (!skipCommentWithoutTests || mergedResult.totalCount > 0)) {
             const octokit = getOctokit(token);
-            await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable, checkInfos, prId, renderFailures);
+            await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable, checkInfos, prId, renderFailures, jobSummaryText);
         }
         setOutput('summary', buildTable(table));
         setOutput('detailed_summary', buildTable(detailTable) + failedSection);
