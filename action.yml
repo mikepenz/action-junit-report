@@ -95,7 +95,7 @@ inputs:
     required: false
     default: 'true'
   job_summary_text:
-    description: 'Additional text to include in the job summary prior to the tables'
+    description: 'Additional text to include in the job summary prior to the tables (Also applies to comment)'
     required: false
     default: ''
   detailed_summary:

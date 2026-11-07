@@ -232,7 +232,8 @@ export async function run(): Promise<void> {
         flakyTable,
         checkInfos,
         prId,
-        renderFailures
+        renderFailures,
+        jobSummaryText
       )
     }
 
