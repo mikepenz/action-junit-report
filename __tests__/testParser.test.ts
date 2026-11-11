@@ -1647,6 +1647,41 @@ describe('parseTestReports', () => {
     ])
   })
 
+  it('should include skipped tests without passed tests with includeSkipped', async () => {
+    const parse = (includeSkipped: boolean) =>
+      parseTestReports(
+        'checkName',
+        'summary',
+        'test_results/tests/utils/target/surefire-reports/TEST-action.surefire.report.calc.StringUtilsTest.xml',
+        '*',
+        false,
+        false,
+        false,
+        [],
+        undefined,
+        '/',
+        '',
+        [],
+        false,
+        -1,
+        true,
+        false,
+        false,
+        includeSkipped
+      )
+
+    const withSkipped = await parse(true)
+    expect(withSkipped.globalAnnotations.map(annotation => annotation.status)).toStrictEqual([
+      'failure',
+      'failure',
+      'skipped'
+    ])
+    expect(withSkipped.globalAnnotations[2].title).toBe('StringUtilsTest.require_fail_null')
+
+    const withoutSkipped = await parse(false)
+    expect(withoutSkipped.globalAnnotations.map(annotation => annotation.status)).toStrictEqual(['failure', 'failure'])
+  })
+
   it('should parse retried tests', async () => {
     const {checkName, summary, totalCount, skipped, failed, passed, retried, globalAnnotations} =
       await parseTestReports(

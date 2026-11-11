@@ -120,7 +120,8 @@ export async function run(): Promise<void> {
         annotationsLimit,
         truncateStackTraces,
         failOnParseError,
-        resolveIgnoreClassname
+        resolveIgnoreClassname,
+        includeSkipped && detailedSummary // skipped tests are only listed in the detailed summary
       )
       mergedResult.totalCount += testResult.totalCount
       mergedResult.skipped += testResult.skipped

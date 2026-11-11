@@ -228,7 +228,8 @@ export async function parseFile(
   truncateStackTraces = true,
   failOnParseError = false,
   globalAnnotations: Annotation[] = [],
-  resolveIgnoreClassname = false
+  resolveIgnoreClassname = false,
+  includeSkipped = false
 ): Promise<ActualTestResult | undefined> {
   core.debug(`Parsing file ${file}`)
 
@@ -268,7 +269,8 @@ export async function parseFile(
     annotationsLimit,
     truncateStackTraces,
     globalAnnotations,
-    resolveIgnoreClassname
+    resolveIgnoreClassname,
+    includeSkipped
   )
 
   if (testResult !== undefined) {
@@ -383,7 +385,8 @@ async function parseSuite(
   annotationsLimit: number,
   truncateStackTraces: boolean,
   globalAnnotations: Annotation[],
-  resolveIgnoreClassname = false
+  resolveIgnoreClassname = false,
+  includeSkipped = false
 ): Promise<ActualTestResult | undefined> {
   if (!suite) {
     // not a valid suite, return fast
@@ -425,7 +428,8 @@ async function parseSuite(
       followSymlink,
       truncateStackTraces,
       limit,
-      resolveIgnoreClassname
+      resolveIgnoreClassname,
+      includeSkipped
     )
 
     // expand global annotations array
@@ -482,7 +486,8 @@ async function parseSuite(
       annotationsLimit,
       truncateStackTraces,
       globalAnnotations,
-      resolveIgnoreClassname
+      resolveIgnoreClassname,
+      includeSkipped
     )
 
     if (childSuiteResult) {
@@ -670,7 +675,8 @@ async function parseTestCases(
   followSymlink: boolean,
   truncateStackTraces: boolean,
   limit = -1,
-  resolveIgnoreClassname = false
+  resolveIgnoreClassname = false,
+  includeSkipped = false
 ): Promise<TestCasesResult> {
   const toIssueArray = (value: any): TestCaseIssue[] => {
     if (!value) return []
@@ -765,7 +771,8 @@ async function parseTestCases(
     // If this isn't reported as a failure and processing all passed tests
     // isn't enabled, then skip the rest of the processing.
     // Exception: if the test has flaky failures, always process it to track retries
-    if (annotationLevel !== 'failure' && !includePassed && flakyFailuresCount === 0) {
+    // Exception: skipped tests are processed on their own if `includeSkipped` is enabled
+    if (annotationLevel !== 'failure' && !includePassed && !(includeSkipped && skip) && flakyFailuresCount === 0) {
       continue
     }
 
@@ -846,7 +853,8 @@ export async function parseTestReports(
   annotationsLimit = -1,
   truncateStackTraces = true,
   failOnParseError = false,
-  resolveIgnoreClassname = false
+  resolveIgnoreClassname = false,
+  includeSkipped = false
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const files = await glob(reportPaths, {follow: followSymlink})
@@ -879,7 +887,8 @@ export async function parseTestReports(
       truncateStackTraces,
       failOnParseError,
       globalAnnotations,
-      resolveIgnoreClassname
+      resolveIgnoreClassname,
+      includeSkipped
     )
 
     if (!testResult) continue

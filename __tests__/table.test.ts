@@ -219,17 +219,26 @@ describe('buildSummaryTables', () => {
 
   it('should show skipped tests when includeSkipped=true but includePassed=false', async () => {
     // This tests the key use case: showing only failed and skipped tests, without passed tests
+    // Parse like the action does, with includePassed=false but includeSkipped=true
     const testResult = await parseTestReports(
       'checkName',
       'summary',
       'test_results/tests/utils/target/surefire-reports/TEST-action.surefire.report.calc.StringUtilsTest.xml',
       '*',
-      true, // Parse all tests
+      false, // includePassed
       true,
       true,
       [],
       undefined,
-      '/'
+      '/',
+      '',
+      [],
+      false,
+      -1,
+      true,
+      false,
+      false,
+      true // includeSkipped
     )
 
     // Build with includePassed=false but includeSkipped=true
