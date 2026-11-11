@@ -80,6 +80,36 @@ describe('buildTable', () => {
       ])
     ).toStrictEqual('<table><tr><th></th><th>Tests</th></tr><tr><td></td><td>A</td></tr></table>')
   })
+
+  const rows = [
+    [
+      {data: 'Test', header: true},
+      {data: 'Result', header: true}
+    ],
+    ['test1', 'passed'],
+    ['test2', 'passed'],
+    ['test3', 'passed'],
+    ['test4', 'passed'],
+    ['test5', 'passed']
+  ]
+
+  it('should keep tables within the length limit', async () => {
+    const table = buildTable(rows)
+    expect(buildTable(rows, table.length)).toBe(table)
+  })
+
+  it('should keep the leading rows that fit and note the omitted rows', async () => {
+    const table = buildTable(rows, 200)
+    expect(table).toBe(
+      '<table><tr><th>Test</th><th>Result</th></tr><tr><td>test1</td><td>passed</td></tr>' +
+        '<tr><td colspan="2"><em>… 4 more rows not shown (size limit)</em></td></tr></table>'
+    )
+    expect(table.length).toBeLessThanOrEqual(200)
+  })
+
+  it('should return an empty string if not even the first row fits', async () => {
+    expect(buildTable(rows, 50)).toBe('')
+  })
 })
 
 describe('truncate', () => {

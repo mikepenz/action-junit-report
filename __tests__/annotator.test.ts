@@ -103,6 +103,34 @@ describe('attachComment', () => {
     expect(body).toContain('Logs omitted for')
   })
 
+  it('shortens the tables to keep the comment within the size limit', async () => {
+    const rows = Array.from({length: 3000}, (_, i) => [`Test.test${i}`, '✅ passed'])
+    const header = [
+      {data: 'Test', header: true},
+      {data: 'Result', header: true}
+    ]
+    const checkInfos = [{name: 'check', url: 'https://github.com/test-owner/test-repo/runs/1'}]
+
+    await attachComment(
+      mockOctokit,
+      ['check'],
+      false,
+      [['check', '3000 ran']],
+      [header, ...rows],
+      [header, ...rows],
+      checkInfos,
+      '123'
+    )
+
+    const body: string = mockOctokit.rest.issues.createComment.mock.calls[0][0].body
+    expect(body.length).toBeLessThanOrEqual(65536)
+    expect(body.startsWith('<table><tr><td>check</td><td>3000 ran</td></tr></table>')).toBe(true)
+    expect(body).toContain('<td>Test.test0</td>')
+    expect(body).toMatch(/… \d+ more rows not shown \(size limit\)/)
+    expect(body).toContain('View check')
+    expect(body.endsWith(buildCommentIdentifier(['check']))).toBe(true)
+  })
+
   it('should use pr_id when provided and context.issue.number is not available', async () => {
     // Setup: no context issue number
     mockContextData.issue.number = undefined

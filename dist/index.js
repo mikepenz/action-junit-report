@@ -56935,29 +56935,47 @@ function buildList(items, ordered = false) {
 }
 /**
  * Function extracted from: https://github.com/actions/toolkit/blob/main/packages/core/src/summary.ts#L229
+ *
+ * If the table is longer than `maxLength`, it keeps the leading rows that fit and notes how many rows were left out.
+ * Returns an empty string if not even the first row fits.
  */
-function buildTable(rows) {
-    const tableBody = rows
-        .map(row => {
-        const cells = row
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .map((cell) => {
-            if (typeof cell === 'string') {
-                return wrap('td', cell);
-            }
-            const { header, data, colspan, rowspan } = cell;
-            const tag = header ? 'th' : 'td';
-            const attrs = {
-                ...(colspan && { colspan }),
-                ...(rowspan && { rowspan })
-            };
-            return wrap(tag, data, attrs);
-        })
-            .join('');
-        return wrap('tr', cells);
+function buildTable(rows, maxLength = Number.POSITIVE_INFINITY) {
+    const tableRows = rows.map(buildTableRow);
+    const emptyLength = wrap('table', '').length;
+    if (tableRows.reduce((length, row) => length + row.length, emptyLength) <= maxLength) {
+        return wrap('table', tableRows.join(''));
+    }
+    // the note spans the columns of the header row
+    const colspan = `${rows[0]?.length ?? 1}`;
+    const omittedRow = (count) => buildTableRow([{ data: `<em>… ${count} more rows not shown (size limit)</em>`, colspan }]);
+    // reserve the space of the note for the largest possible count
+    let length = emptyLength + omittedRow(tableRows.length).length;
+    let kept = 0;
+    while (kept < tableRows.length && length + tableRows[kept].length <= maxLength) {
+        length += tableRows[kept].length;
+        kept++;
+    }
+    if (kept === 0)
+        return '';
+    return wrap('table', tableRows.slice(0, kept).join('') + omittedRow(tableRows.length - kept));
+}
+function buildTableRow(row) {
+    const cells = row
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((cell) => {
+        if (typeof cell === 'string') {
+            return wrap('td', cell);
+        }
+        const { header, data, colspan, rowspan } = cell;
+        const tag = header ? 'th' : 'td';
+        const attrs = {
+            ...(colspan && { colspan }),
+            ...(rowspan && { rowspan })
+        };
+        return wrap(tag, data, attrs);
     })
         .join('');
-    return wrap('table', tableBody);
+    return wrap('tr', cells);
 }
 function escapeHtml(value) {
     // Raw blank lines end HTML blocks in Markdown and can activate injected links or images.
@@ -57064,6 +57082,8 @@ const MAX_ANNOTATIONS_PER_REQUEST = 50;
 // maximum annotation sizes of the checks API: https://docs.github.com/en/rest/checks/runs#create-a-check-run
 const ANNOTATION_TITLE_MAX_LENGTH = 255;
 const ANNOTATION_TEXT_MAX_BYTES = 65535;
+// maximum length of a comment body accepted by GitHub
+const MAX_COMMENT_LENGTH = 65536;
 /**
  * Shortens the annotation fields to the sizes accepted by the checks API, one oversized annotation fails the whole request.
  */
@@ -57239,27 +57259,30 @@ async function attachComment(octokit, checkName, updateComment, table, detailsTa
         return;
     }
     const identifier = buildCommentIdentifier(checkName);
-    let head = buildTable(table);
-    if (detailsTable.length > 1) {
-        head += '\n\n';
-        head += buildTable(detailsTable);
-    }
-    let tail = '';
-    if (flakySummary.length > 1) {
-        tail += '\n\n';
-        tail += buildTable(flakySummary);
-    }
     // Add check links to the job summary if any checks were created
+    let footer = '';
     if (checkInfos.length > 0) {
         const links = checkInfos.map(checkInfo => {
             return buildLink(`View ${escapeHtml(checkInfo.name)}`, checkInfo.url);
         });
-        tail += buildList(links);
-        tail += `\n\n`;
+        footer += buildList(links);
+        footer += `\n\n`;
     }
-    tail += `\n\n${identifier}`;
+    footer += `\n\n${identifier}`;
+    // shorten the tables in order to fit the size limit, the comment has to end with the identifier to be found again
+    let head = buildTable(table, MAX_COMMENT_LENGTH - footer.length);
+    if (detailsTable.length > 1) {
+        head += '\n\n';
+        head += buildTable(detailsTable, MAX_COMMENT_LENGTH - head.length - footer.length);
+    }
+    let tail = '';
+    if (flakySummary.length > 1) {
+        tail += '\n\n';
+        tail += buildTable(flakySummary, MAX_COMMENT_LENGTH - head.length - tail.length - footer.length);
+    }
+    tail += footer;
     let comment = head;
-    const failedSection = renderFailures(65536 - head.length - tail.length - 2);
+    const failedSection = renderFailures(MAX_COMMENT_LENGTH - head.length - tail.length - 2);
     if (failedSection) {
         comment += '\n\n';
         comment += failedSection;
