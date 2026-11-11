@@ -158,7 +158,7 @@ jobs:
 | `check_annotations`          | Optional. Defines if the checks will include annotations. If disabled skips all annotations for the check. (This does not affect `annotate_only`, which uses no checks).                            |
 | `update_check`               | Optional. Updates the check of the running job (see `job_name`) instead of creating a new check. Default: `false`.                                                                                  |
 | `annotate_only`              | Optional. Will only annotate the results on the files, won't create a check run. Defaults to `false`.                                                                                               |
-| `transformers`               | Optional. Array of `Transformer`s offering the ability to adjust the fileName. Defaults to: `[{"searchValue":"::","replaceValue":"/"}]`                                                             |
+| `transformers`               | Optional. Array of `Transformer`s offering the ability to adjust the fileName. Each `searchValue` is a regular expression replaced by its `replaceValue`, e.g. `[{"searchValue":"::","replaceValue":"/"}]` for Rust module paths. Defaults to: `[]`. |
 | `job_summary`                | Optional. Enables the publishing of the job summary for the results. Defaults to `true`. May be required to disable [Enterprise Server](https://github.com/mikepenz/action-junit-report/issues/637) |
 | `job_summary_text`           | Optional. Additional text to include in the job summary prior to the tables. Defaults to empty string.                                                                                              |
 | `detailed_summary`           | Optional. Include table with all test results in the summary (Also applies to comment). Defaults to `false`.                                                                                        |
@@ -243,6 +243,7 @@ A full set list of possible output values for this action.
 | `outputs.skipped`          | The number of skipped test cases.                                                                                   |
 | `outputs.retried`          | The number of retried test cases.                                                                                   |
 | `outputs.failed`           | The number of failed test cases.                                                                                    |
+| `outputs.time`             | The total time of all test cases, in seconds.                                                                       |
 | `outputs.summary`          | The short summary of the junit report. In html format (as also constructed by GitHub for the summary).              |
 | `outputs.detailed_summary` | The detailed summary in HTML, including a table and optional collapsible failed-test logs. |
 | `outputs.flaky_summary`    | The full table with all flaky results in a summary. In html format (as also constructed by GitHub for the summary). |
