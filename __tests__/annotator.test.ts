@@ -103,6 +103,86 @@ describe('attachComment', () => {
     expect(body).toContain('Logs omitted for')
   })
 
+  it('shortens the tables to keep the comment within the size limit', async () => {
+    const rows = Array.from({length: 3000}, (_, i) => [`Test.test${i}`, '✅ passed'])
+    const header = [
+      {data: 'Test', header: true},
+      {data: 'Result', header: true}
+    ]
+    const checkInfos = [{name: 'check', url: 'https://github.com/test-owner/test-repo/runs/1'}]
+
+    await attachComment(
+      mockOctokit,
+      ['check'],
+      false,
+      [['check', '3000 ran']],
+      [header, ...rows],
+      [header, ...rows],
+      checkInfos,
+      '123'
+    )
+
+    const body: string = mockOctokit.rest.issues.createComment.mock.calls[0][0].body
+    expect(body.length).toBeLessThanOrEqual(65536)
+    expect(body.startsWith('<table><tr><td>check</td><td>3000 ran</td></tr></table>')).toBe(true)
+    expect(body).toContain('<td>Test.test0</td>')
+    expect(body).toMatch(/… \d+ more rows not shown \(size limit\)/)
+    expect(body).toContain('View check')
+    expect(body.endsWith(buildCommentIdentifier(['check']))).toBe(true)
+  })
+
+  it('keeps the failures and the identifier when the tables and the summary text are oversized', async () => {
+    const rows = Array.from({length: 3000}, (_, i) => [`Test.test${i}`, '✅ passed'])
+    const titleRow = [{data: '<strong>check</strong>', colspan: '2'}]
+    const checkInfos = Array.from({length: 5}, (_, i) => ({name: `check${i}`, url: `https://github.com/o/r/runs/${i}`}))
+
+    await attachComment(
+      mockOctokit,
+      ['check'],
+      false,
+      [['check', '3000 ran']],
+      [titleRow, ...rows],
+      [titleRow, ...rows],
+      checkInfos,
+      '123',
+      max => `<p>FAILED SECTION ${'x'.repeat(Math.min(max ?? 0, 20000) - 20)}</p>`,
+      'S'.repeat(100000)
+    )
+
+    const body: string = mockOctokit.rest.issues.createComment.mock.calls[0][0].body
+    expect(body.length).toBeLessThanOrEqual(65536)
+    expect(body).toContain('FAILED SECTION')
+    expect(body).toContain('<td colspan="2"><em>… ')
+    expect(body).toContain('View check4')
+    expect(body.endsWith(buildCommentIdentifier(['check']))).toBe(true)
+  })
+
+  it('leaves no stray blank lines when the failures use up the budget and the other tables are dropped', async () => {
+    const rows = Array.from({length: 50}, (_, i) => [`Test.test${i}`, '✅ passed'])
+    const header = [
+      {data: 'Test', header: true},
+      {data: 'Result', header: true}
+    ]
+
+    await attachComment(
+      mockOctokit,
+      ['check'],
+      false,
+      [['check', '50 ran']],
+      [header, ...rows],
+      [header, ...rows],
+      [],
+      '123',
+      max => `<p>${'x'.repeat((max ?? 0) - 7)}</p>`
+    )
+
+    const body: string = mockOctokit.rest.issues.createComment.mock.calls[0][0].body
+    expect(body.length).toBeLessThanOrEqual(65536)
+    expect(body).not.toContain('Test.test0')
+    expect(body).not.toMatch(/\n{3,}/)
+    expect(body.endsWith(buildCommentIdentifier(['check']))).toBe(true)
+  })
+
   it('should use pr_id when provided and context.issue.number is not available', async () => {
     // Setup: no context issue number
     mockContextData.issue.number = undefined
