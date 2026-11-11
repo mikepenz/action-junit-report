@@ -14,6 +14,9 @@ const MAX_ANNOTATIONS_PER_REQUEST = 50
 const ANNOTATION_TITLE_MAX_LENGTH = 255
 const ANNOTATION_TEXT_MAX_BYTES = 65535
 
+// maximum length of a comment body accepted by GitHub
+const MAX_COMMENT_LENGTH = 65536
+
 /**
  * Shortens the annotation fields to the sizes accepted by the checks API, one oversized annotation fails the whole request.
  */
@@ -252,31 +255,35 @@ export async function attachComment(
 
   const identifier = buildCommentIdentifier(checkName)
 
-  let head = buildTable(table)
+  // Add check links to the job summary if any checks were created
+  let footer = ''
+  if (checkInfos.length > 0) {
+    const links = checkInfos.map(checkInfo => {
+      return buildLink(`View ${escapeHtml(checkInfo.name)}`, checkInfo.url)
+    })
+    footer += buildList(links)
+    footer += `\n\n`
+  }
+
+  footer += `\n\n${identifier}`
+
+  // shorten the tables in order to fit the size limit, the comment has to end with the identifier to be found again
+  let head = buildTable(table, MAX_COMMENT_LENGTH - footer.length)
   if (detailsTable.length > 1) {
     head += '\n\n'
-    head += buildTable(detailsTable)
+    head += buildTable(detailsTable, MAX_COMMENT_LENGTH - head.length - footer.length)
   }
 
   let tail = ''
   if (flakySummary.length > 1) {
     tail += '\n\n'
-    tail += buildTable(flakySummary)
+    tail += buildTable(flakySummary, MAX_COMMENT_LENGTH - head.length - tail.length - footer.length)
   }
 
-  // Add check links to the job summary if any checks were created
-  if (checkInfos.length > 0) {
-    const links = checkInfos.map(checkInfo => {
-      return buildLink(`View ${escapeHtml(checkInfo.name)}`, checkInfo.url)
-    })
-    tail += buildList(links)
-    tail += `\n\n`
-  }
-
-  tail += `\n\n${identifier}`
+  tail += footer
 
   let comment = head
-  const failedSection = renderFailures(65536 - head.length - tail.length - 2)
+  const failedSection = renderFailures(MAX_COMMENT_LENGTH - head.length - tail.length - 2)
   if (failedSection) {
     comment += '\n\n'
     comment += failedSection
