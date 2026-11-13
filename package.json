@@ -44,7 +44,7 @@
     "@typescript/native": "npm:typescript@7.0.2",
     "@vercel/ncc": "0.45.0",
     "eslint": "10.13.0",
-    "glob": "13.0.6",
+    "glob": "14.0.4",
     "globals": "17.13.0",
     "prettier": "3.9.10",
     "typescript": "npm:@typescript/typescript6@6.0.2",
