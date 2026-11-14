@@ -1,5 +1,6 @@
 import {
   addToModuleResults,
+  Annotation,
   getModuleName,
   parseFile,
   parseTestReports,
@@ -1867,7 +1868,7 @@ describe('parseTestReports', () => {
         message: 'failed Adding numbers',
         path: 'Calculator',
         raw_details:
-          'Scenario: Adding numbers\n\nThen the result should be 6\n\nMessage:\nexpected 6 but was 5 (RuntimeError)\n./features/step_definitions/steps.rb:8:in `"the result should be {int}"\'\nfeatures/calculator.feature:5:in `the result should be 6\'',
+          'Scenario: Adding numbers\n\nThen the result should be 6\n\nMessage:\n\n    expected 6 but was 5 (RuntimeError)\n./features/step_definitions/steps.rb:8:in `"the result should be {int}"\'\nfeatures/calculator.feature:5:in `the result should be 6\'',
         start_column: 0,
         start_line: 1,
         retries: 0,
@@ -1904,6 +1905,52 @@ describe('parseTestReports', () => {
     expect(globalAnnotations).toHaveLength(1)
     expect(globalAnnotations[0].message).toBe('unexpected markup')
     expect(globalAnnotations[0].raw_details).toBe('expected <b>bold</b> but was <i>bold</i>')
+  })
+
+  describe('CDATA edge cases', () => {
+    const parseEdgeCases = async (truncateStackTraces: boolean): Promise<Annotation[]> => {
+      const testResult = await parseFile(
+        'test_results/issues/testCdataEdgeCases.xml',
+        '',
+        false,
+        false,
+        false,
+        [],
+        undefined,
+        '/',
+        '',
+        [],
+        false,
+        -1,
+        truncateStackTraces
+      )
+      expect(testResult).toBeDefined()
+      return testResult!!.globalAnnotations
+    }
+    const byName = (annotations: Annotation[], name: string): Annotation => {
+      const annotation = annotations.find(a => a.title.endsWith(`.${name}`))
+      expect(annotation).toBeDefined()
+      return annotation!!
+    }
+
+    it('keeps the whitespace between CDATA sections', async () => {
+      const annotations = await parseEdgeCases(false)
+      expect(annotations).toHaveLength(4)
+      expect(byName(annotations, 'whitespace_between_sections').raw_details).toBe('at A.java:1\n2 more')
+      expect(byName(annotations, 'indented_sections').raw_details).toBe('line one\n      line two')
+    })
+
+    it('concatenates text, CDATA and comment separated parts without a separator', async () => {
+      const annotations = await parseEdgeCases(false)
+      expect(byName(annotations, 'comment_between_parts').raw_details).toBe('beforeafter')
+    })
+
+    it('uses text followed by CDATA as message without a message attribute', async () => {
+      const annotations = await parseEdgeCases(true)
+      const annotation = byName(annotations, 'no_message_attribute')
+      expect(annotation.message).toBe('Header line\nfirst trace line')
+      expect(annotation.raw_details).toBe('Header line\nfirst trace line\nsecond trace line\nthird trace line')
+    })
   })
 
   it('parse corrupt test output', async () => {

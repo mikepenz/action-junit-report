@@ -64927,8 +64927,9 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let report;
     try {
-        // CDATA sections share the text key, this keeps text and CDATA of an element in one array in document order
-        report = JSON.parse(xml_js_lib.xml2json(data, { compact: true, cdataKey: '_text' }));
+        // CDATA sections share the text key, this keeps text and CDATA of an element in one array in document order,
+        // including the whitespace between the sections (otherwise sections separated by a newline would be glued together)
+        report = JSON.parse(xml_js_lib.xml2json(data, { compact: true, cdataKey: '_text', captureSpacesBetweenElements: true }));
     }
     catch (error) {
         core_error(`⚠️ Failed to parse file (${file}) with error ${error}`);
