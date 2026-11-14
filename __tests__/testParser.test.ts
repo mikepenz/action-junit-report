@@ -1852,6 +1852,60 @@ describe('parseTestReports', () => {
     expect(mixedAnnotations[1].start_line).toBe(88)
   })
 
+  it('should join the CDATA sections of a cucumber failure', async () => {
+    const testResult = await parseFile('test_results/cucumber/TEST-features-calculator.xml')
+    expect(testResult).toBeDefined()
+    const {totalCount, failedCount, globalAnnotations} = testResult!!
+
+    expect(totalCount).toBe(2)
+    expect(failedCount).toBe(1)
+    expect(globalAnnotations).toStrictEqual([
+      {
+        annotation_level: 'failure',
+        end_column: 0,
+        end_line: 1,
+        message: 'failed Adding numbers',
+        path: 'Calculator',
+        raw_details:
+          'Scenario: Adding numbers\n\nThen the result should be 6\n\nMessage:\nexpected 6 but was 5 (RuntimeError)\n./features/step_definitions/steps.rb:8:in `"the result should be {int}"\'\nfeatures/calculator.feature:5:in `the result should be 6\'',
+        start_column: 0,
+        start_line: 1,
+        retries: 0,
+        status: 'failure',
+        time: 0.00065,
+        title: 'Calculator.Adding numbers'
+      }
+    ])
+  })
+
+  it('should restore a CDATA section split at ]]>', async () => {
+    const testResult = await parseFile('test_results/python/report_xmlrunner.xml')
+    expect(testResult).toBeDefined()
+    const {globalAnnotations} = testResult!!
+
+    expect(globalAnnotations).toHaveLength(1)
+    expect(globalAnnotations[0].raw_details).toBe(
+      'Traceback (most recent call last):\n' +
+        '  File "/home/runner/work/app/app/test_markup.py", line 6, in test_wraps_cdata\n' +
+        "    self.assertEqual('<![CDATA[value]]>', '<![CDATA[other]]>')\n" +
+        "AssertionError: '<![CDATA[value]]>' != '<![CDATA[other]]>'\n" +
+        '- <![CDATA[value]]>\n' +
+        '?          ^^^^\n' +
+        '+ <![CDATA[other]]>\n' +
+        '?          ^^^ +'
+    )
+  })
+
+  it('should keep text and CDATA of a failure in document order', async () => {
+    const testResult = await parseFile('test_results/issues/testMixedContent.xml')
+    expect(testResult).toBeDefined()
+    const {globalAnnotations} = testResult!!
+
+    expect(globalAnnotations).toHaveLength(1)
+    expect(globalAnnotations[0].message).toBe('unexpected markup')
+    expect(globalAnnotations[0].raw_details).toBe('expected <b>bold</b> but was <i>bold</i>')
+  })
+
   it('parse corrupt test output', async () => {
     const result = await parseTestReports(
       '',

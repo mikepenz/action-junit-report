@@ -40,8 +40,7 @@ type TestCaseIssue = {
     file?: string
     line?: string
   }
-  _cdata?: string
-  _text?: string
+  _text?: string | string[] // text and CDATA sections, an array if the content is split (e.g. around `]]>` or comments)
 }
 
 export interface TestResult {
@@ -243,7 +242,8 @@ export async function parseFile(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let report: any
   try {
-    report = JSON.parse(parser.xml2json(data, {compact: true}))
+    // CDATA sections share the text key, this keeps text and CDATA of an element in one array in document order
+    report = JSON.parse(parser.xml2json(data, {compact: true, cdataKey: '_text'}))
   } catch (error) {
     core.error(`⚠️ Failed to parse file (${file}) with error ${error}`)
     if (failOnParseError) throw Error(`⚠️ Failed to parse file (${file}) with error ${error}`)
@@ -564,8 +564,9 @@ async function createTestCaseAnnotation(
   truncateStackTraces: boolean,
   resolveIgnoreClassname: boolean
 ): Promise<Annotation> {
-  // Extract stack trace from a failure/error node.
-  const stackTrace: string = ((issue && issue._cdata) || (issue && issue._text) || '').toString().trim()
+  // Extract stack trace from a failure/error node, joining its parts without separators.
+  const content = issue?._text ?? ''
+  const stackTrace: string = (Array.isArray(content) ? content.join('') : content).trim()
 
   const stackTraceMessage = truncateStackTraces ? stackTrace.split('\n').slice(0, 2).join('\n') : stackTrace
 
