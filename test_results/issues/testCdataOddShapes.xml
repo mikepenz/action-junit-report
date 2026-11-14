@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="CdataOddShapes" tests="6" failures="6" errors="0" skipped="0">
+  <testcase classname="CdataOddShapes" name="child_element" time="0.001">
+    <failure message="child"><b/>text after child</failure>
+  </testcase>
+  <testcase classname="CdataOddShapes" name="empty_cdata" time="0.001">
+    <failure message="empty"><![CDATA[]]></failure>
+  </testcase>
+  <testcase classname="CdataOddShapes" name="whitespace_only" time="0.001">
+    <failure message="blank">
+    </failure>
+  </testcase>
+  <testcase classname="CdataOddShapes" name="self_closing" time="0.001">
+    <failure message="closed"/>
+  </testcase>
+  <testcase classname="CdataOddShapes" name="multiple_failures" time="0.001">
+    <failure message="first"><![CDATA[first part]]>
+<![CDATA[first rest]]></failure>
+    <failure message="second"><![CDATA[second part]]>
+<![CDATA[second rest]]></failure>
+  </testcase>
+  <testcase classname="CdataOddShapes" name="empty_error_with_system_out" time="0.001">
+    <error message="err">
+      <![CDATA[]]>
+    </error>
+    <system-out>
+      <![CDATA[out]]>
+    </system-out>
+  </testcase>
+</testsuite>

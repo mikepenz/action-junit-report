@@ -1953,6 +1953,45 @@ describe('parseTestReports', () => {
     })
   })
 
+  describe('CDATA odd shapes', () => {
+    const parseOddShapes = async (): Promise<Annotation[]> => {
+      const testResult = await parseFile('test_results/issues/testCdataOddShapes.xml')
+      expect(testResult).toBeDefined()
+      return testResult!!.globalAnnotations
+    }
+
+    it('reports every failure, also the ones with empty or blank content', async () => {
+      const annotations = await parseOddShapes()
+      expect(annotations.map(a => a.message)).toStrictEqual([
+        'child',
+        'empty',
+        'blank',
+        'closed',
+        'first',
+        'second',
+        'err'
+      ])
+    })
+
+    it('ignores child elements and keeps the text around them', async () => {
+      const annotations = await parseOddShapes()
+      expect(annotations.find(a => a.message === 'child')!!.raw_details).toBe('text after child')
+    })
+
+    it('has no details for empty, blank or self closing failures', async () => {
+      const annotations = await parseOddShapes()
+      for (const message of ['empty', 'blank', 'closed', 'err']) {
+        expect(annotations.find(a => a.message === message)!!.raw_details).toBe('')
+      }
+    })
+
+    it('joins the sections of each failure of a test separately', async () => {
+      const annotations = await parseOddShapes()
+      expect(annotations.find(a => a.message === 'first')!!.raw_details).toBe('first part\nfirst rest')
+      expect(annotations.find(a => a.message === 'second')!!.raw_details).toBe('second part\nsecond rest')
+    })
+  })
+
   it('parse corrupt test output', async () => {
     const result = await parseTestReports(
       '',
