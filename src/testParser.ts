@@ -29,6 +29,11 @@ interface TestCasesResult {
   annotations: Annotation[]
 }
 
+// skipped tests listed only due to `includeSkipped` (without `includePassed`) don't use up the annotations limit
+function limitCount(annotations: Annotation[], includePassed: boolean): number {
+  return includePassed ? annotations.length : annotations.filter(a => a.status !== 'skipped').length
+}
+
 type TestCaseIssue = {
   _attributes?: {
     message?: string
@@ -411,7 +416,8 @@ async function parseSuite(
     const testcases = Array.isArray(suite.testcase) ? suite.testcase : suite.testcase ? [suite.testcase] : []
     const suiteFile = suite._attributes !== undefined ? suite._attributes.file : null
     const suiteLine = suite._attributes !== undefined ? suite._attributes.line : null
-    const limit = annotationsLimit >= 0 ? annotationsLimit - globalAnnotations.length : annotationsLimit
+    const limit =
+      annotationsLimit >= 0 ? annotationsLimit - limitCount(globalAnnotations, includePassed) : annotationsLimit
     const parsedTestCases = await parseTestCases(
       suiteName,
       suiteFile,
@@ -443,7 +449,7 @@ async function parseSuite(
     globalAnnotations.push(...parsedTestCases.annotations)
   }
   // if we have a limit, and we are above the limit, return fast
-  if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
+  if (annotationsLimit > 0 && limitCount(globalAnnotations, includePassed) >= annotationsLimit) {
     return {
       name: suiteName,
       totalCount,
@@ -501,7 +507,7 @@ async function parseSuite(
     }
 
     // skip out if we reached our annotations limit
-    if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
+    if (annotationsLimit > 0 && limitCount(globalAnnotations, includePassed) >= annotationsLimit) {
       return {
         name: suiteName,
         totalCount,
@@ -809,11 +815,11 @@ async function parseTestCases(
 
       annotations.push(annotation)
 
-      if (limit >= 0 && annotations.length >= limit) break
+      if (limit >= 0 && limitCount(annotations, includePassed) >= limit) break
     }
 
     // Break from the outer testcase loop if we've reached the limit
-    if (limit >= 0 && annotations.length >= limit) break
+    if (limit >= 0 && limitCount(annotations, includePassed) >= limit) break
   }
 
   const failedCount = testCaseFailedCount // Use test case count, not annotation count
@@ -901,7 +907,7 @@ export async function parseTestReports(
     time += t
     testResults.push(testResult)
 
-    if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
+    if (annotationsLimit > 0 && limitCount(globalAnnotations, includePassed) >= annotationsLimit) {
       break
     }
   }

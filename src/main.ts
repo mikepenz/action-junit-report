@@ -48,7 +48,9 @@ export async function run(): Promise<void> {
       try {
         moduleRegex = new RegExp(moduleReports)
       } catch (error) {
-        core.warning(`⚠️ Ignoring input 'module_reports': '${moduleReports}' is not a valid regular expression (${error})`)
+        core.warning(
+          `⚠️ Ignoring input 'module_reports': '${moduleReports}' is not a valid regular expression (${error})`
+        )
       }
     }
     if (moduleRegex && core.getInput('group_reports') === 'false') {
@@ -179,7 +181,8 @@ export async function run(): Promise<void> {
             annotateOnly,
             updateCheck,
             annotateNotice,
-            jobName
+            jobName,
+            includePassed
           )
           if (checkInfo) {
             checkInfos.push(checkInfo)

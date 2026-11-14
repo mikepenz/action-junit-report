@@ -496,6 +496,18 @@ describe('annotateTestResult with update_check', () => {
     expect(checkInfo).toEqual({name: 'JUnit Test Report', url: 'https://github.com/test-owner/test-repo/runs/42'})
   })
 
+  it('does not annotate skipped tests unless passed tests are included', async () => {
+    const result = buildTestResult(1)
+    result.globalAnnotations.push({...result.globalAnnotations[0], annotation_level: 'notice', status: 'skipped'})
+
+    await annotateTestResult(result, 'token', 'sha', true, false, true, true, 'build', false)
+    expect(mockOctokit.rest.checks.update.mock.calls[0][0].output.annotations).toHaveLength(1)
+
+    mockOctokit.rest.checks.update.mockClear()
+    await annotateTestResult(result, 'token', 'sha', true, false, true, true, 'build', true)
+    expect(mockOctokit.rest.checks.update.mock.calls[0][0].output.annotations).toHaveLength(2)
+  })
+
   it('sends annotations in batches of 50', async () => {
     await annotateTestResult(buildTestResult(51), 'token', 'sha', true, false, true, false, 'build')
 

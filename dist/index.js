@@ -57096,8 +57096,9 @@ function limitAnnotation(annotation) {
         raw_details: truncateBytes(annotation.raw_details, ANNOTATION_TEXT_MAX_BYTES)
     };
 }
-async function annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName) {
-    const annotations = testResult.globalAnnotations.filter(annotation => annotateNotice || annotation.annotation_level !== 'notice');
+async function annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName, includePassed = true) {
+    // skipped tests are only listed in the detailed summary (include_skipped) unless passed tests are included
+    const annotations = testResult.globalAnnotations.filter(annotation => (annotateNotice || annotation.annotation_level !== 'notice') && (includePassed || annotation.status !== 'skipped'));
     const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
     let title = 'No test results found!';
     if (foundResults) {
@@ -64802,6 +64803,10 @@ var xml_js_lib = __nccwpck_require__(3675);
 
 
 
+// skipped tests listed only due to `includeSkipped` (without `includePassed`) don't use up the annotations limit
+function limitCount(annotations, includePassed) {
+    return includePassed ? annotations.length : annotations.filter(a => a.status !== 'skipped').length;
+}
 /**
  * A classname ending with a file extension after a slash is already a file path (e.g. vitest/jest), not a dotted Java class.
  * Go package paths contain slashes too, but their last segment has no extension.
@@ -65046,7 +65051,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
         const testcases = Array.isArray(suite.testcase) ? suite.testcase : suite.testcase ? [suite.testcase] : [];
         const suiteFile = suite._attributes !== undefined ? suite._attributes.file : null;
         const suiteLine = suite._attributes !== undefined ? suite._attributes.line : null;
-        const limit = annotationsLimit >= 0 ? annotationsLimit - globalAnnotations.length : annotationsLimit;
+        const limit = annotationsLimit >= 0 ? annotationsLimit - limitCount(globalAnnotations, includePassed) : annotationsLimit;
         const parsedTestCases = await parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testcases, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, limit, resolveIgnoreClassname, includeSkipped);
         // expand global annotations array
         totalCount += parsedTestCases.totalCount;
@@ -65059,7 +65064,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
         globalAnnotations.push(...parsedTestCases.annotations);
     }
     // if we have a limit, and we are above the limit, return fast
-    if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
+    if (annotationsLimit > 0 && limitCount(globalAnnotations, includePassed) >= annotationsLimit) {
         return {
             name: suiteName,
             totalCount,
@@ -65095,7 +65100,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
             time += childSuiteResult.time;
         }
         // skip out if we reached our annotations limit
-        if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
+        if (annotationsLimit > 0 && limitCount(globalAnnotations, includePassed) >= annotationsLimit) {
             return {
                 name: suiteName,
                 totalCount,
@@ -65308,11 +65313,11 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
             const issue = issuesToProcess[failureIndex];
             const annotation = await createTestCaseAnnotation(testcase, issue, failureIndex, issues.length, suiteName, suiteFile, suiteLine, breadCrumb, testTime, skip, success, annotationLevel, flakyFailuresCount, annotateNotice, failed, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, resolveIgnoreClassname);
             annotations.push(annotation);
-            if (limit >= 0 && annotations.length >= limit)
+            if (limit >= 0 && limitCount(annotations, includePassed) >= limit)
                 break;
         }
         // Break from the outer testcase loop if we've reached the limit
-        if (limit >= 0 && annotations.length >= limit)
+        if (limit >= 0 && limitCount(annotations, includePassed) >= limit)
             break;
     }
     const failedCount = testCaseFailedCount; // Use test case count, not annotation count
@@ -65361,7 +65366,7 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
         retried += r;
         time += t;
         testResults.push(testResult);
-        if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
+        if (annotationsLimit > 0 && limitCount(globalAnnotations, includePassed) >= annotationsLimit) {
             break;
         }
     }
@@ -65831,7 +65836,7 @@ async function run() {
         if (!skipAnnotations) {
             try {
                 for (const testResult of testResults) {
-                    const checkInfo = await annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName);
+                    const checkInfo = await annotateTestResult(testResult, token, headSha, checkAnnotations, annotateOnly, updateCheck, annotateNotice, jobName, includePassed);
                     if (checkInfo) {
                         checkInfos.push(checkInfo);
                     }

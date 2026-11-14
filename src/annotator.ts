@@ -43,10 +43,13 @@ export async function annotateTestResult(
   annotateOnly: boolean,
   updateCheck: boolean,
   annotateNotice: boolean,
-  jobName: string
+  jobName: string,
+  includePassed = true
 ): Promise<CheckInfo | undefined> {
+  // skipped tests are only listed in the detailed summary (include_skipped) unless passed tests are included
   const annotations = testResult.globalAnnotations.filter(
-    annotation => annotateNotice || annotation.annotation_level !== 'notice'
+    annotation =>
+      (annotateNotice || annotation.annotation_level !== 'notice') && (includePassed || annotation.status !== 'skipped')
   )
   const foundResults = testResult.totalCount > 0 || testResult.skipped > 0
 
