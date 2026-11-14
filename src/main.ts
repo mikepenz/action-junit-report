@@ -223,18 +223,22 @@ export async function run(): Promise<void> {
 
     if (comment && (!skipCommentWithoutTests || mergedResult.totalCount > 0)) {
       const octokit: InstanceType<typeof GitHub> = github.getOctokit(token)
-      await attachComment(
-        octokit,
-        checkName,
-        updateComment,
-        table,
-        detailTable,
-        flakyTable,
-        checkInfos,
-        prId,
-        renderFailures,
-        jobSummaryText
-      )
+      try {
+        await attachComment(
+          octokit,
+          checkName,
+          updateComment,
+          table,
+          detailTable,
+          flakyTable,
+          checkInfos,
+          prId,
+          renderFailures,
+          jobSummaryText
+        )
+      } catch (error) {
+        core.error(`❌ Failed to create the comment. (${error})`)
+      }
     }
 
     core.setOutput('summary', buildTable(table))

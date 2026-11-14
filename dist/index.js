@@ -65838,7 +65838,12 @@ async function run() {
         }
         if (comment && (!skipCommentWithoutTests || mergedResult.totalCount > 0)) {
             const octokit = getOctokit(token);
-            await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable, checkInfos, prId, renderFailures, jobSummaryText);
+            try {
+                await attachComment(octokit, checkName, updateComment, table, detailTable, flakyTable, checkInfos, prId, renderFailures, jobSummaryText);
+            }
+            catch (error) {
+                core_error(`❌ Failed to create the comment. (${error})`);
+            }
         }
         setOutput('summary', buildTable(table));
         setOutput('detailed_summary', buildTable(detailTable) + failedSection);
