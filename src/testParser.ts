@@ -29,6 +29,11 @@ interface TestCasesResult {
   annotations: Annotation[]
 }
 
+// skipped tests listed only due to `includeSkipped` (without `includePassed`) don't use up the annotations limit
+function limitCount(annotations: Annotation[], includePassed: boolean): number {
+  return includePassed ? annotations.length : annotations.filter(a => a.status !== 'skipped').length
+}
+
 type TestCaseIssue = {
   _attributes?: {
     message?: string
@@ -228,7 +233,8 @@ export async function parseFile(
   truncateStackTraces = true,
   failOnParseError = false,
   globalAnnotations: Annotation[] = [],
-  resolveIgnoreClassname = false
+  resolveIgnoreClassname = false,
+  includeSkipped = false
 ): Promise<ActualTestResult | undefined> {
   core.debug(`Parsing file ${file}`)
 
@@ -268,7 +274,8 @@ export async function parseFile(
     annotationsLimit,
     truncateStackTraces,
     globalAnnotations,
-    resolveIgnoreClassname
+    resolveIgnoreClassname,
+    includeSkipped
   )
 
   if (testResult !== undefined) {
@@ -383,7 +390,8 @@ async function parseSuite(
   annotationsLimit: number,
   truncateStackTraces: boolean,
   globalAnnotations: Annotation[],
-  resolveIgnoreClassname = false
+  resolveIgnoreClassname = false,
+  includeSkipped = false
 ): Promise<ActualTestResult | undefined> {
   if (!suite) {
     // not a valid suite, return fast
@@ -408,7 +416,8 @@ async function parseSuite(
     const testcases = Array.isArray(suite.testcase) ? suite.testcase : suite.testcase ? [suite.testcase] : []
     const suiteFile = suite._attributes !== undefined ? suite._attributes.file : null
     const suiteLine = suite._attributes !== undefined ? suite._attributes.line : null
-    const limit = annotationsLimit >= 0 ? annotationsLimit - globalAnnotations.length : annotationsLimit
+    const limit =
+      annotationsLimit >= 0 ? annotationsLimit - limitCount(globalAnnotations, includePassed) : annotationsLimit
     const parsedTestCases = await parseTestCases(
       suiteName,
       suiteFile,
@@ -425,7 +434,8 @@ async function parseSuite(
       followSymlink,
       truncateStackTraces,
       limit,
-      resolveIgnoreClassname
+      resolveIgnoreClassname,
+      includeSkipped
     )
 
     // expand global annotations array
@@ -439,7 +449,7 @@ async function parseSuite(
     globalAnnotations.push(...parsedTestCases.annotations)
   }
   // if we have a limit, and we are above the limit, return fast
-  if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
+  if (annotationsLimit > 0 && limitCount(globalAnnotations, includePassed) >= annotationsLimit) {
     return {
       name: suiteName,
       totalCount,
@@ -482,7 +492,8 @@ async function parseSuite(
       annotationsLimit,
       truncateStackTraces,
       globalAnnotations,
-      resolveIgnoreClassname
+      resolveIgnoreClassname,
+      includeSkipped
     )
 
     if (childSuiteResult) {
@@ -496,7 +507,7 @@ async function parseSuite(
     }
 
     // skip out if we reached our annotations limit
-    if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
+    if (annotationsLimit > 0 && limitCount(globalAnnotations, includePassed) >= annotationsLimit) {
       return {
         name: suiteName,
         totalCount,
@@ -670,7 +681,8 @@ async function parseTestCases(
   followSymlink: boolean,
   truncateStackTraces: boolean,
   limit = -1,
-  resolveIgnoreClassname = false
+  resolveIgnoreClassname = false,
+  includeSkipped = false
 ): Promise<TestCasesResult> {
   const toIssueArray = (value: any): TestCaseIssue[] => {
     if (!value) return []
@@ -765,7 +777,8 @@ async function parseTestCases(
     // If this isn't reported as a failure and processing all passed tests
     // isn't enabled, then skip the rest of the processing.
     // Exception: if the test has flaky failures, always process it to track retries
-    if (annotationLevel !== 'failure' && !includePassed && flakyFailuresCount === 0) {
+    // Exception: skipped tests are processed on their own if `includeSkipped` is enabled
+    if (annotationLevel !== 'failure' && !includePassed && !(includeSkipped && skip) && flakyFailuresCount === 0) {
       continue
     }
 
@@ -802,11 +815,11 @@ async function parseTestCases(
 
       annotations.push(annotation)
 
-      if (limit >= 0 && annotations.length >= limit) break
+      if (limit >= 0 && limitCount(annotations, includePassed) >= limit) break
     }
 
     // Break from the outer testcase loop if we've reached the limit
-    if (limit >= 0 && annotations.length >= limit) break
+    if (limit >= 0 && limitCount(annotations, includePassed) >= limit) break
   }
 
   const failedCount = testCaseFailedCount // Use test case count, not annotation count
@@ -846,7 +859,8 @@ export async function parseTestReports(
   annotationsLimit = -1,
   truncateStackTraces = true,
   failOnParseError = false,
-  resolveIgnoreClassname = false
+  resolveIgnoreClassname = false,
+  includeSkipped = false
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const files = await glob(reportPaths, {follow: followSymlink})
@@ -879,7 +893,8 @@ export async function parseTestReports(
       truncateStackTraces,
       failOnParseError,
       globalAnnotations,
-      resolveIgnoreClassname
+      resolveIgnoreClassname,
+      includeSkipped
     )
 
     if (!testResult) continue
@@ -892,7 +907,7 @@ export async function parseTestReports(
     time += t
     testResults.push(testResult)
 
-    if (annotationsLimit > 0 && globalAnnotations.length >= annotationsLimit) {
+    if (annotationsLimit > 0 && limitCount(globalAnnotations, includePassed) >= annotationsLimit) {
       break
     }
   }
