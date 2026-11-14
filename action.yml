@@ -192,6 +192,8 @@ outputs:
     description: 'The count of all skipped tests'
   failed:
     description: 'The count of all failed tests'
+  retried:
+    description: 'The count of all retried tests'
   time:
     description: 'The total time taken for all the tests'
   summary:
