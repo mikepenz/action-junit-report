@@ -281,6 +281,65 @@ describe('attachComment', () => {
     })
     expect(mockOctokit.rest.issues.createComment).not.toHaveBeenCalled()
   })
+
+  it('should start the comment with the job summary text', async () => {
+    mockOctokit.paginate.mockResolvedValue([])
+
+    const table = [
+      ['Test', 'Result'],
+      ['Example Test', 'Passed']
+    ]
+    const summaryText = '# Custom Header\n\nSome custom body.'
+
+    await attachComment(mockOctokit, ['Test Check'], false, table, [], [], [], '123', undefined, summaryText)
+
+    const body: string = mockOctokit.rest.issues.createComment.mock.calls[0][0].body
+    expect(body.startsWith(`${summaryText}\n\n<table>`)).toBe(true)
+    expect(body).toContain('Example Test')
+  })
+
+  it('should start the comment with the table without job summary text', async () => {
+    mockOctokit.paginate.mockResolvedValue([])
+
+    const table = [
+      ['Test', 'Result'],
+      ['Example Test', 'Passed']
+    ]
+
+    await attachComment(mockOctokit, ['Test Check'], false, table, [], [], [], '123')
+
+    const body: string = mockOctokit.rest.issues.createComment.mock.calls[0][0].body
+    expect(body.startsWith('<table>')).toBe(true)
+  })
+
+  it('should not comment only the job summary text when all tables are empty', async () => {
+    await attachComment(mockOctokit, ['Test Check'], false, [], [], [], [], '123', undefined, 'Some custom text')
+
+    expect(mockOctokit.rest.issues.createComment).not.toHaveBeenCalled()
+    expect(mockOctokit.rest.issues.updateComment).not.toHaveBeenCalled()
+  })
+
+  it('should keep the comment within the size limit with job summary text', async () => {
+    const renderFailures = vi.fn((maxLength?: number) => 'f'.repeat(maxLength ?? 0))
+    const summaryText = 'x'.repeat(10000)
+
+    await attachComment(
+      mockOctokit,
+      ['Test Check'],
+      false,
+      [['Example Test']],
+      [],
+      [],
+      [],
+      '123',
+      renderFailures,
+      summaryText
+    )
+
+    const body: string = mockOctokit.rest.issues.createComment.mock.calls[0][0].body
+    expect(body.startsWith(summaryText)).toBe(true)
+    expect(body.length).toBeLessThanOrEqual(65536)
+  })
 })
 
 describe('buildCommentIdentifier', () => {
