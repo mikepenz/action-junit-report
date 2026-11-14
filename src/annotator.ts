@@ -14,6 +14,10 @@ const MAX_ANNOTATIONS_PER_REQUEST = 50
 const ANNOTATION_TITLE_MAX_LENGTH = 255
 const ANNOTATION_TEXT_MAX_BYTES = 65535
 
+// maximum length of a comment body accepted by GitHub
+const MAX_COMMENT_LENGTH = 65536
+const SECTION_SEPARATOR = '\n\n'
+
 /**
  * Shortens the annotation fields to the sizes accepted by the checks API, one oversized annotation fails the whole request.
  */
@@ -253,38 +257,37 @@ export async function attachComment(
 
   const identifier = buildCommentIdentifier(checkName)
 
-  // start with the custom text like the job summary does
-  let head = summaryText ? `${summaryText}\n\n` : ''
-  head += buildTable(table)
-  if (detailsTable.length > 1) {
-    head += '\n\n'
-    head += buildTable(detailsTable)
-  }
-
-  let tail = ''
-  if (flakySummary.length > 1) {
-    tail += '\n\n'
-    tail += buildTable(flakySummary)
-  }
-
   // Add check links to the job summary if any checks were created
+  let footer = ''
   if (checkInfos.length > 0) {
     const links = checkInfos.map(checkInfo => {
       return buildLink(`View ${escapeHtml(checkInfo.name)}`, checkInfo.url)
     })
-    tail += buildList(links)
-    tail += `\n\n`
+    footer += buildList(links) + SECTION_SEPARATOR
   }
 
-  tail += `\n\n${identifier}`
+  footer += identifier
 
-  let comment = head
-  const failedSection = renderFailures(65536 - head.length - tail.length - 2)
-  if (failedSection) {
-    comment += '\n\n'
-    comment += failedSection
+  // Single place for the size budget: fixed parts first, then the sections by priority until the limit is used up.
+  // The failures are rendered before the details table, so they are the last to be cut.
+  let budget = MAX_COMMENT_LENGTH - footer.length
+  const fit = (render: (maxLength: number) => string): string => {
+    const section = render(Math.max(0, budget - SECTION_SEPARATOR.length))
+    if (section) budget -= section.length + SECTION_SEPARATOR.length
+    return section
   }
-  comment += tail
+
+  // start with the custom text like the job summary does, limited to a quarter of the comment
+  const summaryPart = fit(max => summaryText.slice(0, Math.min(max, MAX_COMMENT_LENGTH / 4)))
+  const summaryTable = fit(max => buildTable(table, max))
+  const failedPart = fit(max => renderFailures(max))
+  const flakyPart = flakySummary.length > 1 ? fit(max => buildTable(flakySummary, max)) : ''
+  const detailsPart = detailsTable.length > 1 ? fit(max => buildTable(detailsTable, max)) : ''
+
+  // the comment has to end with the identifier to be found again
+  const comment = [summaryPart, summaryTable, detailsPart, failedPart, flakyPart, footer]
+    .filter(Boolean)
+    .join(SECTION_SEPARATOR)
 
   const priorComment = updateComment ? await findPriorComment(octokit, identifier, issueNumber) : undefined
   if (priorComment) {
