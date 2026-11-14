@@ -64927,7 +64927,9 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let report;
     try {
-        report = JSON.parse(xml_js_lib.xml2json(data, { compact: true }));
+        // CDATA sections share the text key, this keeps text and CDATA of an element in one array in document order,
+        // including the whitespace between the sections (otherwise sections separated by a newline would be glued together)
+        report = JSON.parse(xml_js_lib.xml2json(data, { compact: true, cdataKey: '_text', captureSpacesBetweenElements: true }));
     }
     catch (error) {
         core_error(`⚠️ Failed to parse file (${file}) with error ${error}`);
@@ -65132,8 +65134,9 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
  * Helper function to create an annotation for a test case
  */
 async function createTestCaseAnnotation(testcase, issue, failureIndex, totalFailures, suiteName, suiteFile, suiteLine, breadCrumb, testTime, skip, success, annotationLevel, flakyFailuresCount, annotateNotice, failed, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, resolveIgnoreClassname) {
-    // Extract stack trace from a failure/error node.
-    const stackTrace = ((issue && issue._cdata) || (issue && issue._text) || '').toString().trim();
+    // Extract stack trace from a failure/error node, joining its parts without separators.
+    const content = issue?._text ?? '';
+    const stackTrace = (Array.isArray(content) ? content.join('') : content).trim();
     const stackTraceMessage = truncateStackTraces ? stackTrace.split('\n').slice(0, 2).join('\n') : stackTrace;
     // Extract message from a failure/error node.
     const message = ((issue && issue._attributes && issue._attributes.message) ||

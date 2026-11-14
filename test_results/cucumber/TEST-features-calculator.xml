@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite failures="1" errors="0" skipped="0" tests="2" time="0.001122" name="Calculator">
+<testcase classname="Calculator" name="Adding numbers" time="0.000650">
+  <failure message="failed Adding numbers" type="failed">
+    <![CDATA[Scenario: Adding numbers
+
+Then the result should be 6
+
+Message:
+]]>
+    <![CDATA[expected 6 but was 5 (RuntimeError)
+./features/step_definitions/steps.rb:8:in `"the result should be {int}"'
+features/calculator.feature:5:in `the result should be 6']]>
+  </failure>
+  <system-out>
+    <![CDATA[adding 2 and 3
+]]>
+  </system-out>
+  <system-err>
+    <![CDATA[]]>
+  </system-err>
+</testcase>
+<testcase classname="Calculator" name="Subtracting numbers" time="0.000472">
+  <system-out>
+    <![CDATA[]]>
+  </system-out>
+  <system-err>
+    <![CDATA[]]>
+  </system-err>
+</testcase>
+</testsuite>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="CdataEdgeCases" tests="4" failures="4" errors="0" skipped="0">
+  <testcase classname="CdataEdgeCases" name="whitespace_between_sections" time="0.001">
+    <failure message="split"><![CDATA[at A.java:1]]>
+<![CDATA[2 more]]></failure>
+  </testcase>
+  <testcase classname="CdataEdgeCases" name="no_message_attribute" time="0.001">
+    <failure>Header line<![CDATA[
+first trace line
+second trace line
+third trace line]]></failure>
+  </testcase>
+  <testcase classname="CdataEdgeCases" name="comment_between_parts" time="0.001">
+    <failure message="comment">before<!-- a comment -->after</failure>
+  </testcase>
+  <testcase classname="CdataEdgeCases" name="indented_sections" time="0.001">
+    <failure message="indented">
+      <![CDATA[line one]]>
+      <![CDATA[line two]]>
+    </failure>
+  </testcase>
+</testsuite>

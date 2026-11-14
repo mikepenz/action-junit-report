@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="MarkupTest" tests="1" file=".py" time="0.000" timestamp="2026-11-14T10:00:00" failures="1" errors="0" skipped="0">
+	<testcase classname="MarkupTest" name="test_wraps_cdata" time="0.000" timestamp="2026-11-14T10:00:00" file="test_markup.py" line="5">
+		<failure type="AssertionError" message="'&lt;![CDATA[value]]&gt;' != '&lt;![CDATA[other]]&gt;'
+- &lt;![CDATA[value]]&gt;
+?          ^^^^
++ &lt;![CDATA[other]]&gt;
+?          ^^^ +
+">
+<![CDATA[Traceback (most recent call last):
+  File "/home/runner/work/app/app/test_markup.py", line 6, in test_wraps_cdata
+    self.assertEqual('<![CDATA[value]]]]><![CDATA[>', '<![CDATA[other]]]]><![CDATA[>')
+AssertionError: '<![CDATA[value]]]]><![CDATA[>' != '<![CDATA[other]]]]><![CDATA[>'
+- <![CDATA[value]]]]><![CDATA[>
+?          ^^^^
++ <![CDATA[other]]]]><![CDATA[>
+?          ^^^ +
+
+]]>		</failure>
+	</testcase>
+</testsuite>

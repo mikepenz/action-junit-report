@@ -1,5 +1,6 @@
 import {
   addToModuleResults,
+  Annotation,
   getModuleName,
   parseFile,
   parseTestReports,
@@ -1850,6 +1851,145 @@ describe('parseTestReports', () => {
     expect(mixedAnnotations[0].start_line).toBe(55)
     expect(mixedAnnotations[1].message).toBe('Unhandled error')
     expect(mixedAnnotations[1].start_line).toBe(88)
+  })
+
+  it('should join the CDATA sections of a cucumber failure', async () => {
+    const testResult = await parseFile('test_results/cucumber/TEST-features-calculator.xml')
+    expect(testResult).toBeDefined()
+    const {totalCount, failedCount, globalAnnotations} = testResult!!
+
+    expect(totalCount).toBe(2)
+    expect(failedCount).toBe(1)
+    expect(globalAnnotations).toStrictEqual([
+      {
+        annotation_level: 'failure',
+        end_column: 0,
+        end_line: 1,
+        message: 'failed Adding numbers',
+        path: 'Calculator',
+        raw_details:
+          'Scenario: Adding numbers\n\nThen the result should be 6\n\nMessage:\n\n    expected 6 but was 5 (RuntimeError)\n./features/step_definitions/steps.rb:8:in `"the result should be {int}"\'\nfeatures/calculator.feature:5:in `the result should be 6\'',
+        start_column: 0,
+        start_line: 1,
+        retries: 0,
+        status: 'failure',
+        time: 0.00065,
+        title: 'Calculator.Adding numbers'
+      }
+    ])
+  })
+
+  it('should restore a CDATA section split at ]]>', async () => {
+    const testResult = await parseFile('test_results/python/report_xmlrunner.xml')
+    expect(testResult).toBeDefined()
+    const {globalAnnotations} = testResult!!
+
+    expect(globalAnnotations).toHaveLength(1)
+    expect(globalAnnotations[0].raw_details).toBe(
+      'Traceback (most recent call last):\n' +
+        '  File "/home/runner/work/app/app/test_markup.py", line 6, in test_wraps_cdata\n' +
+        "    self.assertEqual('<![CDATA[value]]>', '<![CDATA[other]]>')\n" +
+        "AssertionError: '<![CDATA[value]]>' != '<![CDATA[other]]>'\n" +
+        '- <![CDATA[value]]>\n' +
+        '?          ^^^^\n' +
+        '+ <![CDATA[other]]>\n' +
+        '?          ^^^ +'
+    )
+  })
+
+  it('should keep text and CDATA of a failure in document order', async () => {
+    const testResult = await parseFile('test_results/issues/testMixedContent.xml')
+    expect(testResult).toBeDefined()
+    const {globalAnnotations} = testResult!!
+
+    expect(globalAnnotations).toHaveLength(1)
+    expect(globalAnnotations[0].message).toBe('unexpected markup')
+    expect(globalAnnotations[0].raw_details).toBe('expected <b>bold</b> but was <i>bold</i>')
+  })
+
+  describe('CDATA edge cases', () => {
+    const parseEdgeCases = async (truncateStackTraces: boolean): Promise<Annotation[]> => {
+      const testResult = await parseFile(
+        'test_results/issues/testCdataEdgeCases.xml',
+        '',
+        false,
+        false,
+        false,
+        [],
+        undefined,
+        '/',
+        '',
+        [],
+        false,
+        -1,
+        truncateStackTraces
+      )
+      expect(testResult).toBeDefined()
+      return testResult!!.globalAnnotations
+    }
+    const byName = (annotations: Annotation[], name: string): Annotation => {
+      const annotation = annotations.find(a => a.title.endsWith(`.${name}`))
+      expect(annotation).toBeDefined()
+      return annotation!!
+    }
+
+    it('keeps the whitespace between CDATA sections', async () => {
+      const annotations = await parseEdgeCases(false)
+      expect(annotations).toHaveLength(4)
+      expect(byName(annotations, 'whitespace_between_sections').raw_details).toBe('at A.java:1\n2 more')
+      expect(byName(annotations, 'indented_sections').raw_details).toBe('line one\n      line two')
+    })
+
+    it('concatenates text, CDATA and comment separated parts without a separator', async () => {
+      const annotations = await parseEdgeCases(false)
+      expect(byName(annotations, 'comment_between_parts').raw_details).toBe('beforeafter')
+    })
+
+    it('uses text followed by CDATA as message without a message attribute', async () => {
+      const annotations = await parseEdgeCases(true)
+      const annotation = byName(annotations, 'no_message_attribute')
+      expect(annotation.message).toBe('Header line\nfirst trace line')
+      expect(annotation.raw_details).toBe('Header line\nfirst trace line\nsecond trace line\nthird trace line')
+    })
+  })
+
+  describe('CDATA odd shapes', () => {
+    const parseOddShapes = async (): Promise<Annotation[]> => {
+      const testResult = await parseFile('test_results/issues/testCdataOddShapes.xml')
+      expect(testResult).toBeDefined()
+      return testResult!!.globalAnnotations
+    }
+
+    it('reports every failure, also the ones with empty or blank content', async () => {
+      const annotations = await parseOddShapes()
+      expect(annotations.map(a => a.message)).toStrictEqual([
+        'child',
+        'empty',
+        'blank',
+        'closed',
+        'first',
+        'second',
+        'err'
+      ])
+    })
+
+    it('ignores child elements and keeps the text around them', async () => {
+      const annotations = await parseOddShapes()
+      expect(annotations.find(a => a.message === 'child')!!.raw_details).toBe('text after child')
+    })
+
+    it('has no details for empty, blank or self closing failures', async () => {
+      const annotations = await parseOddShapes()
+      for (const message of ['empty', 'blank', 'closed', 'err']) {
+        expect(annotations.find(a => a.message === message)!!.raw_details).toBe('')
+      }
+    })
+
+    it('joins the sections of each failure of a test separately', async () => {
+      const annotations = await parseOddShapes()
+      expect(annotations.find(a => a.message === 'first')!!.raw_details).toBe('first part\nfirst rest')
+      expect(annotations.find(a => a.message === 'second')!!.raw_details).toBe('second part\nsecond rest')
+    })
   })
 
   it('parse corrupt test output', async () => {
