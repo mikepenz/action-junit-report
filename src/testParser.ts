@@ -187,7 +187,9 @@ export async function resolvePath(
 
   core.debug(`Resolving path for ${fileName} in ${workspacePath}`)
   const normalizedFilename = fileName.replace(/^\.\//, '') // strip relative prefix (./)
-  const globPattern = `${workspacePath}**/${normalizedFilename}.*`
+  // a nested JVM class (`Outer$Inner`, e.g. a JUnit 5 `@Nested` test) is declared in the file of its outermost class
+  const sourceName = normalizedFilename.replace(/^([^/.$]+)\$[^/.]*$/, '$1')
+  const globPattern = `${workspacePath}**/${sourceName}.*`
   const results = await glob(globPattern, {
     follow: followSymlink
   })

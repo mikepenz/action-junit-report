@@ -186,6 +186,17 @@ describe('resolvePath', () => {
     const path = await resolvePath('', './test_results/CalcUtilsTest.kt', ['/build/', '/__pycache__/'])
     expect(path).toBe('test_results/CalcUtilsTest.kt')
   })
+
+  it('should find the file of the outer class for a nested class', async () => {
+    const expected = 'test_results/tests/nested/src/test/java/action/surefire/report/nested/AccountTest.java'
+    expect(await resolvePath('', 'AccountTest$Deposit', ['/build/', '/__pycache__/'])).toBe(expected)
+    expect(await resolvePath('', 'AccountTest$Deposit$Limit', ['/build/', '/__pycache__/'])).toBe(expected)
+  })
+
+  it('should keep the class name of a nested class without a matching file', async () => {
+    const path = await resolvePath('', 'MissingTest$Inner', ['/build/', '/__pycache__/'])
+    expect(path).toBe('MissingTest$Inner')
+  })
 })
 
 describe('parseFile', () => {
@@ -229,6 +240,29 @@ describe('parseFile', () => {
         message: 'Expected: <100.10>\n     but: was <100.11>',
         raw_details:
           'java.lang.AssertionError: \n\nExpected: <100.10>\n     but: was <100.11>\n\tat action.surefire.report.calc.CalcUtilsTest.test scale(CalcUtilsTest.kt:15)'
+      }
+    ])
+  })
+
+  it('should annotate failures of nested classes on the file of the outer class', async () => {
+    const testResult = await parseFile(
+      'test_results/tests/nested/target/surefire-reports/TEST-action.surefire.report.nested.AccountTest$Deposit$Limit.xml'
+    )
+    expect(testResult).toBeDefined()
+    const {totalCount, failedCount, globalAnnotations} = testResult!!
+
+    expect(totalCount).toBe(3)
+    expect(failedCount).toBe(2)
+    expect(globalAnnotations.map(({path, start_line, title}) => ({path, start_line, title}))).toStrictEqual([
+      {
+        path: 'test_results/tests/nested/src/test/java/action/surefire/report/nested/AccountTest.java',
+        start_line: 20,
+        title: 'AccountTest$Deposit.addsTheAmount'
+      },
+      {
+        path: 'test_results/tests/nested/src/test/java/action/surefire/report/nested/AccountTest.java',
+        start_line: 28,
+        title: 'AccountTest$Deposit$Limit.rejectsLargeDeposits'
       }
     ])
   })
