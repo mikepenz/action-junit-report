@@ -63,6 +63,12 @@ export async function run(): Promise<void> {
     const prId = core.getInput('pr_id').trim() || undefined
 
     const reportPaths = core.getMultilineInput('report_paths')
+    const excludeReportPaths = core.getMultilineInput('exclude_report_paths')
+    for (const reportPath of reportPaths.filter(path => path.startsWith('!'))) {
+      core.warning(
+        `⚠️ 'report_paths' does not support negated patterns, '${reportPath}' matches no file. Use 'exclude_report_paths' instead`
+      )
+    }
     const summary = core.getMultilineInput('summary')
     const checkName = core.getMultilineInput('check_name')
     const testFilesPrefix = core.getMultilineInput('test_files_prefix')
@@ -123,7 +129,8 @@ export async function run(): Promise<void> {
         truncateStackTraces,
         failOnParseError,
         resolveIgnoreClassname,
-        includeSkipped && detailedSummary // skipped tests are only listed in the detailed summary
+        includeSkipped && detailedSummary, // skipped tests are only listed in the detailed summary
+        excludeReportPaths
       )
       mergedResult.totalCount += testResult.totalCount
       mergedResult.skipped += testResult.skipped

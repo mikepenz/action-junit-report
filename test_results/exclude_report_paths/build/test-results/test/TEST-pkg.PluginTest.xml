@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="pkg.PluginTest" tests="2" skipped="0" failures="0" errors="0" time="0.2">
+  <testcase name="publishes" classname="pkg.PluginTest" time="0.1"/>
+  <testcase name="verifies" classname="pkg.PluginTest" time="0.1"/>
+</testsuite>

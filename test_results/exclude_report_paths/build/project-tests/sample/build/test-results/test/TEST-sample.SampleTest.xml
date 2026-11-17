@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="sample.SampleTest" tests="1" skipped="0" failures="1" errors="0" time="0.1">
+  <testcase name="fails on purpose" classname="sample.SampleTest" time="0.1">
+    <failure message="expected to fail" type="java.lang.AssertionError">java.lang.AssertionError: expected to fail</failure>
+  </testcase>
+</testsuite>

@@ -864,10 +864,11 @@ export async function parseTestReports(
   truncateStackTraces = true,
   failOnParseError = false,
   resolveIgnoreClassname = false,
-  includeSkipped = false
+  includeSkipped = false,
+  excludeReportPaths: string[] = []
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
-  const files = await glob(reportPaths, {follow: followSymlink})
+  const files = await glob(reportPaths, {follow: followSymlink, ignore: excludeReportPaths})
   const globalAnnotations: Annotation[] = []
   const testResults: ActualTestResult[] = []
   let totalCount = 0

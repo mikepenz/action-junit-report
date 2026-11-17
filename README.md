@@ -137,7 +137,8 @@ jobs:
 
 | **Input**                    | **Description**                                                                                                                                                                                     |
 |------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `report_paths`               | Optional. [Glob](https://github.com/actions/toolkit/tree/master/packages/glob) expression to junit report paths. Defaults to: `**/junit-reports/TEST-*.xml`.                                        |
+| `report_paths`               | Optional. [Glob](https://github.com/isaacs/node-glob) expression to junit report paths. Each line is processed as a separate report. Negated (`!`) patterns are not supported, use `exclude_report_paths` instead. Defaults to: `**/junit-reports/TEST-*.xml`. |
+| `exclude_report_paths`       | Optional. Newline separated list of [glob](https://github.com/isaacs/node-glob) patterns for report files to skip, applied to every `report_paths` entry. Append `/**` to skip a whole folder, e.g. `**/build/project-tests/**`. |
 | `token`                      | Optional. GitHub token for creating a check run. Set to `${{ github.token }}` by default.                                                                                                           |
 | `group_reports`              | Optional. Defines if different reports found by a single `report_paths` glob expression are grouped together. Defaults to `true`.                                                                   |
 | `test_files_prefix`          | Optional. Prepends the provided prefix to test file paths within the report when annotating on GitHub.                                                                                              |
