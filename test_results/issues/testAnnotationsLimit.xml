@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="pkg.ATest" tests="3" failures="0">
+    <testcase classname="pkg.ATest" name="one" time="0.1"/>
+    <testcase classname="pkg.ATest" name="two" time="0.1"/>
+    <testcase classname="pkg.ATest" name="three" time="0.1"/>
+  </testsuite>
+  <testsuite name="pkg.BTest" tests="2" failures="1">
+    <testcase classname="pkg.BTest" name="ok" time="0.1"/>
+    <testcase classname="pkg.BTest" name="broken" time="0.1"><failure message="expected 1 but was 2">AssertionError</failure></testcase>
+  </testsuite>
+</testsuites>
