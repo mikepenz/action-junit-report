@@ -556,7 +556,7 @@ async function createTestCaseAnnotation(
   skip: boolean,
   success: boolean,
   annotationLevel: 'failure' | 'notice' | 'warning',
-  flakyFailuresCount: number,
+  rerunsCount: number,
   annotateNotice: boolean,
   failed: boolean,
   excludeSources: string[],
@@ -659,7 +659,7 @@ async function createTestCaseAnnotation(
     end_line: pos.line,
     start_column: 0,
     end_column: 0,
-    retries: (testcase.retries || 0) + flakyFailuresCount,
+    retries: (testcase.retries || 0) + rerunsCount,
     annotation_level: annotationLevel,
     status: skip ? 'skipped' : success ? 'success' : 'failure',
     title: escapeEmoji(title),
@@ -667,6 +667,22 @@ async function createTestCaseAnnotation(
     raw_details: escapeEmoji(stackTrace),
     time: testTime
   }
+}
+
+/**
+ * Maven Surefire reports the reruns of a test case (`rerunFailingTestsCount`) as child elements of it:
+ * `flakyFailure` and `flakyError` for the failed runs of a test that passed on a rerun,
+ * `rerunFailure` and `rerunError` for the failed reruns of a test that kept failing.
+ */
+const rerunElements = ['flakyFailure', 'flakyError', 'rerunFailure', 'rerunError']
+
+function countReruns(testcase: any): number {
+  let count = 0
+  for (const element of rerunElements) {
+    const value = testcase[element]
+    if (value) count += Array.isArray(value) ? value.length : 1
+  }
+  return count
 }
 
 async function parseTestCases(
@@ -771,18 +787,15 @@ async function parseTestCases(
       testCaseFailedCount++
     }
 
-    // identify the number of flaky failures (check this early to allow flaky tests through)
-    const flakyFailuresCount = testcase.flakyFailure
-      ? Array.isArray(testcase.flakyFailure)
-        ? testcase.flakyFailure.length
-        : 1
-      : 0
+    // identify the number of reruns (check this early to allow flaky tests through)
+    const rerunsCount = countReruns(testcase)
+    retriedCount += rerunsCount
 
     // If this isn't reported as a failure and processing all passed tests
     // isn't enabled, then skip the rest of the processing.
-    // Exception: if the test has flaky failures, always process it to track retries
+    // Exception: if the test has reruns, always process it to track retries
     // Exception: skipped tests are processed on their own if `includeSkipped` is enabled
-    if (annotationLevel !== 'failure' && !includePassed && !(includeSkipped && skip) && flakyFailuresCount === 0) {
+    if (annotationLevel !== 'failure' && !includePassed && !(includeSkipped && skip) && rerunsCount === 0) {
       continue
     }
 
@@ -805,7 +818,7 @@ async function parseTestCases(
         skip,
         success,
         annotationLevel,
-        flakyFailuresCount,
+        rerunsCount,
         annotateNotice,
         failed,
         excludeSources,
