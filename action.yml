@@ -15,6 +15,10 @@ inputs:
     description: 'Xml report paths in glob format'
     required: false
     default: '**/junit-reports/TEST-*.xml'
+  exclude_report_paths:
+    description: 'Newline separated list of glob patterns for report files to skip. Applies to every `report_paths` entry, e.g. `**/build/project-tests/**`'
+    required: false
+    default: ''
   group_reports:
     description: 'Defines if reports are grouped into a combined test result. This '
     required: false

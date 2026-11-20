@@ -65345,9 +65345,9 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
  * https://github.com/mikepenz/action-junit-report/
  */
 async function parseTestReports(checkName, summary, reportPaths, suiteRegex, // no-op
-includePassed = false, annotateNotice = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, breadCrumbDelimiter, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false, resolveIgnoreClassname = false, includeSkipped = false) {
+includePassed = false, annotateNotice = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, breadCrumbDelimiter, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false, resolveIgnoreClassname = false, includeSkipped = false, excludeReportPaths = []) {
     core_debug(`Process test report for: ${reportPaths} (${checkName})`);
-    const files = await glob(reportPaths, { follow: followSymlink });
+    const files = await glob(reportPaths, { follow: followSymlink, ignore: excludeReportPaths });
     const globalAnnotations = [];
     const testResults = [];
     let totalCount = 0;
@@ -65759,6 +65759,10 @@ async function run() {
         const skipCommentWithoutTests = getInput('skip_comment_without_tests') === 'true';
         const prId = getInput('pr_id').trim() || undefined;
         const reportPaths = getMultilineInput('report_paths');
+        const excludeReportPaths = getMultilineInput('exclude_report_paths');
+        for (const reportPath of reportPaths.filter(path => path.startsWith('!'))) {
+            warning(`⚠️ 'report_paths' does not support negated patterns, '${reportPath}' matches no file. Use 'exclude_report_paths' instead`);
+        }
         const summary = getMultilineInput('summary');
         const checkName = getMultilineInput('check_name');
         const testFilesPrefix = getMultilineInput('test_files_prefix');
@@ -65795,8 +65799,8 @@ async function run() {
         };
         info(`Preparing ${reportsCount} report as configured.`);
         for (let i = 0; i < reportsCount; i++) {
-            const testResult = await parseTestReports(retrieve('checkName', checkName, i, reportsCount), retrieve('summary', summary, i, reportsCount), retrieve('reportPaths', reportPaths, i, reportsCount), retrieve('suiteRegex', suiteRegex, i, reportsCount), includePassed, annotateNotice, checkRetries, excludeSources, retrieve('checkTitleTemplate', checkTitleTemplate, i, reportsCount), breadCrumbDelimiter, retrieve('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError, resolveIgnoreClassname, includeSkipped && detailedSummary // skipped tests are only listed in the detailed summary
-            );
+            const testResult = await parseTestReports(retrieve('checkName', checkName, i, reportsCount), retrieve('summary', summary, i, reportsCount), retrieve('reportPaths', reportPaths, i, reportsCount), retrieve('suiteRegex', suiteRegex, i, reportsCount), includePassed, annotateNotice, checkRetries, excludeSources, retrieve('checkTitleTemplate', checkTitleTemplate, i, reportsCount), breadCrumbDelimiter, retrieve('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError, resolveIgnoreClassname, includeSkipped && detailedSummary, // skipped tests are only listed in the detailed summary
+            excludeReportPaths);
             mergedResult.totalCount += testResult.totalCount;
             mergedResult.skipped += testResult.skipped;
             mergedResult.failed += testResult.failed;
