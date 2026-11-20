@@ -64803,7 +64803,6 @@ var xml_js_lib = __nccwpck_require__(3675);
 
 
 
-// skipped tests listed only due to `includeSkipped` (without `includePassed`) don't use up the annotations limit
 function limitCount(annotations, includePassed) {
     return includePassed ? annotations.length : annotations.filter(a => a.status !== 'skipped').length;
 }
@@ -64923,7 +64922,7 @@ async function resolvePath(workspace, transformedFileName, excludeSources, follo
  * https://github.com/mikepenz/action-junit-report/
  */
 async function parseFile(file, suiteRegex = '', // no-op
-includePassed = false, annotateNotice = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/', '/node_modules/'], checkTitleTemplate = undefined, breadCrumbDelimiter = '/', testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false, globalAnnotations = [], resolveIgnoreClassname = false, includeSkipped = false) {
+includePassed = false, annotateNotice = false, checkRetries = false, excludeSources = ['/build/', '/__pycache__/', '/node_modules/'], checkTitleTemplate = undefined, breadCrumbDelimiter = '/', testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false, globalAnnotations = [], resolveIgnoreClassname = false, includeSkipped = false, budget = { remaining: -1, truncated: false }) {
     core_debug(`Parsing file ${file}`);
     const data = external_fs_namespaceObject.readFileSync(file, 'utf8');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64946,7 +64945,7 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
         return undefined;
     }
     const testResult = await parseSuite(testsuite, suiteRegex, // no-op
-    '', breadCrumbDelimiter, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations, resolveIgnoreClassname, includeSkipped);
+    '', breadCrumbDelimiter, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations, resolveIgnoreClassname, includeSkipped, budget);
     if (testResult !== undefined) {
         if (!testResult.name) {
             testResult.name = external_path_namespaceObject.basename(file);
@@ -65034,7 +65033,7 @@ function templateVar(varName) {
 async function parseSuite(
 /* eslint-disable  @typescript-eslint/no-explicit-any */
 suite, suiteRegex, // no-op
-breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations, resolveIgnoreClassname = false, includeSkipped = false) {
+breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations, resolveIgnoreClassname = false, includeSkipped = false, budget = { remaining: -1, truncated: false }) {
     if (!suite) {
         // not a valid suite, return fast
         return undefined;
@@ -65052,7 +65051,14 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
     const annotations = [];
     // parse testCases
     if (suite.testcase) {
-        const testcases = Array.isArray(suite.testcase) ? suite.testcase : suite.testcase ? [suite.testcase] : [];
+        let testcases = Array.isArray(suite.testcase) ? suite.testcase : suite.testcase ? [suite.testcase] : [];
+        if (budget.remaining >= 0) {
+            if (testcases.length > budget.remaining) {
+                testcases = testcases.slice(0, budget.remaining);
+                budget.truncated = true;
+            }
+            budget.remaining -= testcases.length;
+        }
         const suiteFile = suite._attributes !== undefined ? suite._attributes.file : null;
         const suiteLine = suite._attributes !== undefined ? suite._attributes.line : null;
         const limit = annotationsLimit >= 0 ? annotationsLimit - limitCount(globalAnnotations, includePassed) : annotationsLimit;
@@ -65078,7 +65084,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
     const childSuiteResults = [];
     const childBreadCrumb = suiteName ? `${breadCrumb}${suiteName}${breadCrumbDelimiter}` : breadCrumb;
     for (const childSuite of childTestSuites) {
-        const childSuiteResult = await parseSuite(childSuite, suiteRegex, childBreadCrumb, breadCrumbDelimiter, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations, resolveIgnoreClassname, includeSkipped);
+        const childSuiteResult = await parseSuite(childSuite, suiteRegex, childBreadCrumb, breadCrumbDelimiter, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, globalAnnotations, resolveIgnoreClassname, includeSkipped, budget);
         if (childSuiteResult) {
             childSuiteResults.push(childSuiteResult);
             totalCount += childSuiteResult.totalCount;
@@ -65325,7 +65331,7 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
  * https://github.com/mikepenz/action-junit-report/
  */
 async function parseTestReports(checkName, summary, reportPaths, suiteRegex, // no-op
-includePassed = false, annotateNotice = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, breadCrumbDelimiter, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false, resolveIgnoreClassname = false, includeSkipped = false, excludeReportPaths = []) {
+includePassed = false, annotateNotice = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, breadCrumbDelimiter, testFilesPrefix = '', transformer = [], followSymlink = false, annotationsLimit = -1, truncateStackTraces = true, failOnParseError = false, resolveIgnoreClassname = false, includeSkipped = false, excludeReportPaths = [], maxTestCases = -1) {
     core_debug(`Process test report for: ${reportPaths} (${checkName})`);
     const files = await glob(reportPaths, { follow: followSymlink, ignore: excludeReportPaths });
     const globalAnnotations = [];
@@ -65337,10 +65343,16 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
     let retried = 0;
     let time = 0;
     let foundFiles = 0;
+    const budget = { remaining: maxTestCases, truncated: false };
     for (const file of files) {
         foundFiles++;
+        if (budget.remaining === 0) {
+            // limit reached: do not even read the remaining files
+            budget.truncated = true;
+            continue;
+        }
         core_debug(`Parsing report file: ${file}`);
-        const testResult = await parseFile(file, suiteRegex, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError, globalAnnotations, resolveIgnoreClassname, includeSkipped);
+        const testResult = await parseFile(file, suiteRegex, includePassed, annotateNotice, checkRetries, excludeSources, checkTitleTemplate, breadCrumbDelimiter, testFilesPrefix, transformer, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError, globalAnnotations, resolveIgnoreClassname, includeSkipped, budget);
         if (!testResult)
             continue;
         const { totalCount: c, skippedCount: s, failedCount: f, passedCount: p, retriedCount: r, time: t } = testResult;
@@ -65351,6 +65363,9 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
         retried += r;
         time += t;
         testResults.push(testResult);
+    }
+    if (budget.truncated) {
+        warning(`⚠️ 'max_test_cases' (${maxTestCases}) reached for '${reportPaths}': remaining test cases were not parsed, totals and conclusion may be incomplete`);
     }
     return {
         checkName,
@@ -65750,6 +65765,7 @@ async function run() {
         const transformers = readTransformers(getInput('transformers', { trimWhitespace: true }));
         const followSymlink = getBooleanInput('follow_symlink');
         const annotationsLimit = Number(getInput('annotations_limit') || -1);
+        const maxTestCases = Number(getInput('max_test_cases') || -1);
         const skipAnnotations = getInput('skip_annotations') === 'true';
         const truncateStackTraces = getBooleanInput('truncate_stack_traces');
         const resolveIgnoreClassname = getBooleanInput('resolve_ignore_classname');
@@ -65777,7 +65793,7 @@ async function run() {
         info(`Preparing ${reportsCount} report as configured.`);
         for (let i = 0; i < reportsCount; i++) {
             const testResult = await parseTestReports(retrieve('checkName', checkName, i, reportsCount), retrieve('summary', summary, i, reportsCount), retrieve('reportPaths', reportPaths, i, reportsCount), retrieve('suiteRegex', suiteRegex, i, reportsCount), includePassed, annotateNotice, checkRetries, excludeSources, retrieve('checkTitleTemplate', checkTitleTemplate, i, reportsCount), breadCrumbDelimiter, retrieve('testFilesPrefix', testFilesPrefix, i, reportsCount), transformers, followSymlink, annotationsLimit, truncateStackTraces, failOnParseError, resolveIgnoreClassname, includeSkipped && detailedSummary, // skipped tests are only listed in the detailed summary
-            excludeReportPaths);
+            excludeReportPaths, maxTestCases);
             mergedResult.totalCount += testResult.totalCount;
             mergedResult.skipped += testResult.skipped;
             mergedResult.failed += testResult.failed;
