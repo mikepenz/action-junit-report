@@ -1757,6 +1757,30 @@ describe('parseTestReports', () => {
     const absolute = await parse(`${process.cwd()}/${reportPaths}`, ['**/build/project-tests/**'])
     expect(absolute).toMatchObject({foundFiles: 1, totalCount: 2, passed: 2, failed: 0})
 
+    // exclude patterns written like the report path (relative, `./`, absolute, an exact file) apply too
+    const root = 'test_results/exclude_report_paths'
+    const projectTests = `${root}/build/project-tests`
+    const sampleReport = `${projectTests}/sample/build/test-results/test/TEST-sample.SampleTest.xml`
+    const sameForm = [
+      [reportPaths, [`${projectTests}/**`]],
+      [`./${reportPaths}`, [`${projectTests}/**`]],
+      [reportPaths, [`./${projectTests}/**`]],
+      [`./${reportPaths}`, [`./${projectTests}/**`]],
+      [`${process.cwd()}/${reportPaths}`, [`${process.cwd()}/${projectTests}/**`]],
+      [`${process.cwd()}/${reportPaths}`, [`${projectTests}/**`]],
+      [reportPaths, [`${process.cwd()}/${projectTests}/**`]],
+      [reportPaths, [sampleReport]]
+    ] as const
+    for (const [paths, patterns] of sameForm) {
+      expect(await parse(paths, [...patterns]), `${paths} excluding ${patterns}`).toMatchObject({
+        foundFiles: 1,
+        totalCount: 2,
+        failed: 0
+      })
+    }
+    // an exclude identical to report_paths leaves nothing to report
+    expect(await parse(reportPaths, [reportPaths])).toMatchObject({foundFiles: 0, totalCount: 0})
+
     // every pattern is applied
     const excludedAll = await parse(reportPaths, ['**/project-tests/**', '**/TEST-pkg.*.xml'])
     expect(excludedAll).toMatchObject({foundFiles: 0, totalCount: 0})
