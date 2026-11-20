@@ -31,7 +31,7 @@
 |---|---|
 | ✅ **A check on the pull request** | One check run per report, with the failure annotated on the line that failed |
 | 📊 **Summaries where you look** | `job_summary`, `detailed_summary`, `flaky_summary` — and `comment: true` to post them on the PR |
-| 🧩 **Parses what other tools emit** | `<failure>` and `<error>`, nested suites, retries via `check_retries`, any language |
+| 🧩 **Parses what other tools emit** | `<failure>` and `<error>`, nested suites, retries via `check_retries` or Maven Surefire reruns, any language |
 | 🔐 **No `checks: write`? Still works** | `annotate_only: true` annotates forks and read-only tokens without a check run |
 | 🏷️ **Titles you control** | `check_title_template` with `{{BREAD_CRUMB}}`, `{{SUITE_NAME}}`, `{{TEST_NAME}}`, `{{CLASS_NAME}}` |
 | 📈 **Counts as outputs** | `total`, `passed`, `failed`, `skipped`, `retried`, `report_url` for downstream steps |

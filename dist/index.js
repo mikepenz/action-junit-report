@@ -65135,7 +65135,7 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
 /**
  * Helper function to create an annotation for a test case
  */
-async function createTestCaseAnnotation(testcase, issue, failureIndex, totalFailures, suiteName, suiteFile, suiteLine, breadCrumb, testTime, skip, success, annotationLevel, flakyFailuresCount, annotateNotice, failed, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, resolveIgnoreClassname) {
+async function createTestCaseAnnotation(testcase, issue, failureIndex, totalFailures, suiteName, suiteFile, suiteLine, breadCrumb, testTime, skip, success, annotationLevel, rerunsCount, annotateNotice, failed, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, resolveIgnoreClassname) {
     // Extract stack trace from a failure/error node, joining its parts without separators.
     const content = issue?._text ?? '';
     const stackTrace = (Array.isArray(content) ? content.join('') : content).trim();
@@ -65214,7 +65214,7 @@ async function createTestCaseAnnotation(testcase, issue, failureIndex, totalFail
         end_line: pos.line,
         start_column: 0,
         end_column: 0,
-        retries: (testcase.retries || 0) + flakyFailuresCount,
+        retries: (testcase.retries || 0) + rerunsCount,
         annotation_level: annotationLevel,
         status: skip ? 'skipped' : success ? 'success' : 'failure',
         title: escapeEmoji(title),
@@ -65222,6 +65222,21 @@ async function createTestCaseAnnotation(testcase, issue, failureIndex, totalFail
         raw_details: escapeEmoji(stackTrace),
         time: testTime
     };
+}
+/**
+ * Maven Surefire reports the reruns of a test case (`rerunFailingTestsCount`) as child elements of it:
+ * `flakyFailure` and `flakyError` for the failed runs of a test that passed on a rerun,
+ * `rerunFailure` and `rerunError` for the failed reruns of a test that kept failing.
+ */
+const rerunElements = ['flakyFailure', 'flakyError', 'rerunFailure', 'rerunError'];
+function countReruns(testcase) {
+    let count = 0;
+    for (const element of rerunElements) {
+        const value = testcase[element];
+        if (value)
+            count += Array.isArray(value) ? value.length : 1;
+    }
+    return count;
 }
 async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testcases, includePassed = false, annotateNotice = false, checkRetries = false, excludeSources, checkTitleTemplate = undefined, testFilesPrefix = '', transformer, followSymlink, truncateStackTraces, limit = -1, resolveIgnoreClassname = false, includeSkipped = false) {
     const toIssueArray = (value) => {
@@ -65299,24 +65314,21 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
         if (failed) {
             testCaseFailedCount++;
         }
-        // identify the number of flaky failures (check this early to allow flaky tests through)
-        const flakyFailuresCount = testcase.flakyFailure
-            ? Array.isArray(testcase.flakyFailure)
-                ? testcase.flakyFailure.length
-                : 1
-            : 0;
+        // identify the number of reruns (check this early to allow flaky tests through)
+        const rerunsCount = countReruns(testcase);
+        retriedCount += rerunsCount;
         // If this isn't reported as a failure and processing all passed tests
         // isn't enabled, then skip the rest of the processing.
-        // Exception: if the test has flaky failures, always process it to track retries
+        // Exception: if the test has reruns, always process it to track retries
         // Exception: skipped tests are processed on their own if `includeSkipped` is enabled
-        if (annotationLevel !== 'failure' && !includePassed && !(includeSkipped && skip) && flakyFailuresCount === 0) {
+        if (annotationLevel !== 'failure' && !includePassed && !(includeSkipped && skip) && rerunsCount === 0) {
             continue;
         }
         // Handle multiple failures/errors or single case (success/skip).
         const issuesToProcess = issues.length > 0 ? issues : [null]; // Process at least once for non-failure cases
         for (let failureIndex = 0; failureIndex < issuesToProcess.length; failureIndex++) {
             const issue = issuesToProcess[failureIndex];
-            const annotation = await createTestCaseAnnotation(testcase, issue, failureIndex, issues.length, suiteName, suiteFile, suiteLine, breadCrumb, testTime, skip, success, annotationLevel, flakyFailuresCount, annotateNotice, failed, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, resolveIgnoreClassname);
+            const annotation = await createTestCaseAnnotation(testcase, issue, failureIndex, issues.length, suiteName, suiteFile, suiteLine, breadCrumb, testTime, skip, success, annotationLevel, rerunsCount, annotateNotice, failed, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, resolveIgnoreClassname);
             annotations.push(annotation);
             if (limit >= 0 && limitCount(annotations, includePassed) >= limit)
                 break;
