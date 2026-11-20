@@ -30,6 +30,12 @@ interface TestCasesResult {
 }
 
 // skipped tests listed only due to `includeSkipped` (without `includePassed`) don't use up the annotations limit
+/** Remaining test cases to parse (-1 = unlimited), shared across all files of one parseTestReports call. */
+interface ParseBudget {
+  remaining: number
+  truncated: boolean
+}
+
 function limitCount(annotations: Annotation[], includePassed: boolean): number {
   return includePassed ? annotations.length : annotations.filter(a => a.status !== 'skipped').length
 }
@@ -235,7 +241,8 @@ export async function parseFile(
   failOnParseError = false,
   globalAnnotations: Annotation[] = [],
   resolveIgnoreClassname = false,
-  includeSkipped = false
+  includeSkipped = false,
+  budget: ParseBudget = {remaining: -1, truncated: false}
 ): Promise<ActualTestResult | undefined> {
   core.debug(`Parsing file ${file}`)
 
@@ -278,7 +285,8 @@ export async function parseFile(
     truncateStackTraces,
     globalAnnotations,
     resolveIgnoreClassname,
-    includeSkipped
+    includeSkipped,
+    budget
   )
 
   if (testResult !== undefined) {
@@ -394,7 +402,8 @@ async function parseSuite(
   truncateStackTraces: boolean,
   globalAnnotations: Annotation[],
   resolveIgnoreClassname = false,
-  includeSkipped = false
+  includeSkipped = false,
+  budget: ParseBudget = {remaining: -1, truncated: false}
 ): Promise<ActualTestResult | undefined> {
   if (!suite) {
     // not a valid suite, return fast
@@ -416,7 +425,14 @@ async function parseSuite(
 
   // parse testCases
   if (suite.testcase) {
-    const testcases = Array.isArray(suite.testcase) ? suite.testcase : suite.testcase ? [suite.testcase] : []
+    let testcases = Array.isArray(suite.testcase) ? suite.testcase : suite.testcase ? [suite.testcase] : []
+    if (budget.remaining >= 0) {
+      if (testcases.length > budget.remaining) {
+        testcases = testcases.slice(0, budget.remaining)
+        budget.truncated = true
+      }
+      budget.remaining -= testcases.length
+    }
     const suiteFile = suite._attributes !== undefined ? suite._attributes.file : null
     const suiteLine = suite._attributes !== undefined ? suite._attributes.line : null
     const limit =
@@ -481,7 +497,8 @@ async function parseSuite(
       truncateStackTraces,
       globalAnnotations,
       resolveIgnoreClassname,
-      includeSkipped
+      includeSkipped,
+      budget
     )
 
     if (childSuiteResult) {
@@ -845,7 +862,8 @@ export async function parseTestReports(
   failOnParseError = false,
   resolveIgnoreClassname = false,
   includeSkipped = false,
-  excludeReportPaths: string[] = []
+  excludeReportPaths: string[] = [],
+  maxTestCases = -1
 ): Promise<TestResult> {
   core.debug(`Process test report for: ${reportPaths} (${checkName})`)
   const files = await glob(reportPaths, {follow: followSymlink, ignore: excludeReportPaths})
@@ -858,8 +876,14 @@ export async function parseTestReports(
   let retried = 0
   let time = 0
   let foundFiles = 0
+  const budget: ParseBudget = {remaining: maxTestCases, truncated: false}
   for (const file of files) {
     foundFiles++
+    if (budget.remaining === 0) {
+      // limit reached: do not even read the remaining files
+      budget.truncated = true
+      continue
+    }
     core.debug(`Parsing report file: ${file}`)
 
     const testResult = await parseFile(
@@ -879,7 +903,8 @@ export async function parseTestReports(
       failOnParseError,
       globalAnnotations,
       resolveIgnoreClassname,
-      includeSkipped
+      includeSkipped,
+      budget
     )
 
     if (!testResult) continue
@@ -891,6 +916,12 @@ export async function parseTestReports(
     retried += r
     time += t
     testResults.push(testResult)
+  }
+
+  if (budget.truncated) {
+    core.warning(
+      `⚠️ 'max_test_cases' (${maxTestCases}) reached for '${reportPaths}': remaining test cases were not parsed, totals and conclusion may be incomplete`
+    )
   }
 
   return {
