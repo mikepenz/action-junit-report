@@ -169,6 +169,9 @@ inputs:
   annotations_limit:
     description: 'Specify the limit for annotations. Test cases past the limit are still counted in the totals.'
     required: false
+  max_test_cases:
+    description: 'Hard cap on the number of test cases parsed per `report_paths` entry. Parsing stops once reached (remaining files are not read), so totals and the conclusion can be incomplete. Defaults to no limit.'
+    required: false
   skip_annotations:
     description: 'Setting this flag will result in no annotations being added to the run.'
     required: false

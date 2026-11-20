@@ -79,6 +79,7 @@ export async function run(): Promise<void> {
     const transformers = readTransformers(core.getInput('transformers', {trimWhitespace: true}))
     const followSymlink = core.getBooleanInput('follow_symlink')
     const annotationsLimit = Number(core.getInput('annotations_limit') || -1)
+    const maxTestCases = Number(core.getInput('max_test_cases') || -1)
     const skipAnnotations = core.getInput('skip_annotations') === 'true'
     const truncateStackTraces = core.getBooleanInput('truncate_stack_traces')
     const resolveIgnoreClassname = core.getBooleanInput('resolve_ignore_classname')
@@ -130,7 +131,8 @@ export async function run(): Promise<void> {
         failOnParseError,
         resolveIgnoreClassname,
         includeSkipped && detailedSummary, // skipped tests are only listed in the detailed summary
-        excludeReportPaths
+        excludeReportPaths,
+        maxTestCases
       )
       mergedResult.totalCount += testResult.totalCount
       mergedResult.skipped += testResult.skipped

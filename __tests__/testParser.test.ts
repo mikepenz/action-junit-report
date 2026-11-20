@@ -1884,6 +1884,43 @@ describe('parseTestReports', () => {
     expect(globalAnnotations).toHaveLength(3)
   })
 
+  it('should stop parsing at max_test_cases', async () => {
+    const parse = (maxTestCases: number): ReturnType<typeof parseTestReports> =>
+      parseTestReports(
+        'checkName',
+        'summary',
+        'test_results/issues/testAnnotationsLimit.xml',
+        '*',
+        true,
+        false,
+        false,
+        [],
+        undefined,
+        '/',
+        '',
+        [],
+        false,
+        -1,
+        true,
+        false,
+        false,
+        false,
+        [],
+        maxTestCases
+      )
+
+    // the failing test is the 5th: it is cut off, so the run looks green
+    const limited = await parse(3)
+    expect(limited.totalCount).toBe(3)
+    expect(limited.failed).toBe(0)
+
+    // a limit at or above the number of test cases changes nothing
+    expect(await parse(5)).toMatchObject({totalCount: 5, passed: 4, failed: 1})
+
+    // 0 reads no file at all
+    expect(await parse(0)).toMatchObject({foundFiles: 1, totalCount: 0})
+  })
+
   it('should parse retried tests', async () => {
     const {checkName, summary, totalCount, skipped, failed, passed, retried, globalAnnotations} =
       await parseTestReports(
