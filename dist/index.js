@@ -65067,21 +65067,6 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
         annotations.push(...parsedTestCases.annotations);
         globalAnnotations.push(...parsedTestCases.annotations);
     }
-    // if we have a limit, and we are above the limit, return fast
-    if (annotationsLimit > 0 && limitCount(globalAnnotations, includePassed) >= annotationsLimit) {
-        return {
-            name: suiteName,
-            totalCount,
-            skippedCount,
-            failedCount,
-            passedCount,
-            retriedCount,
-            time,
-            annotations,
-            globalAnnotations,
-            testResults: []
-        };
-    }
     // parse child test suites
     const childTestSuites = suite.testsuite
         ? Array.isArray(suite.testsuite)
@@ -65102,21 +65087,6 @@ breadCrumb, breadCrumbDelimiter = '/', includePassed = false, annotateNotice = f
             passedCount += childSuiteResult.passedCount;
             retriedCount += childSuiteResult.retriedCount;
             time += childSuiteResult.time;
-        }
-        // skip out if we reached our annotations limit
-        if (annotationsLimit > 0 && limitCount(globalAnnotations, includePassed) >= annotationsLimit) {
-            return {
-                name: suiteName,
-                totalCount,
-                skippedCount,
-                failedCount,
-                passedCount,
-                retriedCount,
-                time,
-                annotations,
-                globalAnnotations,
-                testResults: childSuiteResults
-            };
         }
     }
     return {
@@ -65327,15 +65297,13 @@ async function parseTestCases(suiteName, suiteFile, suiteLine, breadCrumb, testc
         // Handle multiple failures/errors or single case (success/skip).
         const issuesToProcess = issues.length > 0 ? issues : [null]; // Process at least once for non-failure cases
         for (let failureIndex = 0; failureIndex < issuesToProcess.length; failureIndex++) {
+            // keep counting test cases past the annotations limit, only stop creating annotations
+            if (limit >= 0 && limitCount(annotations, includePassed) >= limit)
+                break;
             const issue = issuesToProcess[failureIndex];
             const annotation = await createTestCaseAnnotation(testcase, issue, failureIndex, issues.length, suiteName, suiteFile, suiteLine, breadCrumb, testTime, skip, success, annotationLevel, rerunsCount, annotateNotice, failed, excludeSources, checkTitleTemplate, testFilesPrefix, transformer, followSymlink, truncateStackTraces, resolveIgnoreClassname);
             annotations.push(annotation);
-            if (limit >= 0 && limitCount(annotations, includePassed) >= limit)
-                break;
         }
-        // Break from the outer testcase loop if we've reached the limit
-        if (limit >= 0 && limitCount(annotations, includePassed) >= limit)
-            break;
     }
     const failedCount = testCaseFailedCount; // Use test case count, not annotation count
     const passedCount = totalCount - failedCount - skippedCount;
@@ -65383,9 +65351,6 @@ includePassed = false, annotateNotice = false, checkRetries = false, excludeSour
         retried += r;
         time += t;
         testResults.push(testResult);
-        if (annotationsLimit > 0 && limitCount(globalAnnotations, includePassed) >= annotationsLimit) {
-            break;
-        }
     }
     return {
         checkName,

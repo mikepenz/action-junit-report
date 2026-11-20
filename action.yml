@@ -167,7 +167,7 @@ inputs:
     required: false
     default: ${{ github.job }}
   annotations_limit:
-    description: 'Specify the limit for annotations. This will also interrupt parsing all test-suites if the limit is reached.'
+    description: 'Specify the limit for annotations. Test cases past the limit are still counted in the totals.'
     required: false
   skip_annotations:
     description: 'Setting this flag will result in no annotations being added to the run.'

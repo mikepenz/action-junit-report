@@ -308,7 +308,7 @@ describe('parseFile', () => {
 
     expect(testResult).toBeDefined()
     const {totalCount, skippedCount, globalAnnotations} = testResult!!
-    expect(totalCount).toBe(1)
+    expect(totalCount).toBe(2)
     expect(skippedCount).toBe(0)
     expect(globalAnnotations).toStrictEqual([
       {
@@ -1858,6 +1858,30 @@ describe('parseTestReports', () => {
     // every pattern is applied
     const excludedAll = await parse(reportPaths, ['**/project-tests/**', '**/TEST-pkg.*.xml'])
     expect(excludedAll).toMatchObject({foundFiles: 0, totalCount: 0})
+  })
+
+  it('should count all test cases past the annotations limit', async () => {
+    const {totalCount, passed, failed, globalAnnotations} = await parseTestReports(
+      'checkName',
+      'summary',
+      'test_results/issues/testAnnotationsLimit.xml',
+      '*',
+      true,
+      false,
+      false,
+      [],
+      undefined,
+      '/',
+      '',
+      [],
+      false,
+      3
+    )
+
+    expect(totalCount).toBe(5)
+    expect(passed).toBe(4)
+    expect(failed).toBe(1)
+    expect(globalAnnotations).toHaveLength(3)
   })
 
   it('should parse retried tests', async () => {
